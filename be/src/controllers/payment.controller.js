@@ -888,7 +888,21 @@ const vnpayReturn = async (req, res, next) => {
     const result = vnpayService.verifyReturnUrl(vnp_Params);
     
     if (result.isSuccess && result.responseCode === '00') {
-      const order = await Order.findOne({ where: { number: result.orderId } });
+      // vnp_TxnRef đã bị loại ký tự đặc biệt (VD: "ORD25110001" thay vì "ORD-2511-00001")
+      // Tìm order theo cả dạng đã sanitize và dạng gốc với dấu gạch ngang
+      const sanitizedRef = result.orderId;
+      let order = await Order.findOne({ where: { number: sanitizedRef } });
+      
+      // Thử tìm theo dạng gốc có dấu gạch ngang (ORD-XXXX-XXXXX)
+      if (!order && sanitizedRef.startsWith('ORD') && sanitizedRef.length > 6) {
+        const withDashes = `${sanitizedRef.substring(0, 3)}-${sanitizedRef.substring(3, 7)}-${sanitizedRef.substring(7)}`;
+        order = await Order.findOne({ where: { number: withDashes } });
+      }
+      
+      // Thử tìm partial match
+      if (!order) {
+        order = await Order.findOne({ where: { number: { [Op.like]: `%${sanitizedRef}%` } } });
+      }
       
       if (order && order.paymentStatus !== 'paid') {
         const updateResult = await Order.update(

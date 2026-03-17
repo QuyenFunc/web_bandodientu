@@ -276,11 +276,10 @@ const AdminLayout: React.FC = () => {
                 <div className="relative" ref={userDropdownRef}>
                   <button
                     onClick={handleUserClick}
-                    className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${
-                      isAuthenticated
+                    className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${isAuthenticated
                         ? 'bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-900/20 dark:to-primary-800/10 text-primary-600 dark:text-primary-400 hover:from-primary-200 hover:to-primary-100 dark:hover:from-primary-900/30 dark:hover:to-primary-800/20 border border-primary-200/50 dark:border-primary-700/30'
                         : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700'
-                    }`}
+                      }`}
                     aria-label={t('header.actions.userAccount')}
                   >
                     <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
@@ -354,11 +353,10 @@ const AdminLayout: React.FC = () => {
                     <li key={item.key}>
                       <Link
                         to={item.path}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
                             ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-medium'
                             : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
+                          }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <span
@@ -389,11 +387,10 @@ const AdminLayout: React.FC = () => {
                     <li key={item.key}>
                       <Link
                         to={item.path}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
                             ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-medium'
                             : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
+                          }`}
                       >
                         <span
                           className={

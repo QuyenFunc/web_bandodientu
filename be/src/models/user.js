@@ -54,8 +54,12 @@ const User = sequelize.define(
       defaultValue: true,
       field: 'isActive', // Explicitly use camelCase in database
     },
-    verificationToken: {
-      type: DataTypes.STRING,
+    otpCode: {
+      type: DataTypes.STRING(6),
+      allowNull: true,
+    },
+    otpExpires: {
+      type: DataTypes.DATE,
       allowNull: true,
     },
     resetPasswordToken: {
@@ -100,7 +104,8 @@ User.prototype.comparePassword = async function (candidatePassword) {
 User.prototype.toJSON = function () {
   const values = { ...this.get() };
   delete values.password;
-  delete values.verificationToken;
+  delete values.otpCode;
+  delete values.otpExpires;
   delete values.resetPasswordToken;
   delete values.resetPasswordExpires;
   return values;

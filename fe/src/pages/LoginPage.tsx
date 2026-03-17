@@ -18,6 +18,8 @@ const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
+  const [resendSuccess, setResendSuccess] = useState('');
+  const [resendError, setResendError] = useState('');
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -85,22 +87,21 @@ const LoginPage: React.FC = () => {
 
   const handleResendVerification = async () => {
     if (!email) {
-      setError(t('auth.login.validation.emailRequired'));
+      setResendError('Vui lòng nhập email của bạn trước');
       return;
     }
-
+    setResendSuccess('');
+    setResendError('');
     try {
       await resendVerification({ email }).unwrap();
-      // Show success message
-      alert(t('auth.login.verificationSent'));
+      setResendSuccess('Đã gửi mã OTP mới đến email của bạn!');
     } catch (err: any) {
-      console.log('❌ Resend verification failed:', err);
-      setError(
-        err?.data?.message ||
-          err?.message ||
-          t('auth.login.errors.resendFailed')
-      );
+      setResendError(err?.data?.message || 'Không thể gửi lại OTP');
     }
+  };
+
+  const handleGoToOtp = () => {
+    navigate(`/verify-email${email ? `?email=${encodeURIComponent(email)}` : ''}`);
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
@@ -185,33 +186,64 @@ const LoginPage: React.FC = () => {
               </Link>
             </p>
           </div>
-          <div className="min-h-[60px] h-full mt-4">
+          <div className="mt-4 space-y-3">
+            {/* Login error */}
             {error && (
               <div className="p-4 bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-400 rounded-lg">
-                {typeof error === 'string'
-                  ? error
-                  : (error as any)?.data?.message ||
-                    (error as any)?.message ||
-                    t('auth.login.errors.invalidCredentials')}
-                {(error as any)?.data?.message?.includes(
-                  'Vui lòng xác thực email'
-                ) && (
-                  <div className="mt-2">
+                <p className="text-sm font-medium">
+                  {typeof error === 'string'
+                    ? error
+                    : (error as any)?.data?.message ||
+                      (error as any)?.message ||
+                      t('auth.login.errors.invalidCredentials')}
+                </p>
+                {(error as any)?.data?.message?.includes('Vui lòng xác thực email') && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {/* Nút nhập OTP */}
+                    <button
+                      type="button"
+                      onClick={handleGoToOtp}
+                      className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      📩 Nhập mã OTP xác thực
+                    </button>
+                    {/* Nút gửi lại OTP */}
                     <button
                       type="button"
                       onClick={handleResendVerification}
                       disabled={isResending}
-                      className="text-primary-600 dark:text-primary-400 hover:underline disabled:opacity-50"
+                      className="w-full py-2 px-4 border border-current text-sm font-medium rounded-lg hover:bg-error-200 dark:hover:bg-error-900/50 disabled:opacity-50 transition-colors"
                     >
-                      {isResending
-                        ? t('auth.login.resendingVerification', 'Sending...')
-                        : t(
-                            'auth.login.resendVerification',
-                            'Resend verification email'
-                          )}
+                      {isResending ? 'Đang gửi...' : 'Gửi lại email xác minh'}
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Resend OTP success */}
+            {resendSuccess && (
+              <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg flex items-start gap-2">
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium">{resendSuccess}</p>
+                  <button
+                    type="button"
+                    onClick={handleGoToOtp}
+                    className="mt-1 text-sm underline hover:no-underline"
+                  >
+                    Nhập mã OTP ngay →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Resend OTP error */}
+            {resendError && (
+              <div className="p-3 bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-400 rounded-lg text-sm">
+                {resendError}
               </div>
             )}
           </div>

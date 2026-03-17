@@ -41,28 +41,30 @@ const sendEmail = async (options) => {
   await transporter.sendMail(mailOptions);
 };
 
-// Send verification email
-const sendVerificationEmail = async (email, token) => {
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${token}`;
-
+// Send OTP verification email
+const sendOtpEmail = async (email, otp) => {
   await sendEmail({
     email,
-    subject: 'Xác thực tài khoản của bạn',
+    subject: 'Mã xác thực tài khoản của bạn',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Xác thực tài khoản</h2>
-        <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấp vào liên kết bên dưới để xác thực email của bạn:</p>
-        <p>
-          <a href="${verificationUrl}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px;">
-            Xác thực email
-          </a>
-        </p>
-        <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
-        <p>Liên kết này sẽ hết hạn sau 24 giờ.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+        <div style="background: white; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <h2 style="color: #1a1a1a; margin-bottom: 8px; font-size: 24px;">Xác thực tài khoản</h2>
+          <p style="color: #555; margin-bottom: 24px;">Cảm ơn bạn đã đăng ký. Nhập mã OTP bên dưới để kích hoạt tài khoản của bạn:</p>
+
+          <div style="background: #f0f4ff; border: 2px dashed #4f6ef7; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+            <p style="color: #888; font-size: 12px; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 2px;">Mã xác thực OTP</p>
+            <div style="font-size: 40px; font-weight: 900; letter-spacing: 12px; color: #4f6ef7; font-family: 'Courier New', monospace;">${otp}</div>
+          </div>
+
+          <p style="color: #e74c3c; font-size: 13px; text-align: center; margin-top: 16px;">⏰ Mã này có hiệu lực trong <strong>10 phút</strong></p>
+          <p style="color: #aaa; font-size: 12px; text-align: center; margin-top: 8px;">Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+        </div>
       </div>
     `,
   });
 };
+
 
 // Send reset password email
 const sendResetPasswordEmail = async (email, token) => {
@@ -219,9 +221,10 @@ const sendOrderCancellationEmail = async (email, order) => {
 
 module.exports = {
   sendEmail,
-  sendVerificationEmail,
+  sendOtpEmail,
   sendResetPasswordEmail,
   sendOrderConfirmationEmail,
   sendOrderStatusUpdateEmail,
   sendOrderCancellationEmail,
 };
+

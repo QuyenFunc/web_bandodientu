@@ -8,7 +8,6 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema,
   emailSchema,
-  verifyEmailSchema,
 } = require('../validators/user.validator');
 const { authenticate } = require('../middlewares/authenticate');
 
@@ -110,29 +109,9 @@ router.post('/logout', authenticate, authController.logout);
 
 /**
  * @swagger
- * /api/auth/verify-email/{token}:
- *   get:
- *     summary: Verify user email
- *     tags: [Authentication]
- *     parameters:
- *       - in: path
- *         name: token
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Email verified successfully
- *       400:
- *         description: Invalid or expired token
- */
-router.get('/verify-email/:token', authController.verifyEmail);
-
-/**
- * @swagger
- * /api/auth/verify-email:
+ * /api/auth/verify-otp:
  *   post:
- *     summary: Verify email with token
+ *     summary: Verify email with OTP code
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -141,21 +120,23 @@ router.get('/verify-email/:token', authController.verifyEmail);
  *           schema:
  *             type: object
  *             required:
- *               - token
+ *               - email
+ *               - otp
  *             properties:
- *               token:
+ *               email:
  *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *                 minLength: 6
+ *                 maxLength: 6
  *     responses:
  *       200:
  *         description: Email verified successfully
  *       400:
- *         description: Invalid or expired token
+ *         description: Invalid or expired OTP
  */
-router.post(
-  '/verify-email',
-  validateRequest(verifyEmailSchema),
-  authController.verifyEmailWithToken
-);
+router.post('/verify-otp', authController.verifyOtp);
 
 /**
  * @swagger

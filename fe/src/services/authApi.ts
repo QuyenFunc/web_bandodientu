@@ -69,52 +69,30 @@ export const authApi = api.injectEndpoints({
       },
     }),
 
-    verifyEmail: builder.mutation<{ message: string }, string>({
-      queryFn: async (token, api, extraOptions) => {
+    verifyOtp: builder.mutation<{ message: string }, { email: string; otp: string }>({
+      queryFn: async ({ email, otp }, api, extraOptions) => {
         try {
-          console.log('🚀 Starting verifyEmail with token:', token);
-
           const result = await baseQuery(
             {
-              url: `/auth/verify-email/${token}`,
-              method: 'GET',
+              url: '/auth/verify-otp',
+              method: 'POST',
+              body: { email, otp },
             },
             api,
             extraOptions
           );
 
           if (result.error) {
-            console.log('❌ Response error:', result.error);
-            const errorData = result.error.data as any;
-
-            // Nếu lỗi là token đã được sử dụng, có thể coi như đã verify thành công
-            if (
-              result.error.status === 400 &&
-              (errorData?.message?.includes('đã được xác thực') ||
-                errorData?.message?.includes('already verified') ||
-                errorData?.message?.includes('đã được sử dụng'))
-            ) {
-              console.log('🔄 Token already used, treating as success');
-              return {
-                data: {
-                  message: 'Email đã được xác thực thành công trước đó',
-                },
-              };
-            }
-
             return { error: result.error };
           }
 
           const data = result.data as any;
-          console.log('✅ Success response:', data);
-
           return {
             data: {
               message: data?.message || 'Email verified successfully',
             },
           };
         } catch (error) {
-          console.log('💥 Error in verifyEmail:', error);
           return {
             error: {
               status: 'FETCH_ERROR',
@@ -412,6 +390,7 @@ export const {
   useResetPasswordMutation,
   useResendVerificationMutation,
   useGetCurrentUserQuery,
-  useVerifyEmailMutation,
+  useVerifyOtpMutation,
   useForgotPasswordMutation,
 } = authApi;
+

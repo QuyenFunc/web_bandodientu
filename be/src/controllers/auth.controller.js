@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const { User } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
 const emailService = require('../services/email/emailService');
@@ -15,8 +14,9 @@ const register = async (req, res, next) => {
       throw new AppError('Email đã được sử dụng', 400);
     }
 
-    // Generate verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    // Generate 6-digit OTP
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Create new user
     const user = await User.create({
@@ -25,16 +25,16 @@ const register = async (req, res, next) => {
       firstName,
       lastName,
       phone,
-      verificationToken,
+      otpCode,
+      otpExpires,
     });
 
-    // Send verification email
-    await emailService.sendVerificationEmail(user.email, verificationToken);
+    // Send OTP email
+    await emailService.sendOtpEmail(user.email, otpCode);
 
     res.status(201).json({
       status: 'success',
-      message:
-        'Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.',
+      message: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã OTP xác thực.',
     });
   } catch (error) {
     next(error);
@@ -109,25 +109,39 @@ const logout = async (req, res, next) => {
   }
 };
 
-// Verify email
-const verifyEmail = async (req, res, next) => {
+// Verify email with OTP
+const verifyOtp = async (req, res, next) => {
   try {
-    const { token } = req.params;
+    const { email, otp } = req.body;
 
-    console.log(token);
-
-    // Find user with token
-    const user = await User.findOne({ where: { verificationToken: token } });
-
-    console.log(user);
-
-    if (!user) {
-      throw new AppError('Token không hợp lệ hoặc đã hết hạn', 400);
+    if (!email || !otp) {
+      throw new AppError('Email và mã OTP là bắt buộc', 400);
     }
 
-    // Update user
+    // Find user by email
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      throw new AppError('Không tìm thấy tài khoản với email này', 404);
+    }
+
+    if (user.isEmailVerified) {
+      throw new AppError('Email đã được xác thực trước đó', 400);
+    }
+
+    // Check OTP
+    if (!user.otpCode || user.otpCode !== String(otp)) {
+      throw new AppError('Mã OTP không đúng', 400);
+    }
+
+    // Check expiry
+    if (!user.otpExpires || new Date() > user.otpExpires) {
+      throw new AppError('Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.', 400);
+    }
+
+    // Verify user
     user.isEmailVerified = true;
-    user.verificationToken = null;
+    user.otpCode = null;
+    user.otpExpires = null;
     await user.save();
 
     res.status(200).json({
@@ -139,32 +153,7 @@ const verifyEmail = async (req, res, next) => {
   }
 };
 
-// Verify email with token (POST method)
-const verifyEmailWithToken = async (req, res, next) => {
-  try {
-    const { token } = req.body;
-
-    // Find user with token
-    const user = await User.findOne({ where: { verificationToken: token } });
-    if (!user) {
-      throw new AppError('Token không hợp lệ hoặc đã hết hạn', 400);
-    }
-
-    // Update user
-    user.isEmailVerified = true;
-    user.verificationToken = null;
-    await user.save();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Xác thực email thành công. Bạn có thể đăng nhập ngay bây giờ.',
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Resend verification email
+// Resend OTP verification email
 const resendVerification = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -180,19 +169,21 @@ const resendVerification = async (req, res, next) => {
       throw new AppError('Email đã được xác thực', 400);
     }
 
-    // Generate new verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    // Generate new OTP
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Update user
-    user.verificationToken = verificationToken;
+    user.otpCode = otpCode;
+    user.otpExpires = otpExpires;
     await user.save();
 
-    // Send verification email
-    await emailService.sendVerificationEmail(user.email, verificationToken);
+    // Send OTP email
+    await emailService.sendOtpEmail(user.email, otpCode);
 
     res.status(200).json({
       status: 'success',
-      message: 'Đã gửi lại email xác thực. Vui lòng kiểm tra email của bạn.',
+      message: 'Đã gửi lại mã OTP. Vui lòng kiểm tra email của bạn.',
     });
   } catch (error) {
     next(error);
@@ -363,8 +354,7 @@ module.exports = {
   register,
   login,
   logout,
-  verifyEmail,
-  verifyEmailWithToken,
+  verifyOtp,
   resendVerification,
   refreshToken,
   forgotPassword,

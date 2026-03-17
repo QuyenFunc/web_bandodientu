@@ -129,7 +129,9 @@ const AppRoutes: React.FC = () => {
               </PublicOnlyRoute>
             }
           />
+          <Route path="verify-email" element={<VerifyEmailPage />} />
           <Route path="verify-email/:token" element={<VerifyEmailPage />} />
+
 
           {/* Protected routes (require authentication) */}
           <Route

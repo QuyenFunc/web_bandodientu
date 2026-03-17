@@ -123,11 +123,10 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled || isSearchOpen
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isSearchOpen
           ? 'bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md shadow-lg border-b border-neutral-200/20 dark:border-neutral-700/20 py-2'
           : 'bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm py-3'
-      }`}
+        }`}
     >
       <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 flex items-center justify-between">
         {/* Logo */}
@@ -196,19 +195,18 @@ const Header: React.FC = () => {
           </div>
 
           {/* Theme Toggle */}
-          <div className="p-1 sm:p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+          {/* <div className="p-1 sm:p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
             <ThemeToggle />
-          </div>
+          </div> */}
 
           {/* User */}
           <div className="relative" ref={userDropdownRef}>
             <button
               onClick={handleUserClick}
-              className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${
-                isAuthenticated
+              className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${isAuthenticated
                   ? 'bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-900/20 dark:to-primary-800/10 text-primary-600 dark:text-primary-400 hover:from-primary-200 hover:to-primary-100 dark:hover:from-primary-900/30 dark:hover:to-primary-800/20 border border-primary-200/50 dark:border-primary-700/30'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700'
-              }`}
+                }`}
               aria-label={t('header.actions.userAccount')}
             >
               <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
@@ -300,11 +298,10 @@ const Header: React.FC = () => {
           {/* Cart */}
           <button
             onClick={handleCartClick}
-            className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${
-              cartItemsCount > 0
+            className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${cartItemsCount > 0
                 ? 'bg-gradient-to-r from-secondary-100 to-secondary-50 dark:from-secondary-900/20 dark:to-secondary-800/10 text-secondary-600 dark:text-secondary-400 hover:from-secondary-200 hover:to-secondary-100 dark:hover:from-secondary-900/30 dark:hover:to-secondary-800/20 border border-secondary-200/50 dark:border-secondary-700/30'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700'
-            }`}
+              }`}
             aria-label={t('header.actions.shoppingCart')}
           >
             <CartIcon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />

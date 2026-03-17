@@ -1,5 +1,6 @@
 const sequelize = require('../config/sequelize');
 const User = require('./user');
+const DiscountCode = require('./discountCode');
 const Address = require('./address');
 const Category = require('./category');
 const Product = require('./product');
@@ -23,6 +24,7 @@ const Image = require('./image');
 const News = require('./news');
 const NewsletterSubscriber = require('./newsletterSubscriber');
 const Feedback = require('./feedback');
+const ChatMessage = require('./chatMessage');
 
 // User - Address relationship
 User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
@@ -107,6 +109,10 @@ CartItem.belongsTo(ProductVariant, { foreignKey: 'variantId' });
 User.hasMany(Order, { foreignKey: 'userId', as: 'orders' });
 Order.belongsTo(User, { foreignKey: 'userId' });
 
+// Order - DiscountCode relationship
+DiscountCode.hasMany(Order, { foreignKey: 'discountCodeId' });
+Order.belongsTo(DiscountCode, { foreignKey: 'discountCodeId', as: 'appliedDiscount' });
+
 // Order - OrderItem relationship
 Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'items' });
 OrderItem.belongsTo(Order, { foreignKey: 'orderId' });
@@ -128,6 +134,10 @@ Product.belongsToMany(User, {
   otherKey: 'userId',
   as: 'wishlistedBy',
 });
+
+// Explicit associations for eager loading wishlist items directly
+Wishlist.belongsTo(Product, { foreignKey: 'productId' });
+Wishlist.belongsTo(User, { foreignKey: 'userId' });
 
 // Product - WarrantyPackage relationship (many-to-many)
 Product.belongsToMany(WarrantyPackage, {
@@ -188,6 +198,10 @@ Image.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Product.hasMany(Image, { foreignKey: 'productId', as: 'productImages' });
 User.hasMany(Image, { foreignKey: 'userId', as: 'userImages' });
 
+// User - ChatMessage relationship
+User.hasMany(ChatMessage, { foreignKey: 'userId', as: 'chatMessages' });
+ChatMessage.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 // Export models
 module.exports = {
   sequelize,
@@ -214,5 +228,7 @@ module.exports = {
   Image,
   News,
   NewsletterSubscriber,
+  ChatMessage,
   Feedback,
+  DiscountCode,
 };

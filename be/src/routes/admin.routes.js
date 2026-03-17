@@ -3,6 +3,7 @@ const router = express.Router();
 
 // Import controllers
 const adminController = require('../controllers/admin.controller');
+const discountCodeController = require('../controllers/discountCode.controller');
 
 // Import middlewares
 const { adminAuthenticate } = require('../middlewares/adminAuth');
@@ -20,6 +21,10 @@ const {
   deleteValidation,
   getByIdValidation,
 } = require('../validators/admin.validator');
+const {
+  createDiscountCodeValidation,
+  updateDiscountCodeValidation,
+} = require('../validators/discountCode.validator');
 
 // Middleware cho tất cả admin routes
 router.use(adminAuthenticate);
@@ -146,6 +151,44 @@ router.put(
   '/orders/:id/status',
   validate(updateOrderStatusValidation),
   adminController.updateOrderStatus
+);
+
+/**
+ * DISCOUNT CODE MANAGEMENT ROUTES
+ */
+// GET /api/admin/discount-codes - Lấy danh sách mã giảm giá
+router.get(
+  '/discount-codes',
+  validate(paginationValidation),
+  discountCodeController.getAllDiscountCodes
+);
+
+// GET /api/admin/discount-codes/:id - Lấy chi tiết mã giảm giá
+router.get(
+  '/discount-codes/:id',
+  validate(getByIdValidation),
+  discountCodeController.getDiscountCodeById
+);
+
+// POST /api/admin/discount-codes - Tạo mã giảm giá mới
+router.post(
+  '/discount-codes',
+  validate(createDiscountCodeValidation),
+  discountCodeController.createDiscountCode
+);
+
+// PUT /api/admin/discount-codes/:id - Cập nhật mã giảm giá
+router.put(
+  '/discount-codes/:id',
+  validate(updateDiscountCodeValidation),
+  discountCodeController.updateDiscountCode
+);
+
+// DELETE /api/admin/discount-codes/:id - Xóa mã giảm giá
+router.delete(
+  '/discount-codes/:id',
+  validate(deleteValidation),
+  discountCodeController.deleteDiscountCode
 );
 
 module.exports = router;

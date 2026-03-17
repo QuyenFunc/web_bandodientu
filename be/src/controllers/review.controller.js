@@ -46,20 +46,27 @@ const createReview = async (req, res, next) => {
       where: { userId, productId },
     });
 
+    let review;
     if (existingReview) {
-      throw new AppError('Bạn đã đánh giá sản phẩm này rồi', 400);
+      await existingReview.update({
+        rating,
+        title,
+        content: comment,
+        images: images || [],
+        isVerified: true,
+      });
+      review = existingReview;
+    } else {
+      review = await Review.create({
+        productId,
+        userId,
+        rating,
+        title,
+        content: comment,
+        images: images || [],
+        isVerified: true,
+      });
     }
-
-    // Create review
-    const review = await Review.create({
-      productId,
-      userId,
-      rating,
-      title,
-      content: comment,
-      images: images || [],
-      isVerified: true, // Auto-verify since we checked purchase
-    });
 
     // Get review with user info
     const createdReview = await Review.findByPk(review.id, {

@@ -15,6 +15,7 @@ import {
   Image,
   Card,
   Typography,
+  Upload,
 } from 'antd';
 import {
   PlusOutlined,
@@ -47,6 +48,7 @@ const CategoriesPage: React.FC = () => {
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [fileList, setFileList] = useState<any[]>([]);
 
   // API hooks
   const {
@@ -95,6 +97,7 @@ const CategoriesPage: React.FC = () => {
       setIsModalVisible(false);
       setEditingCategory(null);
       form.resetFields();
+      setFileList([]);
       refetch();
     } catch (error: any) {
       message.error(error?.data?.message || 'Có lỗi xảy ra!');
@@ -117,6 +120,7 @@ const CategoriesPage: React.FC = () => {
     setEditingCategory(null);
     setIsModalVisible(true);
     form.resetFields();
+    setFileList([]);
     form.setFieldsValue({
       isActive: true,
       sortOrder: 0,
@@ -135,6 +139,19 @@ const CategoriesPage: React.FC = () => {
       isActive: category.isActive,
       sortOrder: category.sortOrder || 0,
     });
+    
+    if (category.image) {
+      setFileList([
+        {
+          uid: '-1',
+          name: 'image',
+          status: 'done',
+          url: category.image,
+        },
+      ]);
+    } else {
+      setFileList([]);
+    }
   };
 
   // Table columns
@@ -347,7 +364,41 @@ const CategoriesPage: React.FC = () => {
               name="image"
               label={<span className="dark:text-neutral-300">Hình ảnh</span>}
             >
-              <Input placeholder="Nhập URL hình ảnh (không bắt buộc)" />
+              <div className="flex flex-col gap-2">
+                <Input 
+                  placeholder="Nhập URL hình ảnh hoặc tải lên bên dưới" 
+                  value={form.getFieldValue('image')}
+                  onChange={(e) => form.setFieldsValue({ image: e.target.value })}
+                />
+                <Upload
+                  name="file"
+                  action={`${import.meta.env.VITE_API_URL || 'http://localhost:8888'}/api/upload/categories/single`}
+                  headers={{
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                  }}
+                  listType="picture-card"
+                  fileList={fileList}
+                  onChange={({ fileList: newFileList, file }) => {
+                    setFileList(newFileList);
+                    if (file.status === 'done' && file.response?.data?.url) {
+                      form.setFieldsValue({ image: file.response.data.url });
+                      message.success('Tải ảnh lên thành công!');
+                    } else if (file.status === 'error') {
+                      message.error('Tải ảnh lên thất bại!');
+                    } else if (newFileList.length === 0) {
+                      form.setFieldsValue({ image: '' });
+                    }
+                  }}
+                  maxCount={1}
+                >
+                  {fileList.length < 1 && (
+                    <div className="flex flex-col items-center justify-center">
+                      <PlusOutlined className="text-lg" />
+                      <div className="mt-1 text-xs">Tải ảnh lên</div>
+                    </div>
+                  )}
+                </Upload>
+              </div>
             </Form.Item>
 
             <Form.Item

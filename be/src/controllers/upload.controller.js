@@ -9,6 +9,7 @@ const uploadDirs = {
   reviews: path.join(__dirname, '../../uploads/reviews'),
   products: path.join(__dirname, '../../uploads/products'),
   users: path.join(__dirname, '../../uploads/users'),
+  categories: path.join(__dirname, '../../uploads/categories'),
 };
 
 Object.values(uploadDirs).forEach((dir) => {

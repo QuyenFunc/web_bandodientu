@@ -201,7 +201,7 @@ const getDetailedStats = catchAsync(async (req, res) => {
   const orderStats = await Order.findAll({
     attributes: [
       [
-        Sequelize.fn('DATE_FORMAT', Sequelize.col('createdAt'), dateFormat),
+        Sequelize.fn('DATE_FORMAT', Sequelize.col('created_at'), dateFormat),
         'period',
       ],
       [Sequelize.fn('COUNT', Sequelize.col('id')), 'orderCount'],
@@ -213,11 +213,11 @@ const getDetailedStats = catchAsync(async (req, res) => {
       },
     },
     group: [
-      Sequelize.fn('DATE_FORMAT', Sequelize.col('createdAt'), dateFormat),
+      Sequelize.fn('DATE_FORMAT', Sequelize.col('created_at'), dateFormat),
     ],
     order: [
       [
-        Sequelize.fn('DATE_FORMAT', Sequelize.col('createdAt'), dateFormat),
+        Sequelize.fn('DATE_FORMAT', Sequelize.col('created_at'), dateFormat),
         'ASC',
       ],
     ],
@@ -227,7 +227,7 @@ const getDetailedStats = catchAsync(async (req, res) => {
   const userStats = await User.findAll({
     attributes: [
       [
-        Sequelize.fn('DATE_FORMAT', Sequelize.col('createdAt'), dateFormat),
+        Sequelize.fn('DATE_FORMAT', Sequelize.col('created_at'), dateFormat),
         'period',
       ],
       [Sequelize.fn('COUNT', Sequelize.col('id')), 'newUsers'],
@@ -239,11 +239,11 @@ const getDetailedStats = catchAsync(async (req, res) => {
       },
     },
     group: [
-      Sequelize.fn('DATE_FORMAT', Sequelize.col('createdAt'), dateFormat),
+      Sequelize.fn('DATE_FORMAT', Sequelize.col('created_at'), dateFormat),
     ],
     order: [
       [
-        Sequelize.fn('DATE_FORMAT', Sequelize.col('createdAt'), dateFormat),
+        Sequelize.fn('DATE_FORMAT', Sequelize.col('created_at'), dateFormat),
         'ASC',
       ],
     ],

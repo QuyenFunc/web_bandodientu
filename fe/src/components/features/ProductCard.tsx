@@ -1,10 +1,21 @@
 import { addNotification } from '@/features/ui/uiSlice';
 import { Product } from '@/types/product.types';
 import { calculatePriceRange } from '@/utils/priceUtils';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
+import { RootState } from '@/store';
+import { 
+  useAddToWishlistMutation, 
+  useRemoveFromWishlistMutation 
+} from '@/services/wishlistApi';
+import { 
+  addToWishlistLocal, 
+  removeFromWishlistLocal 
+} from '@/features/wishlist/wishlistSlice';
+import { HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 
 // Mở rộng interface Product để hỗ trợ discountPercentage từ API
 interface ProductCardProps extends Product {
@@ -29,6 +40,56 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Wishlist logic
+  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const isWishlisted = wishlistItems.includes(id);
+
+  const [addToWishlist] = useAddToWishlistMutation();
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Authenticated user state - Assuming auth can be pulled if needed
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      dispatch(
+        addNotification({
+          type: 'info',
+          message: 'Vui lòng đăng nhập để sử dụng chức năng yêu thích',
+        })
+      );
+      navigate('/login');
+      return;
+    }
+
+    if (isToggling) return;
+    setIsToggling(true);
+
+    try {
+      if (isWishlisted) {
+        dispatch(removeFromWishlistLocal(id));
+        await removeFromWishlist(id).unwrap();
+      } else {
+        dispatch(addToWishlistLocal(id));
+        await addToWishlist({ productId: id }).unwrap();
+      }
+    } catch (error) {
+      console.error('Wishlist toggle failed:', error);
+      // Revert if error
+      if (isWishlisted) {
+        dispatch(addToWishlistLocal(id));
+      } else {
+        dispatch(removeFromWishlistLocal(id));
+      }
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   // Luôn sử dụng ID để đảm bảo API sản phẩm liên quan hoạt động đúng
   const productUrl = `/products/${id}`;
@@ -82,6 +143,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
             />
           </div>
         </Link>
+
+        {/* Wishlist Heart Button */}
+        <button
+          className="absolute top-4 right-4 z-20 p-2 bg-white/90 dark:bg-neutral-800/90 rounded-full shadow-md backdrop-blur-sm hover:bg-white dark:hover:bg-neutral-800 transition-all duration-200 group/heart"
+          onClick={handleToggleWishlist}
+          disabled={isToggling}
+        >
+          {isWishlisted ? (
+            <HeartIconSolid className="h-5 w-5 text-rose-500 fill-current animate-heart-beat" />
+          ) : (
+            <HeartIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover/heart:text-rose-500 transition-colors duration-200" />
+          )}
+        </button>
 
         {/* Premium overlay with gradient effect only */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

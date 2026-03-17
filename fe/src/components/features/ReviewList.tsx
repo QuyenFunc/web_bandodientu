@@ -229,22 +229,32 @@ const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
                   </p>
 
                   {/* Review images */}
-                  {review.images && review.images.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {review.images.map((image, index) => (
-                        <img
-                          key={index}
-                          src={image}
-                          alt={`Review image ${index + 1}`}
-                          className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => {
-                            // Open image in modal or new tab
-                            window.open(image, '_blank');
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  {(() => {
+                    try {
+                      const parsedImages = typeof review.images === 'string'
+                        ? JSON.parse(review.images)
+                        : Array.isArray(review.images) ? review.images : [];
+                      
+                      return Array.isArray(parsedImages) && parsedImages.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {parsedImages.map((image: string, index: number) => (
+                            <img
+                              key={index}
+                              src={image}
+                              alt={`Review image ${index + 1}`}
+                              className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => {
+                                window.open(image, '_blank');
+                              }}
+                            />
+                          ))}
+                        </div>
+                      ) : null;
+                    } catch (e) {
+                      console.error('Failed to parse review images', e);
+                      return null;
+                    }
+                  })()}
 
                   {/* Helpful buttons */}
                   <div className="flex items-center space-x-4 text-sm">

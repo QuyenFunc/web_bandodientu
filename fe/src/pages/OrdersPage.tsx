@@ -13,6 +13,7 @@ import { formatPrice } from '@/utils/format';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { toast } from '@/utils/toast';
+import ReviewModal from '@/components/reviews/ReviewModal';
 
 // Order status badge variants
 const statusVariants: Record<string, { variant: BadgeVariant; label: string }> =
@@ -41,6 +42,15 @@ const OrdersPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
   const [repayingOrder, setRepayingOrder] = useState<string | null>(null);
+  
+  // Review Modal state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState<{ id: string; name: string } | null>(null);
+
+  const handleOpenReview = (productId: string, productName: string) => {
+    setReviewProduct({ id: productId, name: productName });
+    setReviewModalOpen(true);
+  };
 
   // Fetch orders
   const {
@@ -284,42 +294,53 @@ const OrdersPage: React.FC = () => {
       ) : (
         <>
           <div className="space-y-6">
-            {orders.map((order) => (
+            {orders.map((order) => {
+              const statusColors: Record<string, string> = {
+                pending: 'border-l-yellow-400',
+                processing: 'border-l-blue-400',
+                shipped: 'border-l-purple-400',
+                delivered: 'border-l-green-400',
+                cancelled: 'border-l-red-400',
+              };
+
+              return (
               <div
                 key={order.id}
-                className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-700 overflow-hidden hover:shadow-md transition-shadow"
+                className={`bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-neutral-100 dark:border-neutral-700/50 overflow-hidden hover:shadow-md transition-all duration-300 border-l-4 ${statusColors[order.status] || 'border-l-neutral-400'}`}
               >
                 {/* Order Header */}
-                <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/50">
+                <div className="p-6 border-b border-neutral-100 dark:border-neutral-700/60 bg-gradient-to-r from-neutral-50/80 to-transparent dark:from-neutral-900/40">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
-                          <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
+                          <h2 className="text-lg font-bold text-neutral-800 dark:text-neutral-100">
                             {t('orders.orderNumber', { number: order.number })}
                           </h2>
                           <Badge variant={statusVariants[order.status].variant}>
                             {t(`orders.status.${order.status}`)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 00-2 2z" /></svg>
                           {t('orders.placedOn', {
                             date: formatDate(order.createdAt),
                           })}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      
+                      <div className="sm:ml-auto flex items-center gap-4">
                         <div className="text-right">
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                             {t('orders.total')}
                           </p>
-                          <p className="text-xl font-bold text-neutral-800 dark:text-neutral-100">
+                          <p className="text-2xl font-black text-primary-600 dark:text-primary-400">
                             {formatCurrency(order.total)}
                           </p>
                         </div>
                         {order.paymentStatus && (
                           <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${
                               paymentStatusColors[order.paymentStatus]
                             }`}
                           >
@@ -328,38 +349,30 @@ const OrdersPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    
+                    <div className="flex gap-2 lg:border-l lg:pl-4 border-neutral-200 dark:border-neutral-700">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => toggleOrderDetails(order.id)}
-                        className="dark:text-primary-300"
+                        className="bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 shadow-sm"
                       >
                         {selectedOrder === order.id
                           ? t('orders.hideDetails')
                           : t('orders.viewDetails')}
                       </Button>
+                      
                       {order.status === 'pending' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCancelOrder(order.id)}
                           disabled={cancellingOrder === order.id}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 dark:hover:border-red-800/40"
                         >
                           {cancellingOrder === order.id
                             ? t('orders.cancelling')
                             : t('orders.cancelOrder')}
-                        </Button>
-                      )}
-                      {order.trackingNumber && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          as={Link}
-                          to={`/track-order/${order.number}`}
-                        >
-                          {t('orders.track')}
                         </Button>
                       )}
                     </div>
@@ -370,12 +383,11 @@ const OrdersPage: React.FC = () => {
                 <div className="p-6">
                   {order.items && order.items.length > 0 ? (
                     <div className="flex items-center gap-4">
-                      <div className="flex -space-x-2">
-                        {order.items.slice(0, 4).map((item, index) => (
+                      <div className="flex gap-2 flex-wrap">
+                        {order.items.slice(0, 4).map((item) => (
                           <div
                             key={item.id}
-                            className="w-12 h-12 rounded-lg border-2 border-white dark:border-neutral-800 overflow-hidden bg-neutral-100 dark:bg-neutral-700 flex-shrink-0"
-                            style={{ zIndex: 10 - index }}
+                            className="w-12 h-12 rounded-lg border border-neutral-100 dark:border-neutral-700 overflow-hidden bg-neutral-50 dark:bg-neutral-800 flex-shrink-0 shadow-sm hover:scale-105 transition-transform"
                           >
                             {item.Product?.images?.[0] ? (
                               <img
@@ -384,14 +396,14 @@ const OrdersPage: React.FC = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-xs font-medium text-neutral-500">
+                              <div className="w-full h-full flex items-center justify-center text-xs font-medium text-neutral-400">
                                 {item.Product?.name?.charAt(0) || '?'}
                               </div>
                             )}
                           </div>
                         ))}
                         {order.items.length > 4 && (
-                          <div className="w-12 h-12 rounded-lg border-2 border-white dark:border-neutral-800 bg-neutral-200 dark:bg-neutral-600 flex items-center justify-center text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                          <div className="w-12 h-12 rounded-lg border border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 flex items-center justify-center text-xs font-bold text-neutral-500 shadow-sm">
                             +{order.items.length - 4}
                           </div>
                         )}
@@ -487,10 +499,20 @@ const OrdersPage: React.FC = () => {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right flex flex-col items-end gap-2">
                                   <p className="font-semibold text-neutral-800 dark:text-neutral-100">
                                     {formatCurrency(item.quantity * item.price)}
                                   </p>
+                                  {order.status === 'delivered' && item.Product && (
+                                    <PremiumButton
+                                      variant="outline"
+                                      size="small"
+                                      onClick={() => handleOpenReview(item.Product!.id, item.Product!.name)}
+                                      className="py-1 text-xs"
+                                    >
+                                      Đánh giá
+                                    </PremiumButton>
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -578,7 +600,7 @@ const OrdersPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            ))}
+            )})}
           </div>
 
           {/* Pagination */}
@@ -626,6 +648,19 @@ const OrdersPage: React.FC = () => {
             </div>
           )}
         </>
+      )}
+      {/* Review Modal */}
+      {reviewProduct && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false);
+            setReviewProduct(null);
+          }}
+          productId={reviewProduct.id}
+          productName={reviewProduct.name}
+          onSuccess={() => refetch()} // might need to lock review button if implemented backend lock
+        />
       )}
     </div>
   );

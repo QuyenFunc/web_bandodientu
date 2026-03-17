@@ -15,6 +15,12 @@ export interface OrderItem {
   attributes?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  Product?: {
+    id: string;
+    name: string;
+    images: string[];
+    price: number;
+  };
 }
 
 export interface Order {
@@ -93,6 +99,22 @@ export interface CreateOrderRequest {
   billingPhone?: string;
   paymentMethod: string;
   notes?: string;
+  discountCode?: string;
+}
+
+export interface ApplyDiscountRequest {
+  code: string;
+  orderAmount: number;
+}
+
+export interface ApplyDiscountResponse {
+  status: string;
+  message: string;
+  data: {
+    discountAmount: number;
+    discountCodeId: string;
+    code: string;
+  };
 }
 
 export interface CreateOrderResponse {
@@ -192,6 +214,15 @@ export const orderApi = api.injectEndpoints({
         { type: 'Order', id: 'LIST' },
       ],
     }),
+
+    // Apply discount code
+    applyDiscountCode: builder.mutation<ApplyDiscountResponse, ApplyDiscountRequest>({
+      query: (data) => ({
+        url: '/discount-codes/apply',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -202,4 +233,5 @@ export const {
   useCreateOrderMutation,
   useCancelOrderMutation,
   useRepayOrderMutation,
+  useApplyDiscountCodeMutation,
 } = orderApi;

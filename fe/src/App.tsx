@@ -6,6 +6,7 @@ import { RootState } from '@/store';
 import AppRoutes from '@/routes/AppRoutes';
 import Notifications from '@/components/common/Notifications';
 import { ChatWidgetPortal } from '@/features/ai';
+import SupportChat from '@/components/chat/SupportChat';
 import { useTokenRefresh } from '@/hooks/useTokenRefresh';
 import LoginSuccess from '@/components/auth/LoginSuccess';
 import AuthProvider from '@/components/auth/AuthProvider';
@@ -48,6 +49,7 @@ const AppContent: React.FC = () => {
           <LoginSuccess />
           <AppRoutes />
           <ChatWidgetPortal />
+          <SupportChat />
         </StripeProvider>
       </AuthProvider>
     </HelmetProvider>

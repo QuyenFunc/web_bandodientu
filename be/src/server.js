@@ -1,4 +1,5 @@
 require('dotenv').config();
+// restart nodemon to reload .env config
 const app = require('./app');
 const sequelize = require('./config/sequelize');
 const logger = require('./utils/logger');
@@ -78,6 +79,17 @@ const startServer = async () => {
       `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
     );
   });
+
+  // Setup Socket.io
+  const { Server } = require('socket.io');
+  const io = new Server(server, {
+    cors: {
+      origin: process.env.CORS_ORIGIN || '*',
+      methods: ['GET', 'POST'],
+    },
+  });
+
+  require('./config/socket')(io);
 
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (err) => {

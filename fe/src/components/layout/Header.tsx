@@ -10,6 +10,9 @@ import { toggleMobileMenu, toggleSearch } from '@/features/ui/uiSlice';
 import { useAuth } from '@/hooks/useAuth';
 import { useGetCartCountQuery } from '@/services/cartApi';
 import { initializeCart } from '@/features/cart/cartSlice';
+import { useGetWishlistQuery } from '@/services/wishlistApi';
+import { setWishlist } from '@/features/wishlist/wishlistSlice';
+import { HeartIcon } from '@heroicons/react/24/outline';
 import {
   NAVIGATION_ICONS,
   NavigationIconKey,
@@ -64,6 +67,23 @@ const Header: React.FC = () => {
       ? serverCartCount
       : localCartCount
     : localCartCount;
+
+  // Wishlist logic for header badge state
+  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const wishlistCount = wishlistItems.length;
+
+  const { data: serverWishlist } = useGetWishlistQuery(undefined, {
+    skip: !isAuthenticated,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  useEffect(() => {
+    if (serverWishlist && serverWishlist.data) {
+      // Map products to array of IDs
+      dispatch(setWishlist(serverWishlist.data.map((p: any) => p.id)));
+    }
+  }, [serverWishlist, dispatch]);
 
   // Debug logging for cart count
 
@@ -247,7 +267,13 @@ const Header: React.FC = () => {
                     {t('header.dropdown.orders')}
                   </Link>
 
-                  {/* Wishlist link removed */}
+                  <Link
+                    to="/wishlist"
+                    className="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                    onClick={() => setShowUserDropdown(false)}
+                  >
+                    {t('header.dropdown.wishlist')}
+                  </Link>
 
                   {/* Admin Panel Link - only for admin users */}
                   {isAdmin() && (
@@ -294,6 +320,25 @@ const Header: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Wishlist */}
+          <button
+            onClick={() => navigate('/wishlist')}
+            className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${wishlistCount > 0
+                ? 'bg-gradient-to-r from-rose-100 to-rose-50 dark:from-rose-900/20 dark:to-rose-800/10 text-rose-600 dark:text-rose-400 hover:from-rose-200 hover:to-rose-100 dark:hover:from-rose-900/30 dark:hover:to-rose-800/20 border border-rose-200/50 dark:border-rose-700/30'
+                : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700'
+              }`}
+            aria-label={t('header.actions.wishlist')}
+          >
+            <HeartIcon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
+            {wishlistCount > 0 && (
+              <>
+                <span className="absolute -top-1 -right-1 sm:-top-0.5 sm:-right-0.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-lg">
+                  {wishlistCount}
+                </span>
+              </>
+            )}
+          </button>
 
           {/* Cart */}
           <button

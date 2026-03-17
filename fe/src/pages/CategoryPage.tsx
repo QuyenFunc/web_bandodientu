@@ -39,8 +39,18 @@ const CategoryPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Get category info from mock (fast, no API delay)
-  const categoryInfo = getCategoryBySlug(slug || '');
+  // Get category info via API
+  const { data: categoryData, isLoading: categoryLoading } = useGetCategoryBySlugQuery(slug || '', { skip: !slug });
+
+  // Fallback info from mock (if API loading or failed)
+  const mockInfo = getCategoryBySlug(slug || '');
+
+  const categoryInfo = useMemo(() => {
+    if (categoryData?.data && !Array.isArray(categoryData.data)) {
+      return categoryData.data;
+    }
+    return mockInfo as any;
+  }, [categoryData, mockInfo]);
 
   // Get real products via API using category ID
   const { sort, order } = sortOrderMap[sortBy];
@@ -54,10 +64,19 @@ const CategoryPage: React.FC = () => {
   );
 
   // Related categories (siblings)
-  const relatedCategories = useMemo(
-    () => mockCategories.filter((c) => c.slug !== slug).slice(0, 5),
-    [slug]
-  );
+  const { data: allCatsData } = useGetAllCategoriesQuery();
+  const relatedCategories = useMemo(() => {
+    const cats = Array.isArray(allCatsData?.data) ? allCatsData.data : [];
+    return cats.filter((c: any) => c.slug !== slug).slice(0, 5);
+  }, [allCatsData, slug]);
+
+  if (categoryLoading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
 
   if (!categoryInfo) {
     navigate('/not-found');
@@ -74,6 +93,17 @@ const CategoryPage: React.FC = () => {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Hero Banner */}
       <div className="relative overflow-hidden bg-gradient-to-r from-primary-800 via-primary-700 to-primary-600 text-white">
+        {categoryInfo.image && (
+          <div className="absolute inset-0 opacity-25">
+            <img 
+              src={categoryInfo.image.startsWith('http') ? categoryInfo.image : `${import.meta.env.VITE_API_URL || 'http://localhost:8888'}${categoryInfo.image}`}
+              className="w-full h-full object-cover object-center"
+              alt="bg"
+            />
+            <div className="absolute inset-0 bg-black/40"></div>
+          </div>
+        )}
+        
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-8 left-16 text-8xl rotate-12 select-none">{emoji}</div>
@@ -97,8 +127,16 @@ const CategoryPage: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-4xl border border-white/30 shadow-lg">
-              {emoji}
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-4xl border border-white/30 shadow-lg overflow-hidden">
+              {categoryInfo.image ? (
+                <img 
+                  src={categoryInfo.image.startsWith('http') ? categoryInfo.image : `${import.meta.env.VITE_API_URL || 'http://localhost:8888'}${categoryInfo.image}`}
+                  alt={categoryInfo.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                emoji
+              )}
             </div>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{categoryInfo.name}</h1>

@@ -71,7 +71,11 @@ const HomePage: React.FC = () => {
     categories.data?.slice(0, 6).map((category: any) => ({
       id: category.id,
       name: category.name,
-      image: category.image || getCategoryImage(category.name, category.slug),
+      image: category.image
+        ? category.image.startsWith('http')
+          ? category.image
+          : `${import.meta.env.VITE_API_URL || 'http://localhost:8888'}${category.image}`
+        : getCategoryImage(category.name, category.slug),
       count: category.productCount || 0,
       slug: category.slug,
     })) || [];

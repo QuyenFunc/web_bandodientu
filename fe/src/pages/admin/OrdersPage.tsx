@@ -524,36 +524,63 @@ const OrdersPage: React.FC = () => {
             </Descriptions>
 
             {/* Customer Information */}
-            <Card
-              title={
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            {/* Customer Information & Shipping */}
+            <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+              <Col xs={24} md={12}>
+                <Card
+                  title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <UserOutlined />
+                      {t('admin.orders.details.customer.title')}
+                    </div>
+                  }
+                  size="small"
+                  style={{ height: '100%' }}
                 >
-                  <UserOutlined />
-                  {t('admin.orders.details.customer.title')}
-                </div>
-              }
-              size="small"
-              style={{ marginBottom: '16px' }}
-            >
-              <Descriptions column={1}>
-                <Descriptions.Item
-                  label={t('admin.orders.details.customer.name')}
-                >
-                  {selectedOrder.User?.firstName} {selectedOrder.User?.lastName}
+                  <Descriptions column={1}>
+                    <Descriptions.Item label={t('admin.orders.details.customer.name')}>
+                      {selectedOrder.User?.firstName} {selectedOrder.User?.lastName}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('admin.orders.details.customer.email')}>
+                      {selectedOrder.User?.email}
+                    </Descriptions.Item>
+                    {selectedOrder.User?.phone && (
+                      <Descriptions.Item label={t('admin.orders.details.customer.phone')}>
+                        {selectedOrder.User.phone}
+                      </Descriptions.Item>
+                    )}
+                  </Descriptions>
+                </Card>
+              </Col>
+              
+              <Col xs={24} md={12}>
+                <Card title="Thông tin giao hàng" size="small" style={{ height: '100%' }}>
+                  <Descriptions column={1}>
+                    <Descriptions.Item label="Người nhận">
+                      {selectedOrder.shippingFirstName} {selectedOrder.shippingLastName}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Điện thoại">
+                      {selectedOrder.shippingPhone || 'N/A'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Địa chỉ">
+                      {selectedOrder.shippingAddress1}
+                      {selectedOrder.shippingAddress2 ? `, ${selectedOrder.shippingAddress2}` : ''}
+                      {`, ${selectedOrder.shippingCity}, ${selectedOrder.shippingState}`}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Payment Info */}
+            <Card title="Thông tin thanh toán" size="small" style={{ marginBottom: '16px' }}>
+              <Descriptions column={2}>
+                <Descriptions.Item label="Phương thức">
+                  {selectedOrder.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : selectedOrder.paymentMethod.toUpperCase()}
                 </Descriptions.Item>
-                <Descriptions.Item
-                  label={t('admin.orders.details.customer.email')}
-                >
-                  {selectedOrder.User?.email}
+                <Descriptions.Item label="Giao dịch">
+                  {selectedOrder.paymentTransactionId || 'N/A'}
                 </Descriptions.Item>
-                {selectedOrder.User?.phone && (
-                  <Descriptions.Item
-                    label={t('admin.orders.details.customer.phone')}
-                  >
-                    {selectedOrder.User.phone}
-                  </Descriptions.Item>
-                )}
               </Descriptions>
             </Card>
 

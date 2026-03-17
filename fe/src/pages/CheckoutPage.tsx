@@ -21,7 +21,7 @@ import { RootState } from '@/store';
 import { clearCart, initializeCart, addItem } from '@/features/cart/cartSlice';
 import { addNotification } from '@/features/ui/uiSlice';
 import { formatPrice } from '@/utils/format';
-import { useCreateOrderMutation } from '@/services/orderApi';
+import { useCreateOrderMutation, useApplyDiscountCodeMutation } from '@/services/orderApi';
 import { cartApi, useGetCartCountQuery } from '@/services/cartApi';
 import { useProvinces } from '@/hooks/useProvinces';
 import { useCreateVnpayUrlMutation } from '@/services/vnpayApi';
@@ -130,6 +130,7 @@ const CheckoutPage: React.FC = () => {
 
   // Payment methods with i18n
   const paymentMethods = [
+    { value: 'cod', label: 'Thanh toán khi nhận hàng (COD)' },
     { value: 'vnpay', label: 'Thanh toán trực tuyến VNPay' },
     { value: 'stripe', label: t('checkout.paymentMethod.creditCard') },
     { value: 'bank_transfer', label: t('checkout.paymentMethod.bankTransfer') },
@@ -206,6 +207,12 @@ const CheckoutPage: React.FC = () => {
   const [selectedDistrictCode, setSelectedDistrictCode] = useState<string>('');
   const [selectedWardCode, setSelectedWardCode] = useState<string>('');
 
+  // Discount code states
+  const [discountCodeInput, setDiscountCodeInput] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
+  const [discountError, setDiscountError] = useState('');
+  const [applyDiscountCode, { isLoading: isValidatingCode }] = useApplyDiscountCodeMutation();
+
   // Installment Table Columns
   const installmentColumns = [
     {
@@ -268,7 +275,8 @@ const CheckoutPage: React.FC = () => {
   );
   const shippingCost = selectedShipping?.price || 0;
   const tax = 0; // 0% tax - taxes are not applied per request
-  const total = subtotal + shippingCost + tax;
+  const discountAmount = appliedDiscount ? appliedDiscount.amount : 0;
+  const total = subtotal + shippingCost + tax - discountAmount;
 
   // Handle form input changes
   const handleInputChange = (name: string, value: string) => {
@@ -415,6 +423,41 @@ const CheckoutPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle apply discount code
+  const handleApplyDiscount = async () => {
+    if (!discountCodeInput.trim()) {
+      setDiscountError('Vui lòng nhập mã giảm giá');
+      return;
+    }
+
+    try {
+      const res = await applyDiscountCode({
+        code: discountCodeInput,
+        orderAmount: subtotal,
+      }).unwrap();
+
+      setAppliedDiscount({
+        code: res.data.code,
+        amount: res.data.discountAmount,
+      });
+      setDiscountError('');
+      dispatch(
+        addNotification({
+          type: 'success',
+          message: 'Áp dụng mã giảm giá thành công!',
+        })
+      );
+    } catch (error: any) {
+      setDiscountError(error.data?.message || 'Mã giảm giá không hợp lệ');
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCodeInput('');
+    setDiscountError('');
+  };
+
   // Create order
   const handleCreateOrder = async () => {
     if (!validateForm()) {
@@ -463,6 +506,7 @@ const CheckoutPage: React.FC = () => {
           : formData.billingPhone,
         paymentMethod: formData.paymentMethod,
         notes: formData.notes,
+        discountCode: appliedDiscount ? appliedDiscount.code : undefined,
       };
 
       const response = await createOrder(orderData).unwrap();
@@ -543,6 +587,9 @@ const CheckoutPage: React.FC = () => {
       // For bank transfer, create order and redirect to QR payment page
       const order = await handleCreateOrder();
       if (order) {
+        dispatch(clearCart());
+        dispatch(cartApi.util.invalidateTags(['CartCount']));
+
         // Navigate to payment QR page with order information
         navigate(
           `/payment-qr?orderId=${order.id}&amount=${order.total}&numberOrder=${order.number}`
@@ -568,6 +615,10 @@ const CheckoutPage: React.FC = () => {
           }).unwrap();
 
           if (res.data?.paymentUrl) {
+            // NOTE: Cart is NOT cleared here anymore. 
+            // It will be cleared ONLY AFTER successful payment when the user is redirected back with success state,
+            // or through the backend success webhook (preventing empty cart on cancel/back).
+            
             window.location.href = res.data.paymentUrl;
             return;
           }
@@ -950,6 +1001,39 @@ const CheckoutPage: React.FC = () => {
               </div>
             )}
 
+            {/* Discount Code Section */}
+            {!isRepayingOrder && (
+              <div className="mb-6 border-t border-neutral-200 dark:border-neutral-700 pt-4">
+                <div className="flex space-x-2 items-end">
+                  <div className="flex-grow">
+                    <Input
+                      placeholder="Mã giảm giá"
+                      value={discountCodeInput}
+                      onChange={(e) => setDiscountCodeInput(e.target.value.toUpperCase())}
+                      disabled={!!appliedDiscount}
+                    />
+                  </div>
+                  <CustomButton
+                    variant={appliedDiscount ? "danger" : "primary"}
+                    onClick={appliedDiscount ? handleRemoveDiscount : handleApplyDiscount}
+                    isProcessing={isValidatingCode}
+                    className="h-[42px] px-4"
+                  >
+                    {appliedDiscount ? "Hủy" : "Áp dụng"}
+                  </CustomButton>
+                </div>
+                {discountError && (
+                  <p className="text-red-500 text-xs mt-1">{discountError}</p>
+                )}
+                {appliedDiscount && (
+                  <p className="text-green-600 text-sm mt-1 flex items-center">
+                    <CheckCircleOutlined className="mr-1" />
+                    Đã áp dụng mã <strong>{appliedDiscount.code}</strong>. Giảm {formatPrice(appliedDiscount.amount)}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Totals */}
             <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-2">
               {!isRepayingOrder ? (
@@ -966,6 +1050,12 @@ const CheckoutPage: React.FC = () => {
                         : formatPrice(shippingCost)}
                     </span>
                   </div>
+                  {appliedDiscount && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>Mã giảm giá ({appliedDiscount.code})</span>
+                      <span>-{formatPrice(appliedDiscount.amount)}</span>
+                    </div>
+                  )}
                   {tax > 0 && (
                     <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                       <span>{t('checkout.orderSummary.tax')}</span>
@@ -1000,7 +1090,7 @@ const CheckoutPage: React.FC = () => {
               </PremiumButton>
             )}
 
-            {(['bank_transfer', 'vnpay', 'installment'].includes(formData.paymentMethod)) && (!currentOrder || formData.paymentMethod === 'vnpay') && (
+            {(['bank_transfer', 'vnpay', 'installment', 'cod'].includes(formData.paymentMethod)) && (!currentOrder || formData.paymentMethod === 'vnpay') && (
               <PremiumButton
                 variant="primary"
                 size="large"

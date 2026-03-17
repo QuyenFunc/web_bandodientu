@@ -39,6 +39,7 @@ const createOrder = async (req, res, next) => {
       billingPhone,
       paymentMethod,
       notes,
+      discountCode,
     } = req.body;
 
     // Get active cart
@@ -81,7 +82,7 @@ const createOrder = async (req, res, next) => {
     let subtotal = 0;
     const tax = 0; // Calculate tax if needed
     const shippingCost = 0; // Calculate shipping if needed
-    const discount = 0; // Apply discount if needed
+    let discount = 0; // Apply discount if needed
 
     for (const item of cart.items) {
       const product = item.Product;
@@ -110,6 +111,51 @@ const createOrder = async (req, res, next) => {
       // Calculate item price
       const price = variant ? variant.price : product.price;
       subtotal += price * item.quantity;
+    }
+
+    // Calculate Discount
+    let discountCodeId = null;
+    if (discountCode) {
+      const { DiscountCode } = require('../models');
+      const codeData = await DiscountCode.findOne({
+        where: { code: discountCode, isActive: true },
+        transaction,
+      });
+
+      if (!codeData) {
+        throw new AppError('Mã giảm giá không hợp lệ hoặc đã hết hạn', 400);
+      }
+
+      const now = new Date();
+      if (codeData.startDate && now < new Date(codeData.startDate)) {
+        throw new AppError('Mã giảm giá chưa đến thời gian áp dụng', 400);
+      }
+      if (codeData.endDate && now > new Date(codeData.endDate)) {
+        throw new AppError('Mã giảm giá đã hết hạn', 400);
+      }
+      if (codeData.usageLimit !== null && codeData.usedCount >= codeData.usageLimit) {
+        throw new AppError('Mã giảm giá đã đạt giới hạn lượt sử dụng', 400);
+      }
+      if (subtotal < parseFloat(codeData.minOrderAmount)) {
+        throw new AppError(`Đơn hàng phải tối thiểu ${codeData.minOrderAmount} để sử dụng mã này`, 400);
+      }
+
+      if (codeData.type === 'percent') {
+        discount = (subtotal * parseFloat(codeData.value)) / 100;
+        if (codeData.maxDiscountAmount && discount > parseFloat(codeData.maxDiscountAmount)) {
+          discount = parseFloat(codeData.maxDiscountAmount);
+        }
+      } else {
+        discount = parseFloat(codeData.value);
+      }
+
+      if (discount > subtotal) {
+        discount = subtotal;
+      }
+      discountCodeId = codeData.id;
+
+      // Tăng lượt sử dụng
+      await codeData.update({ usedCount: codeData.usedCount + 1 }, { transaction });
     }
 
     // Calculate total
@@ -165,6 +211,7 @@ const createOrder = async (req, res, next) => {
         tax,
         shippingCost,
         discount,
+        discountCodeId,
         total,
         notes,
       },
@@ -201,6 +248,10 @@ const createOrder = async (req, res, next) => {
       // Stock will be reduced only AFTER successful payment in the payment webhook
       // This prevents inventory issues when customers don't complete payment
     }
+
+    // NOTE: CartItems are NOT cleared here anymore.
+    // They will be cleared ONLY AFTER successful payment in the payment webhook (confirmPayment / vnpayReturn).
+    // This allows the user to retain their cart items if they cancel/fail the payment window and try again.
 
     // Commit the transaction
     await transaction.commit();

@@ -3,6 +3,7 @@ const router = express.Router();
 
 // Import route modules
 const authRoutes = require('./auth.routes');
+const discountCodeRoutes = require('./discountCode.routes');
 const userRoutes = require('./user.routes');
 const categoryRoutes = require('./category.routes');
 const productRoutes = require('./product.routes');
@@ -14,6 +15,7 @@ const adminRoutes = require('./admin.routes');
 const uploadRoutes = require('./upload.routes');
 const paymentRoutes = require('./payment.routes');
 const chatbotRoutes = require('./chatbot.routes');
+const chatRoutes = require('./chat.routes');
 const warrantyPackageRoutes = require('./warrantyPackages');
 const attributeRoutes = require('./attributeRoutes');
 const imageRoutes = require('./image.routes');
@@ -22,6 +24,7 @@ const contactRoutes = require('./contact.routes');
 
 // API routes
 router.use('/auth', authRoutes);
+router.use('/discount-codes', discountCodeRoutes);
 router.use('/users', userRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/products', productRoutes);
@@ -33,6 +36,7 @@ router.use('/upload', uploadRoutes);
 router.use('/admin', adminRoutes);
 router.use('/payment', paymentRoutes);
 router.use('/chatbot', chatbotRoutes);
+router.use('/chat', chatRoutes);
 router.use('/warranty-packages', warrantyPackageRoutes);
 router.use('/attributes', attributeRoutes);
 router.use('/images', imageRoutes);

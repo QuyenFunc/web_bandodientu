@@ -20,7 +20,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
-// Wishlist feature removed
+const WishlistPage = lazy(() => import('@/pages/WishlistPage'));
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
 const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
 const DealsPage = lazy(() => import('@/pages/DealsPage'));
@@ -45,8 +45,12 @@ const AdminCategoriesPage = lazy(() => import('@/pages/admin/CategoriesPage'));
 const AdminWarrantyPackagesPage = lazy(
   () => import('@/pages/admin/WarrantyPackagesPage')
 );
+const AdminDiscountCodesPage = lazy(
+  () => import('@/pages/admin/DiscountCodesPage')
+);
 const AdminNewsPage = lazy(() => import('@/pages/admin/NewsPage'));
 const CreateNewsPage = lazy(() => import('@/pages/admin/CreateNewsPage'));
+const SupportDashboard = lazy(() => import('@/pages/admin/SupportDashboard'));
 
 const SimpleNamingTestPage = lazy(
   () => import('@/pages/admin/SimpleNamingTestPage')
@@ -174,7 +178,14 @@ const AppRoutes: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          {/* Wishlist route removed */}
+          <Route
+            path="wishlist"
+            element={
+              <ProtectedRoute>
+                <WishlistPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Error pages */}
           <Route path="unauthorized" element={<UnauthorizedPage />} />
@@ -208,10 +219,15 @@ const AppRoutes: React.FC = () => {
           {/* Other admin sections */}
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="support" element={<SupportDashboard />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route
             path="warranty-packages"
             element={<AdminWarrantyPackagesPage />}
+          />
+          <Route
+            path="discount-codes"
+            element={<AdminDiscountCodesPage />}
           />
 
           {/* Test Pages */}

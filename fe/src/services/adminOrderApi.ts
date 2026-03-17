@@ -18,6 +18,13 @@ export interface AdminOrder {
   trackingNumber?: string;
   shippingProvider?: string;
   estimatedDelivery?: string;
+  shippingFirstName: string;
+  shippingLastName: string;
+  shippingAddress1: string;
+  shippingAddress2?: string;
+  shippingCity: string;
+  shippingState: string;
+  shippingPhone?: string;
   createdAt: string;
   updatedAt: string;
   User: {

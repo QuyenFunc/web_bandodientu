@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useGetDashboardStatsQuery } from '@/services/adminDashboardApi';
 import { useGetAdminOrdersQuery } from '@/services/adminOrderApi';
 import { formatPrice } from '@/utils/format';
+import DashboardCharts from '@/components/admin/DashboardCharts';
 
 // Status badge colors
 const statusColors: Record<string, string> = {
@@ -402,6 +403,9 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Analytics Charts */}
+      <DashboardCharts />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Orders */}

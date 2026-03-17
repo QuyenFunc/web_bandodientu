@@ -23,6 +23,8 @@ import { addNotification } from '@/features/ui/uiSlice';
 import { formatPrice } from '@/utils/format';
 import { useCreateOrderMutation } from '@/services/orderApi';
 import { cartApi, useGetCartCountQuery } from '@/services/cartApi';
+import { useProvinces } from '@/hooks/useProvinces';
+import { useCreateVnpayUrlMutation } from '@/services/vnpayApi';
 
 const CheckoutPage: React.FC = () => {
   const { t } = useTranslation();
@@ -121,12 +123,14 @@ const CheckoutPage: React.FC = () => {
   }, [dispatch, navigate, t]);
 
   const [createOrder] = useCreateOrderMutation();
+  const [createVnpayUrl] = useCreateVnpayUrlMutation();
 
   // Lấy số lượng giỏ hàng từ server
   const { data: serverCartCount } = useGetCartCountQuery();
 
   // Payment methods with i18n
   const paymentMethods = [
+    { value: 'vnpay', label: 'Thanh toán trực tuyến VNPay' },
     { value: 'stripe', label: t('checkout.paymentMethod.creditCard') },
     { value: 'bank_transfer', label: t('checkout.paymentMethod.bankTransfer') },
     { value: 'installment', label: 'Trả góp 0% qua thẻ tín dụng' },
@@ -157,9 +161,13 @@ const CheckoutPage: React.FC = () => {
     lastName: user?.lastName || '',
     email: user?.email || '',
     phone: user?.phone || '', // Sử dụng số điện thoại của người dùng nếu có
-    address: '',
-    city: '',
-    state: '',
+    addressDetail: '', // Số nhà, tên đường
+    ward: '',
+    district: '', // Lưu tên quận/huyện
+    province: '', // Lưu tên tỉnh/thành
+    address: '', // = addressDetail + ward
+    city: '', // = district
+    state: '', // = province
     zipCode: '',
     country: 'VN',
     shippingMethod: 'standard',
@@ -181,6 +189,22 @@ const CheckoutPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
+
+  // Provinces hook
+  const {
+    provinces,
+    districts,
+    wards,
+    loadingProvinces,
+    loadingDistricts,
+    loadingWards,
+    fetchDistricts,
+    fetchWards
+  } = useProvinces();
+
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>('');
+  const [selectedDistrictCode, setSelectedDistrictCode] = useState<string>('');
+  const [selectedWardCode, setSelectedWardCode] = useState<string>('');
 
   // Installment Table Columns
   const installmentColumns = [
@@ -248,10 +272,24 @@ const CheckoutPage: React.FC = () => {
 
   // Handle form input changes
   const handleInputChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      
+      // Update derived fields logic
+      if (['addressDetail', 'ward'].includes(name)) {
+        updated.address = [updated.addressDetail, updated.ward].filter(Boolean).join(', ');
+      }
+      if (name === 'district') updated.city = value;
+      if (name === 'province') updated.state = value;
+      
+      // Auto-fill billing address if same as shipping
+      if (updated.sameAsShipping && name.startsWith('shipping')) {
+        const billingField = name.replace('shipping', 'billing');
+        updated[billingField as keyof typeof updated] = value as never;
+      }
+      
+      return updated;
+    });
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -260,14 +298,48 @@ const CheckoutPage: React.FC = () => {
         [name]: '',
       }));
     }
+  };
 
-    // Auto-fill billing address if same as shipping
-    if (formData.sameAsShipping && name.startsWith('shipping')) {
-      const billingField = name.replace('shipping', 'billing');
-      setFormData((prev) => ({
-        ...prev,
-        [billingField]: value,
-      }));
+  // Handle Province change
+  const handleProvinceChange = (provinceCode: string) => {
+    setSelectedProvinceCode(provinceCode);
+    setSelectedDistrictCode('');
+    setSelectedWardCode('');
+    
+    // Tìm tên tỉnh
+    const province = provinces.find(p => p.code.toString() === provinceCode);
+    if (province) {
+      handleInputChange('province', province.name);
+      handleInputChange('district', '');
+      handleInputChange('ward', '');
+    }
+    
+    fetchDistricts(provinceCode);
+  };
+
+  // Handle District change
+  const handleDistrictChange = (districtCode: string) => {
+    setSelectedDistrictCode(districtCode);
+    setSelectedWardCode('');
+    
+    // Tìm tên huyện
+    const district = districts.find(d => d.code.toString() === districtCode);
+    if (district) {
+      handleInputChange('district', district.name);
+      handleInputChange('ward', '');
+    }
+    
+    fetchWards(districtCode);
+  };
+
+  // Handle Ward change
+  const handleWardChange = (wardCode: string) => {
+    setSelectedWardCode(wardCode);
+    
+    // Tìm tên xã
+    const ward = wards.find(w => w.code.toString() === wardCode);
+    if (ward) {
+      handleInputChange('ward', ward.name);
     }
   };
 
@@ -299,11 +371,9 @@ const CheckoutPage: React.FC = () => {
       'lastName',
       'email',
       'phone',
-      'address',
+      'addressDetail',
       'city',
       'state',
-      'zipCode',
-      'country',
     ];
 
     requiredFields.forEach((field) => {
@@ -481,6 +551,40 @@ const CheckoutPage: React.FC = () => {
       }
     }
 
+    if (formData.paymentMethod === 'vnpay') {
+      let order = currentOrder;
+      
+      // Nếu chưa có order (thanh toán mới), tạo order mới
+      if (!order) {
+        order = await handleCreateOrder();
+      }
+      
+      if (order) {
+        try {
+          const res = await createVnpayUrl({
+            amount: order.total,
+            orderId: order.number || order.id, // Ưu tiên số đơn hàng, nếu không có dùng ID
+            bankCode: ''
+          }).unwrap();
+          
+          if (res.data?.paymentUrl) {
+            window.location.href = res.data.paymentUrl;
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to create VNPay URL', error);
+          dispatch(
+            addNotification({
+              type: 'error',
+              message: 'Không thể tạo mã thanh toán VNPay',
+              duration: 5000,
+            })
+          );
+        }
+      }
+      return;
+    }
+
     // For other payment methods, create order and redirect
     const order = await handleCreateOrder();
     if (order) {
@@ -634,46 +738,46 @@ const CheckoutPage: React.FC = () => {
                   error={errors.phone}
                   required
                 />
-                <div className="md:col-span-2">
-                  <Input
-                    label={t('checkout.shippingInfo.address')}
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange('address', e.target.value)
-                    }
-                    error={errors.address}
-                    required
-                  />
-                </div>
-                <Input
-                  label={t('checkout.shippingInfo.city')}
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  error={errors.city}
-                  required
-                />
-                <Input
-                  label={t('checkout.shippingInfo.state')}
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
+                <Select
+                  label="Tỉnh / Thành phố"
+                  value={selectedProvinceCode}
+                  onChange={handleProvinceChange}
+                  options={provinces.map(p => ({ value: p.code.toString(), label: p.name }))}
                   error={errors.state}
-                  required
-                />
-                <Input
-                  label={t('checkout.shippingInfo.zipCode')}
-                  value={formData.zipCode}
-                  onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                  error={errors.zipCode}
+                  placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh / thành phố"}
                   required
                 />
                 <Select
-                  label={t('checkout.shippingInfo.country')}
-                  value={formData.country}
-                  onChange={(e) => handleInputChange('country', e.target.value)}
-                  options={countries}
-                  error={errors.country}
+                  label="Quận / Huyện"
+                  value={selectedDistrictCode}
+                  onChange={handleDistrictChange}
+                  options={districts.map(d => ({ value: d.code.toString(), label: d.name }))}
+                  error={errors.city}
+                  disabled={!selectedProvinceCode}
+                  placeholder={loadingDistricts ? "Đang tải..." : "Chọn quận / huyện"}
                   required
                 />
+                <Select
+                  label="Phường / Xã"
+                  value={selectedWardCode}
+                  onChange={handleWardChange}
+                  options={wards.map(w => ({ value: w.code.toString(), label: w.name }))}
+                  disabled={!selectedDistrictCode}
+                  placeholder={loadingWards ? "Đang tải..." : "Chọn phường / xã"}
+                  required
+                />
+                <div className="md:col-span-2">
+                  <Input
+                    label="Số nhà, Tên đường"
+                    value={formData.addressDetail}
+                    onChange={(e) =>
+                      handleInputChange('addressDetail', e.target.value)
+                    }
+                    error={errors.addressDetail}
+                    placeholder="Ví dụ: Số 123, Đường ABC"
+                    required
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -896,7 +1000,7 @@ const CheckoutPage: React.FC = () => {
               </PremiumButton>
             )}
 
-            {formData.paymentMethod === 'bank_transfer' && !currentOrder && (
+            {(['bank_transfer', 'vnpay', 'installment'].includes(formData.paymentMethod)) && (!currentOrder || formData.paymentMethod === 'vnpay') && (
               <PremiumButton
                 variant="primary"
                 size="large"

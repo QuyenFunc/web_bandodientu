@@ -31,12 +31,11 @@ module.exports = {
 
     if (
       tableDefinition.values &&
-      normalizeType(tableDefinition.values.type) !== 'JSONB'
+      normalizeType(tableDefinition.values.type) !== 'JSON'
     ) {
       await queryInterface.changeColumn('product_attributes', 'values', {
-        type: Sequelize.JSONB,
+        type: Sequelize.JSON,
         allowNull: false,
-        defaultValue: [],
       });
     }
 
@@ -52,9 +51,11 @@ module.exports = {
 
     if (tableDefinition.type) {
       await queryInterface.removeColumn('product_attributes', 'type');
-      await queryInterface.sequelize.query(
-        'DROP TYPE IF EXISTS "enum_product_attributes_type";'
-      );
+      try {
+        await queryInterface.sequelize.query(
+          'DROP TYPE IF EXISTS "enum_product_attributes_type";'
+        );
+      } catch (err) {}
     }
 
     if (tableDefinition.required) {
@@ -79,10 +80,10 @@ module.exports = {
 
     if (
       tableDefinition.values &&
-      normalizeType(tableDefinition.values.type) === 'JSONB'
+      normalizeType(tableDefinition.values.type) === 'JSON'
     ) {
       await queryInterface.changeColumn('product_attributes', 'values', {
-        type: Sequelize.ARRAY(Sequelize.STRING),
+        type: Sequelize.TEXT,
         allowNull: false,
       });
     }
@@ -106,23 +107,12 @@ async function removeIndexIfExists(queryInterface, table, fields) {
 }
 
 async function doesIndexExist(queryInterface, table, indexName) {
-  const [results] = await queryInterface.sequelize.query(
-    `
-      SELECT 1
-      FROM pg_indexes
-      WHERE schemaname = 'public'
-        AND tablename = :table
-        AND indexname = :index;
-    `,
-    {
-      replacements: {
-        table,
-        index: indexName,
-      },
-    }
-  );
-
-  return results.length > 0;
+  try {
+    const indexes = await queryInterface.showIndex(table);
+    return indexes.some((index) => index.name === indexName);
+  } catch (err) {
+    return false;
+  }
 }
 
 function buildIndexName(table, fields) {

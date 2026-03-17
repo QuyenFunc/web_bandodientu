@@ -26,13 +26,13 @@ const ProductVariant = sequelize.define(
       allowNull: true,
     },
     attributes: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       allowNull: false,
       defaultValue: {},
     },
     // New field for hierarchical attributes
     attributeValues: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       allowNull: false,
       defaultValue: {},
       field: 'attribute_values',
@@ -49,7 +49,7 @@ const ProductVariant = sequelize.define(
       defaultValue: 0,
     },
     images: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.JSON,
       defaultValue: [],
       get() {
         return buildPublicImageCollection(this.getDataValue('images'));
@@ -87,7 +87,7 @@ const ProductVariant = sequelize.define(
     },
     // Variant specifications (override product specs)
     specifications: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       defaultValue: {},
     },
   },

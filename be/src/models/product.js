@@ -21,7 +21,7 @@ const Product = sequelize.define(
       allowNull: false,
     },
     slug: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
@@ -80,7 +80,7 @@ const Product = sequelize.define(
       defaultValue: 0,
     },
     sku: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
       allowNull: true,
       unique: true,
     },

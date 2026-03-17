@@ -18,6 +18,9 @@ router.post(
   paymentController.handleSePayWebhook
 );
 
+// VNPay return IPN/redirect route (no authentication)
+router.get('/vnpay/return', paymentController.vnpayReturn);
+
 // Authenticated routes
 router.use(authenticate);
 
@@ -26,6 +29,9 @@ router.post('/create-payment-intent', paymentController.createPaymentIntent);
 
 // Confirm payment
 router.post('/confirm-payment', paymentController.confirmPayment);
+
+// VNPay create url
+router.post('/vnpay/create-url', paymentController.createVnpayUrl);
 
 // Customer management
 router.post('/create-customer', paymentController.createCustomer);

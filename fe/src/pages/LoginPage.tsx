@@ -70,8 +70,13 @@ const LoginPage: React.FC = () => {
       // Dispatch success to Redux store
       dispatch(loginSuccess(result));
 
-      // Redirect to the page they were trying to access
-      navigate(from, { replace: true });
+      // Redirect based on role
+      const userRole = result?.user?.role;
+      if (userRole === 'admin' || userRole === 'manager') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(from === '/admin' ? '/' : from, { replace: true });
+      }
     } catch (err: any) {
       console.log('❌ Login failed:', err);
       // Error is already handled by RTK Query and displayed in UI

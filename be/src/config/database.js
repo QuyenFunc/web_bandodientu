@@ -7,7 +7,7 @@ module.exports = {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    dialect: 'postgres',
+    dialect: 'mysql',
     logging: false,
     define: {
       timestamps: true,
@@ -20,7 +20,7 @@ module.exports = {
     database: process.env.DB_NAME_TEST || 'ecommerce_test',
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    dialect: 'postgres',
+    dialect: 'mysql',
     logging: false,
     define: {
       timestamps: true,
@@ -33,7 +33,7 @@ module.exports = {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    dialect: 'postgres',
+    dialect: 'mysql',
     logging: false,
     define: {
       timestamps: true,

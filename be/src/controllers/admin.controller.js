@@ -110,7 +110,7 @@ const getDashboardStats = catchAsync(async (req, res) => {
       [
         Sequelize.fn(
           'SUM',
-          Sequelize.literal('quantity * "OrderItem"."price"')
+          Sequelize.literal('quantity * `OrderItem`.`price`')
         ),
         'totalRevenue',
       ],
@@ -121,7 +121,7 @@ const getDashboardStats = catchAsync(async (req, res) => {
         attributes: ['name', 'images', 'price'],
       },
     ],
-    group: ['productId', 'Product.id'],
+    group: ['productId', 'Product.id', 'Product.name', 'Product.images', 'Product.price'],
     order: [[Sequelize.fn('SUM', Sequelize.col('quantity')), 'DESC']],
     limit: 5,
   });

@@ -169,7 +169,22 @@ export const getAttributeValuesWithStock = (
   );
   if (!attribute) return [];
 
-  return attribute.values.map((value) => {
+  // Normalize values to array in case backend returns JSON string or non-array
+  let values: string[];
+  if (Array.isArray(attribute.values)) {
+    values = attribute.values;
+  } else if (typeof attribute.values === 'string') {
+    try {
+      const parsed = JSON.parse(attribute.values);
+      values = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      values = [];
+    }
+  } else {
+    values = [];
+  }
+
+  return values.map((value) => {
     // Create a temporary combination with this value
     const tempAttributes = { ...selectedAttributes, [attributeName]: value };
 

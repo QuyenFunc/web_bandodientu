@@ -42,8 +42,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
       ? Math.round(discountPercentage)
       : compareAtPrice
         ? Math.round(
-            ((compareAtPrice - priceInfo.basePrice) / compareAtPrice) * 100
-          )
+          ((compareAtPrice - priceInfo.basePrice) / compareAtPrice) * 100
+        )
         : 0;
 
   // Handle view details
@@ -88,7 +88,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       {/* Enhanced product info section */}
-      <div className="p-6 space-y-4 flex-grow flex flex-col">
+      <div className="p-6 flex-grow flex flex-col gap-3">
         {/* Rating positioned at top */}
         <div className="flex items-center">
           {ratings && (
@@ -122,64 +122,57 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </p>
         )}
 
-        {/* Enhanced price section */}
-        <div className="space-y-3 pt-2 mt-auto">
-          <div className="flex flex-col space-y-1">
-            <div className="flex items-baseline gap-3">
-              <span className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">
-                {priceInfo.priceText}
-              </span>
-              {compareAtPrice && compareAtPrice > priceInfo.basePrice && (
-                <span className="text-base text-neutral-400 dark:text-neutral-500 line-through font-medium">
-                  {compareAtPrice.toLocaleString('vi-VN')}đ
-                </span>
-              )}
-            </div>
+        {/* Price section */}
+        <div className="mt-auto flex flex-col gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+              {priceInfo.priceText}
+            </span>
             {compareAtPrice && compareAtPrice > priceInfo.basePrice && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
-                  Tiết kiệm{' '}
-                  {(compareAtPrice - priceInfo.basePrice).toLocaleString(
-                    'vi-VN'
-                  )}
-                  đ
-                </span>
-                <div className="h-1 w-1 bg-neutral-300 dark:bg-neutral-600 rounded-full"></div>
-                <span className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
-                  {discount}% OFF
-                </span>
-              </div>
+              <span className="text-sm text-neutral-400 dark:text-neutral-500 line-through font-medium">
+                {compareAtPrice.toLocaleString('vi-VN')}đ
+              </span>
             )}
           </div>
-
-          {/* Enhanced view details button */}
-          <button
-            className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-xl py-3.5 px-5 transition-colors duration-200 shadow-lg font-semibold text-sm tracking-wide flex items-center justify-center gap-3 group/btn"
-            onClick={handleViewDetails}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-            <span className="whitespace-nowrap">XEM CHI TIẾT</span>
-          </button>
+          {compareAtPrice && compareAtPrice > priceInfo.basePrice && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-md">
+                Tiết kiệm {(compareAtPrice - priceInfo.basePrice).toLocaleString('vi-VN')}đ
+              </span>
+              <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded-md">
+                -{discount}%
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* View details button — always at bottom */}
+        <button
+          className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-lg py-2.5 px-4 transition-colors duration-200 shadow-sm hover:shadow font-semibold text-sm flex items-center justify-center gap-2"
+          onClick={handleViewDetails}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
+          </svg>
+          <span>XEM CHI TIẾT</span>
+        </button>
       </div>
     </div>
   );

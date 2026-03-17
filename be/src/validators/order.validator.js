@@ -24,14 +24,8 @@ const createOrderSchema = Joi.object({
     'string.empty': 'Tỉnh/Thành phố giao hàng không được để trống',
     'any.required': 'Tỉnh/Thành phố giao hàng là trường bắt buộc',
   }),
-  shippingZip: Joi.string().required().messages({
-    'string.empty': 'Mã bưu điện giao hàng không được để trống',
-    'any.required': 'Mã bưu điện giao hàng là trường bắt buộc',
-  }),
-  shippingCountry: Joi.string().required().messages({
-    'string.empty': 'Quốc gia giao hàng không được để trống',
-    'any.required': 'Quốc gia giao hàng là trường bắt buộc',
-  }),
+  shippingZip: Joi.string().allow('').optional(),
+  shippingCountry: Joi.string().allow('').optional(),
   shippingPhone: Joi.string().allow('').optional(),
 
   billingFirstName: Joi.string().required().messages({
@@ -56,14 +50,8 @@ const createOrderSchema = Joi.object({
     'string.empty': 'Tỉnh/Thành phố thanh toán không được để trống',
     'any.required': 'Tỉnh/Thành phố thanh toán là trường bắt buộc',
   }),
-  billingZip: Joi.string().required().messages({
-    'string.empty': 'Mã bưu điện thanh toán không được để trống',
-    'any.required': 'Mã bưu điện thanh toán là trường bắt buộc',
-  }),
-  billingCountry: Joi.string().required().messages({
-    'string.empty': 'Quốc gia thanh toán không được để trống',
-    'any.required': 'Quốc gia thanh toán là trường bắt buộc',
-  }),
+  billingZip: Joi.string().allow('').optional(),
+  billingCountry: Joi.string().allow('').optional(),
   billingPhone: Joi.string().allow('').optional(),
 
   paymentMethod: Joi.string().required().messages({

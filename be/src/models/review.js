@@ -46,7 +46,7 @@ const Review = sequelize.define(
       defaultValue: 0
     },
     images: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.JSON,
       defaultValue: []
     },
   },

@@ -82,10 +82,12 @@ module.exports = {
 };
 
 async function doesTableExist(queryInterface, table) {
-  const [[result]] = await queryInterface.sequelize.query(
-    `SELECT to_regclass('public.${table}') AS table_name;`
-  );
-  return Boolean(result.table_name);
+  try {
+    await queryInterface.describeTable(table);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 async function addIndexIfMissing(queryInterface, table, fields, options = {}) {
@@ -108,23 +110,12 @@ async function removeIndexIfExists(queryInterface, table, fields, options = {}) 
 }
 
 async function doesIndexExist(queryInterface, table, indexName) {
-  const [results] = await queryInterface.sequelize.query(
-    `
-      SELECT 1
-      FROM pg_indexes
-      WHERE schemaname = 'public'
-        AND tablename = :table
-        AND indexname = :index;
-    `,
-    {
-      replacements: {
-        table,
-        index: indexName,
-      },
-    }
-  );
-
-  return results.length > 0;
+  try {
+    const indexes = await queryInterface.showIndex(table);
+    return indexes.some((index) => index.name === indexName);
+  } catch (err) {
+    return false;
+  }
 }
 
 async function dropTableIfExists(queryInterface, table) {

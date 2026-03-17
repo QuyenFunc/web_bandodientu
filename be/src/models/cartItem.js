@@ -37,7 +37,7 @@ const CartItem = sequelize.define(
       },
     },
     warrantyPackageIds: {
-      type: DataTypes.ARRAY(DataTypes.UUID),
+      type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
       field: 'warranty_package_ids',

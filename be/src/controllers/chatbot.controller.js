@@ -479,8 +479,8 @@ class ChatbotController {
       const searchConditions = [];
       searchTerms.forEach((term) => {
         searchConditions.push(
-          { name: { [Op.iLike]: `%${term}%` } },
-          { description: { [Op.iLike]: `%${term}%` } }
+          { name: { [Op.like]: `%${term}%` } },
+          { description: { [Op.like]: `%${term}%` } }
         );
       });
 

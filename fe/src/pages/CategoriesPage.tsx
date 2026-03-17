@@ -1,162 +1,163 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGetCategoriesQuery } from '@/services/categoryApi';
-import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { Category } from '@/types/category.types';
-import { mockCategories } from '@/data/mockCategories';
+
+const CATEGORY_ICONS: Record<string, string> = {
+  audio: '🎧',
+  wearables: '⌚',
+  computers: '💻',
+  accessories: '🔌',
+  'tvs-home-theater': '📺',
+  cameras: '📷',
+  gaming: '🎮',
+  laptop: '💻',
+  'giay-dep': '👟',
+  'thoi-trang-nam': '👔',
+  'thoi-trang-nu': '👗',
+  'o-to-xe-may': '🚗',
+};
+
+const getIcon = (slug?: string, name?: string) => {
+  if (slug && CATEGORY_ICONS[slug]) return CATEGORY_ICONS[slug];
+  const n = name?.toLowerCase() || '';
+  if (n.includes('laptop') || n.includes('máy tính')) return '💻';
+  if (n.includes('giày') || n.includes('dép')) return '👟';
+  if (n.includes('thời trang nam')) return '👔';
+  if (n.includes('thời trang nữ') || n.includes('nu')) return '👗';
+  if (n.includes('audio') || n.includes('âm thanh')) return '🎧';
+  if (n.includes('camera')) return '📷';
+  if (n.includes('game') || n.includes('gaming')) return '🎮';
+  if (n.includes('ô tô') || n.includes('xe máy')) return '🚗';
+  if (n.includes('phụ kiện') || n.includes('accessories')) return '🔌';
+  return '📦';
+};
 
 const CategoriesPage: React.FC = () => {
-  const { data: categories, isLoading, error } = useGetCategoriesQuery();
+  const { data: categories, isLoading } = useGetCategoriesQuery();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter categories based on search term
-  const filteredCategories = categories?.filter((category) =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCategories = categories?.filter((cat) =>
+    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Group categories by first letter for alphabetical display
-  const groupedCategories = filteredCategories?.reduce<
-    Record<string, Category[]>
-  >((acc, category) => {
-    const firstLetter = category.name.charAt(0).toUpperCase();
-    if (!acc[firstLetter]) {
-      acc[firstLetter] = [];
-    }
-    acc[firstLetter].push(category);
+  const groupedCategories = filteredCategories?.reduce<Record<string, Category[]>>((acc, cat) => {
+    const letter = cat.name.charAt(0).toUpperCase();
+    if (!acc[letter]) acc[letter] = [];
+    acc[letter].push(cat);
     return acc;
   }, {});
 
-  // Sort the keys alphabetically
-  const sortedLetters = groupedCategories
-    ? Object.keys(groupedCategories).sort()
-    : [];
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-red-600 mb-4">
-          Error Loading Categories
-        </h1>
-        <p className="text-neutral-600 dark:text-neutral-400">
-          We encountered an error while loading the categories. Please try again
-          later.
-        </p>
-      </div>
-    );
-  }
+  const sortedLetters = groupedCategories ? Object.keys(groupedCategories).sort() : [];
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8 text-center">
-        Browse All Categories
-      </h1>
-
-      {/* Search input */}
-      <div className="max-w-md mx-auto mb-12">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search categories..."
-            className="w-full py-3 pl-12 pr-4 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-500 dark:text-neutral-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+      {/* Hero Header */}
+      <div className="relative bg-gradient-to-br from-primary-700 via-primary-600 to-primary-500 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-10 select-none pointer-events-none">
+          {['💻', '👗', '👟', '🎧', '📷', '🎮', '⌚', '🔌'].map((icon, i) => (
+            <span
+              key={i}
+              className="absolute text-5xl"
+              style={{
+                top: `${[10, 50, 20, 70, 5, 40, 60, 80][i]}%`,
+                left: `${[5, 15, 40, 55, 70, 80, 90, 30][i]}%`,
+                transform: `rotate(${[-10, 15, -5, 20, -15, 8, -20, 12][i]}deg)`,
+              }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              {icon}
+            </span>
+          ))}
+        </div>
+        <div className="relative container mx-auto px-4 py-14 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 text-3xl mb-5 shadow-md">
+            🗂️
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Tất cả danh mục</h1>
+          <p className="text-white/80 text-sm md:text-base max-w-md mx-auto">
+            Khám phá hàng ngàn sản phẩm trong {categories?.length || 0} danh mục đa dạng
+          </p>
+
+          {/* Search */}
+          <div className="mt-8 max-w-md mx-auto">
+            <div className="relative">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm danh mục..."
+                className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/60 focus:outline-none focus:bg-white/30 focus:border-white/50 transition-all text-sm"
               />
-            </svg>
+            </div>
           </div>
         </div>
       </div>
 
-      {filteredCategories?.length === 0 ? (
-        <div className="text-center py-12 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12 mx-auto text-neutral-400 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="text-xl font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-            No categories found
-          </h3>
-          <p className="text-neutral-500 dark:text-neutral-400">
-            Try a different search term
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-12">
-          {sortedLetters.map((letter) => (
-            <div key={letter} className="category-group">
-              <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400 mb-4 border-b border-neutral-200 dark:border-neutral-700 pb-2">
-                {letter}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {groupedCategories?.[letter].map((category) => (
-                  <Link
-                    key={category.id}
-                    to={`/shop?category=${category.id}`}
-                    className="p-4 bg-white dark:bg-neutral-800 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-neutral-200 dark:border-neutral-700"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-neutral-900 dark:text-white">
-                          {category.name}
-                        </h3>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          {category.productCount || 0} products
-                        </p>
-                      </div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-neutral-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </div>
-                  </Link>
-                ))}
+      <div className="container mx-auto px-4 py-10 max-w-6xl">
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-neutral-900 rounded-2xl p-5 animate-pulse">
+                <div className="w-12 h-12 bg-neutral-200 dark:bg-neutral-700 rounded-xl mb-3"></div>
+                <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3 mb-2"></div>
+                <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3"></div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : filteredCategories?.length === 0 ? (
+          <div className="text-center py-16 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-100 dark:border-neutral-800">
+            <div className="text-5xl mb-4">🔍</div>
+            <h3 className="text-lg font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+              Không tìm thấy danh mục
+            </h3>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">Hãy thử từ khóa khác</p>
+          </div>
+        ) : searchTerm ? (
+          /* Search results */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {filteredCategories?.map((cat) => (
+              <CategoryCard key={cat.id} category={cat} />
+            ))}
+          </div>
+        ) : (
+          /* Flat grid - all categories */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {filteredCategories?.map((cat) => (
+              <CategoryCard key={cat.id} category={cat} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
+  );
+};
+
+const CategoryCard: React.FC<{ category: Category }> = ({ category }) => {
+  const icon = getIcon(category.slug, category.name);
+  return (
+    <Link
+      to={`/shop?category=${category.id}`}
+      className="group bg-white dark:bg-neutral-900 rounded-2xl p-5 border border-neutral-100 dark:border-neutral-800 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-md transition-all duration-200"
+    >
+      <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-xl flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform duration-200">
+        {icon}
+      </div>
+      <h3 className="font-semibold text-neutral-900 dark:text-white text-sm leading-snug group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors line-clamp-2">
+        {category.name}
+      </h3>
+      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+        {category.productCount || 0} sản phẩm
+      </p>
+      <div className="mt-3 flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity">
+        <span>Xem ngay</span>
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </Link>
   );
 };
 

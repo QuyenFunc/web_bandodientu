@@ -100,8 +100,9 @@ const ProductDetailPage: React.FC = () => {
   useEffect(() => {
     if (product && product.attributes && product.attributes.length > 0) {
       const firstAttribute = product.attributes[0];
-      if (firstAttribute.values && firstAttribute.values.length > 0) {
-        const firstValue = firstAttribute.values[0];
+      const values = Array.isArray(firstAttribute.values) ? firstAttribute.values : [];
+      if (values.length > 0) {
+        const firstValue = values[0];
 
         // Only auto-select if nothing is selected yet
         if (Object.keys(selectedAttributes).length === 0) {
@@ -113,11 +114,10 @@ const ProductDetailPage: React.FC = () => {
     }
   }, [product]);
 
-  // Set default warranty
+  // Set default warranty - only reset when product changes (avoid infinite loop)
   useEffect(() => {
-    // Khởi tạo mảng rỗng để không chọn gói bảo hành nào mặc định
     setSelectedWarranties([]);
-  }, [warrantyPackages]);
+  }, [product?.id]);
 
   // Handle quantity change
   const handleQuantityChange = (newQuantity: number) => {

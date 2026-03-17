@@ -34,11 +34,10 @@ const getAllProducts = async (req, res, next) => {
     // Search filter
     if (search) {
       whereConditions[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } },
-        { shortDescription: { [Op.iLike]: `%${search}%` } },
-        // { searchKeywords: { [Op.contains]: [search] } },
-        { searchKeywords: { [Op.iLike]: `%${search}%` } },
+        { name: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
+        { shortDescription: { [Op.like]: `%${search}%` } },
+        { searchKeywords: { [Op.like]: `%${search}%` } },
       ];
     }
 
@@ -1031,11 +1030,11 @@ const searchProducts = async (req, res, next) => {
     const { count, rows: products } = await Product.findAndCountAll({
       where: {
         [Op.or]: [
-          { name: { [Op.iLike]: `%${q}%` } },
-          { description: { [Op.iLike]: `%${q}%` } },
-          { shortDescription: { [Op.iLike]: `%${q}%` } },
+          { name: { [Op.like]: `%${q}%` } },
+          { description: { [Op.like]: `%${q}%` } },
+          { shortDescription: { [Op.like]: `%${q}%` } },
           // { searchKeywords: { [Op.contains]: [q] } },
-          { searchKeywords: { [Op.iLike]: `%${q}%` } },
+          { searchKeywords: { [Op.like]: `%${q}%` } },
         ],
       },
       include: [

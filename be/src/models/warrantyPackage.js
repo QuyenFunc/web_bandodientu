@@ -31,11 +31,11 @@ const WarrantyPackage = sequelize.define(
       },
     },
     terms: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       defaultValue: {},
     },
     coverage: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.JSON,
       defaultValue: [],
     },
     isActive: {

@@ -1,4 +1,5 @@
 const stripeService = require('../services/payment/stripeService');
+const vnpayService = require('../services/payment/vnpayService');
 const { Order, User, OrderItem, Product, ProductVariant, Cart, CartItem } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
 const { Op } = require('sequelize');
@@ -706,7 +707,7 @@ const handleSePayWebhook = async (req, res, next) => {
           // Try matching against the number field if it contains the numeric part
           order = await Order.findOne({ 
             where: { 
-              number: { [Op.iLike]: `%${numericPart}%` } 
+              number: { [Op.like]: `%${numericPart}%` } 
             } 
           });
         }
@@ -718,7 +719,7 @@ const handleSePayWebhook = async (req, res, next) => {
         order = await Order.findOne({ 
           where: { 
             [Op.or]: [
-              { number: { [Op.iLike]: `%${orderId}%` } },  // Partial match in order number
+              { number: { [Op.like]: `%${orderId}%` } },  // Partial match in order number
             ]
           }
         });
@@ -850,6 +851,83 @@ const handleSePayWebhook = async (req, res, next) => {
   }
 };
 
+// Tạo VNPay URL
+const createVnpayUrl = async (req, res, next) => {
+  try {
+    const { amount, orderId, bankCode } = req.body;
+    
+    if (!amount || amount <= 0 || !orderId) {
+      throw new AppError('Invalid amount or orderId', 400);
+    }
+    
+    const ipAddr = req.headers['x-forwarded-for'] ||
+                   req.connection.remoteAddress ||
+                   req.socket.remoteAddress ||
+                   req.connection.socket.remoteAddress || '127.0.0.1';
+                   
+    const paymentUrl = vnpayService.createPaymentUrl({
+      orderId,
+      amount,
+      bankCode,
+      ipAddr
+    });
+    
+    res.status(200).json({
+      status: 'success',
+      data: { paymentUrl }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Xử lý VNPay Return
+const vnpayReturn = async (req, res, next) => {
+  try {
+    const vnp_Params = req.query;
+    const result = vnpayService.verifyReturnUrl(vnp_Params);
+    
+    if (result.isSuccess && result.responseCode === '00') {
+      const order = await Order.findOne({ where: { number: result.orderId } });
+      
+      if (order && order.paymentStatus !== 'paid') {
+        const updateResult = await Order.update(
+          {
+            status: 'processing',
+            paymentStatus: 'paid',
+            paymentTransactionId: result.transactionNo,
+            paymentProvider: 'vnpay',
+            updatedAt: new Date(),
+          },
+          { where: { id: order.id } }
+        );
+
+        // Reduce inventory
+        const orderItems = await OrderItem.findAll({ where: { orderId: order.id } });
+        for (const item of orderItems) {
+          if (item.variantId) {
+            await ProductVariant.decrement({ stockQuantity: item.quantity }, { where: { id: item.variantId } });
+          } else {
+            await Product.decrement({ stockQuantity: item.quantity }, { where: { id: item.productId } });
+          }
+        }
+        
+        await clearUserCart(order.userId);
+      }
+      
+      // Chuyển hướng frontend về trang thành công (đã gắn URL trong VNPay redirect)
+      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=success`);
+    } else {
+      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=failed`);
+    }
+  } catch (error) {
+    console.error('VNPay return error:', error);
+    return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=error`);
+  }
+};
+
+// IPN if needed can be added similar to vnpayReturn but using server-to-server POST
+
 module.exports = {
   createPaymentIntent,
   confirmPayment,
@@ -859,4 +937,6 @@ module.exports = {
   handleWebhook,
   createRefund,
   handleSePayWebhook,
+  createVnpayUrl,
+  vnpayReturn,
 };

@@ -27,12 +27,10 @@ module.exports = {
         defaultValue: 0,
       },
       terms: {
-        type: Sequelize.JSONB,
-        defaultValue: {},
+        type: Sequelize.JSON,
       },
       coverage: {
-        type: Sequelize.ARRAY(Sequelize.STRING),
-        defaultValue: [],
+        type: Sequelize.JSON,
       },
       is_active: {
         type: Sequelize.BOOLEAN,

@@ -46,7 +46,7 @@ const OrderItem = sequelize.define(
       allowNull: true
     },
     attributes: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       defaultValue: {}
     },
   },

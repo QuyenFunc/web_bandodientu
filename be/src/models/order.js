@@ -58,11 +58,11 @@ const Order = sequelize.define(
     },
     shippingZip: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     shippingCountry: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     shippingPhone: {
       type: DataTypes.STRING,
@@ -98,11 +98,11 @@ const Order = sequelize.define(
     },
     billingZip: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     billingCountry: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     billingPhone: {
       type: DataTypes.STRING,

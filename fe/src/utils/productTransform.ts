@@ -52,9 +52,34 @@ export const transformProduct = (product: RawProduct): TransformedProduct => {
       average: 0,
       count: 0,
     },
-    // Ensure variants and attributes are passed through
-    variants: product.variants || [],
-    attributes: product.attributes || [],
+    // Ensure variants and attributes are passed through, normalizing attributes.values to array
+    variants: (product.variants || []).map((v: any) => {
+      let attrs = v.attributes;
+      if (typeof attrs === 'string') {
+        try {
+          attrs = JSON.parse(attrs);
+        } catch {
+          attrs = {};
+        }
+      }
+      return { ...v, attributes: attrs || {} };
+    }),
+    attributes: (product.attributes || []).map((attr: any) => {
+      let values = attr.values;
+      if (!Array.isArray(values)) {
+        if (typeof values === 'string') {
+          try {
+            const parsed = JSON.parse(values);
+            values = Array.isArray(parsed) ? parsed : [];
+          } catch {
+            values = [];
+          }
+        } else {
+          values = [];
+        }
+      }
+      return { ...attr, values };
+    }),
   };
 };
 

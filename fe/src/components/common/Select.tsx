@@ -14,6 +14,7 @@ interface SelectProps {
   error?: string;
   disabled?: boolean;
   className?: string;
+  required?: boolean;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -25,6 +26,7 @@ const Select: React.FC<SelectProps> = ({
   error,
   disabled = false,
   className = '',
+  required = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
@@ -75,6 +77,7 @@ const Select: React.FC<SelectProps> = ({
       {label && (
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
           {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
 

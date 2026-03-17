@@ -176,17 +176,7 @@ const Header: React.FC = () => {
             );
           })}
 
-          {/* Admin Link - visible to admin users */}
-          {isAdmin() && (
-            <Link
-              to="/admin/dashboard"
-              className="group relative px-2 sm:px-3 py-2 rounded-xl font-medium bg-gradient-to-r from-info-100 to-info-50 dark:from-info-900/20 dark:to-info-800/10 text-info-700 dark:text-info-300 hover:from-info-200 hover:to-info-100 dark:hover:from-info-900/30 dark:hover:to-info-800/20 transition-all duration-300 flex items-center space-x-1 border border-info-200/50 dark:border-info-700/30 whitespace-nowrap"
-            >
-              <AdminIcon className="h-4 w-4 group-hover:scale-110 transition-transform duration-300 hidden sm:block" />
-              <span className="text-sm">Admin</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-info-500/10 to-info-400/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </Link>
-          )}
+
         </nav>
 
         {/* Actions */}
@@ -456,32 +446,7 @@ const Header: React.FC = () => {
             ))}
           </div>
 
-          {/* Mobile Admin Link - visible to admin users */}
-          {isAdmin() && (
-            <Link
-              to="/admin/dashboard"
-              className="block font-medium px-3 py-3 rounded-lg bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-              onClick={() => dispatch(toggleMobileMenu())}
-            >
-              <div className="flex items-center space-x-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                <span>Admin Panel</span>
-              </div>
-            </Link>
-          )}
+
 
           {/* Mobile Language Switcher */}
           <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">

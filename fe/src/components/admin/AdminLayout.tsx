@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useSelector, useDispatch } from 'react-redux';
@@ -7,11 +7,15 @@ import { RootState } from '@/store';
 import { setTheme } from '@/features/ui/uiSlice';
 import { ConfigProvider, theme as antdTheme, Button, Drawer } from 'antd';
 import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
+import { UserIcon } from '@/components/icons';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, getUserFullName } = useAuth();
+  const { user, getUserFullName, isAuthenticated, logout } = useAuth();
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const theme = useSelector((state: RootState) => state.ui.theme);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,6 +33,34 @@ const AdminLayout: React.FC = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Handle click outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleUserClick = () => {
+    if (isAuthenticated) {
+      setShowUserDropdown(!showUserDropdown);
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleLogoutClick = async () => {
+    await logout();
+    navigate('/', { replace: true });
+  };
 
   const toggleTheme = () => {
     dispatch(setTheme(theme === 'light' ? 'dark' : 'light'));
@@ -207,14 +239,6 @@ const AdminLayout: React.FC = () => {
                 <h1 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white">
                   Admin Panel
                 </h1>
-                <div className="hidden md:flex items-center space-x-2 text-sm text-neutral-600 dark:text-neutral-400">
-                  <Link
-                    to="/"
-                    className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                  >
-                    ← Back to Store
-                  </Link>
-                </div>
               </div>
               <div className="flex items-center space-x-2 md:space-x-4">
                 {/* Theme toggle button */}
@@ -248,11 +272,59 @@ const AdminLayout: React.FC = () => {
                   )}
                 </Button>
 
-                <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                  <span className="hidden sm:inline-block">Welcome, </span>
-                  <span className="font-medium text-neutral-900 dark:text-white">
-                    {getUserFullName()}
-                  </span>
+                {/* User Dropdown */}
+                <div className="relative" ref={userDropdownRef}>
+                  <button
+                    onClick={handleUserClick}
+                    className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${
+                      isAuthenticated
+                        ? 'bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-900/20 dark:to-primary-800/10 text-primary-600 dark:text-primary-400 hover:from-primary-200 hover:to-primary-100 dark:hover:from-primary-900/30 dark:hover:to-primary-800/20 border border-primary-200/50 dark:border-primary-700/30'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700'
+                    }`}
+                    aria-label={t('header.actions.userAccount')}
+                  >
+                    <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300" />
+                    {isAuthenticated && (
+                      <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gradient-to-r from-success-500 to-success-400 rounded-full border-2 border-white dark:border-neutral-800 animate-pulse"></span>
+                    )}
+                    {isAuthenticated && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-primary-400/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    )}
+                  </button>
+
+                  {/* User Dropdown Menu */}
+                  {isAuthenticated && showUserDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 z-50">
+                      <div className="py-2">
+                        <div className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">
+                          <p className="font-semibold text-neutral-800 dark:text-neutral-100 truncate max-w-[160px]">
+                            {getUserFullName()}
+                          </p>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate max-w-[160px]">
+                            {user?.email}
+                          </p>
+                        </div>
+                        <Link
+                          to="/"
+                          className="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                          onClick={() => setShowUserDropdown(false)}
+                        >
+                          Trang cửa hàng
+                        </Link>
+                        <div className="border-t border-neutral-200 dark:border-neutral-700 mt-2">
+                          <button
+                            onClick={() => {
+                              setShowUserDropdown(false);
+                              handleLogoutClick();
+                            }}
+                            className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                          >
+                            {t('header.dropdown.logout')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

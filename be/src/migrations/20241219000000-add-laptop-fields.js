@@ -24,8 +24,7 @@ module.exports = {
     });
 
     await addColumnIfMissing(queryInterface, 'products', 'specifications', {
-      type: Sequelize.JSONB,
-      defaultValue: {},
+      type: Sequelize.JSON,
     });
 
     // Add new fields to product_variants table
@@ -74,12 +73,10 @@ module.exports = {
         defaultValue: 0,
       },
       terms: {
-        type: Sequelize.JSONB,
-        defaultValue: {},
+        type: Sequelize.JSON,
       },
       coverage: {
-        type: Sequelize.ARRAY(Sequelize.STRING),
-        defaultValue: [],
+        type: Sequelize.JSON,
       },
       is_active: {
         type: Sequelize.BOOLEAN,
@@ -228,30 +225,21 @@ async function removeIndexIfExists(queryInterface, table, fields) {
 }
 
 async function doesTableExist(queryInterface, table) {
-  const [[result]] = await queryInterface.sequelize.query(
-    `SELECT to_regclass('public.${table}') AS table_name;`
-  );
-  return Boolean(result.table_name);
+  try {
+    await queryInterface.describeTable(table);
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 async function doesIndexExist(queryInterface, table, indexName) {
-  const [results] = await queryInterface.sequelize.query(
-    `
-      SELECT 1
-      FROM pg_indexes
-      WHERE schemaname = 'public'
-        AND tablename = :table
-        AND indexname = :index;
-    `,
-    {
-      replacements: {
-        table,
-        index: indexName,
-      },
-    }
-  );
-
-  return results.length > 0;
+  try {
+    const indexes = await queryInterface.showIndex(table);
+    return indexes.some((index) => index.name === indexName);
+  } catch (err) {
+    return false;
+  }
 }
 
 function buildIndexName(table, fields) {

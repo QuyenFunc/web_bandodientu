@@ -7,11 +7,11 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'ecommerce_db',
-  process.env.DB_USER || 'postgres',
-  process.env.DB_PASSWORD || 'postgres',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASSWORD || '1234',
   {
     host: process.env.DB_HOST || 'localhost',
-    dialect: 'postgres',
+    dialect: 'mysql',
     logging: false,
   }
 );

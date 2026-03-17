@@ -30,8 +30,7 @@ module.exports = {
 
     if (!variantDefinition.specifications) {
       await queryInterface.addColumn('product_variants', 'specifications', {
-        type: DataTypes.JSONB,
-        defaultValue: {},
+        type: DataTypes.JSON,
       });
     }
 

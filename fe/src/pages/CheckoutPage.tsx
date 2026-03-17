@@ -274,20 +274,20 @@ const CheckoutPage: React.FC = () => {
   const handleInputChange = (name: string, value: string) => {
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      
+
       // Update derived fields logic
       if (['addressDetail', 'ward'].includes(name)) {
         updated.address = [updated.addressDetail, updated.ward].filter(Boolean).join(', ');
       }
       if (name === 'district') updated.city = value;
       if (name === 'province') updated.state = value;
-      
+
       // Auto-fill billing address if same as shipping
       if (updated.sameAsShipping && name.startsWith('shipping')) {
         const billingField = name.replace('shipping', 'billing');
         updated[billingField as keyof typeof updated] = value as never;
       }
-      
+
       return updated;
     });
 
@@ -305,7 +305,7 @@ const CheckoutPage: React.FC = () => {
     setSelectedProvinceCode(provinceCode);
     setSelectedDistrictCode('');
     setSelectedWardCode('');
-    
+
     // Tìm tên tỉnh
     const province = provinces.find(p => p.code.toString() === provinceCode);
     if (province) {
@@ -313,7 +313,7 @@ const CheckoutPage: React.FC = () => {
       handleInputChange('district', '');
       handleInputChange('ward', '');
     }
-    
+
     fetchDistricts(provinceCode);
   };
 
@@ -321,21 +321,21 @@ const CheckoutPage: React.FC = () => {
   const handleDistrictChange = (districtCode: string) => {
     setSelectedDistrictCode(districtCode);
     setSelectedWardCode('');
-    
+
     // Tìm tên huyện
     const district = districts.find(d => d.code.toString() === districtCode);
     if (district) {
       handleInputChange('district', district.name);
       handleInputChange('ward', '');
     }
-    
+
     fetchWards(districtCode);
   };
 
   // Handle Ward change
   const handleWardChange = (wardCode: string) => {
     setSelectedWardCode(wardCode);
-    
+
     // Tìm tên xã
     const ward = wards.find(w => w.code.toString() === wardCode);
     if (ward) {
@@ -553,12 +553,12 @@ const CheckoutPage: React.FC = () => {
 
     if (formData.paymentMethod === 'vnpay') {
       let order = currentOrder;
-      
+
       // Nếu chưa có order (thanh toán mới), tạo order mới
       if (!order) {
         order = await handleCreateOrder();
       }
-      
+
       if (order) {
         try {
           const res = await createVnpayUrl({
@@ -566,7 +566,7 @@ const CheckoutPage: React.FC = () => {
             orderId: order.number || order.id, // Ưu tiên số đơn hàng, nếu không có dùng ID
             bankCode: ''
           }).unwrap();
-          
+
           if (res.data?.paymentUrl) {
             window.location.href = res.data.paymentUrl;
             return;
@@ -852,7 +852,7 @@ const CheckoutPage: React.FC = () => {
                 </label>
               ))}
             </div>
-            
+
             {/* Installment Info Modal */}
             <Modal
               title={
@@ -880,16 +880,16 @@ const CheckoutPage: React.FC = () => {
                     <li>Nhân viên tư vấn sẽ liên hệ lại để hướng dẫn quý khách thực hiện chuyển đổi trả góp.</li>
                   </ol>
                 </div>
-                
+
                 <h4 className="font-semibold text-gray-700 mt-4">Danh sách ngân hàng hỗ trợ:</h4>
-                <Table 
-                  columns={installmentColumns} 
-                  dataSource={installmentData} 
-                  pagination={false} 
+                <Table
+                  columns={installmentColumns}
+                  dataSource={installmentData}
+                  pagination={false}
                   size="small"
                   bordered
                 />
-                
+
                 <p className="text-xs text-gray-500 italic mt-2">
                   * Lưu ý: Chương trình trả góp 0% chỉ áp dụng cho thẻ tín dụng (Credit Card). Không áp dụng cho thẻ ATM/Debit.
                 </p>

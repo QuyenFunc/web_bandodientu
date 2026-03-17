@@ -40,19 +40,12 @@ const connectDB = async () => {
     require('./models');
     logger.info('Database models loaded successfully.');
 
-    // Sync models with database
-    if (
-      process.env.NODE_ENV === 'development' &&
-      process.env.DB_SYNC === 'true'
-    ) {
-      // Use alter: true instead of force: true to preserve data
-      // force: true will DROP and recreate tables (DELETES ALL DATA)
-      // alter: true will modify existing tables to match models
-      await sequelize.sync({ alter: true });
-      logger.info(
-        'Database tables synchronized successfully (preserving data).'
-      );
-    }
+    // NOTE: sequelize.sync() is disabled to prevent "Too many keys" MySQL 64-key limit error
+    // Use migrations instead: npm run db:migrate
+    // if (process.env.NODE_ENV === 'development' && process.env.DB_SYNC === 'true') {
+    //   await sequelize.sync({ alter: true, foreignKeys: false });
+    //   logger.info('Database tables synchronized successfully (preserving data).');
+    // }
   } catch (error) {
     logger.error('Unable to connect to the database:', error);
     logger.error('Error details:', error.message);

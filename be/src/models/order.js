@@ -12,7 +12,6 @@ const Order = sequelize.define(
     number: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
     },
     userId: {
       type: DataTypes.UUID,

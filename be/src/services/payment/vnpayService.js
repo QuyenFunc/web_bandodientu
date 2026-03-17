@@ -3,17 +3,14 @@ const querystring = require('querystring');
 const moment = require('moment-timezone');
 
 function sortObject(obj) {
-  let sorted = {};
-  let str = [];
-  let key;
-  for (key in obj) {
+  // Sắp xếp các key theo bảng chữ cái
+  const keys = Object.keys(obj).sort();
+  const sorted = {};
+  
+  for (const key of keys) {
     if (obj.hasOwnProperty(key)) {
-      str.push(encodeURIComponent(key));
+      sorted[key] = obj[key];
     }
-  }
-  str.sort();
-  for (key = 0; key < str.length; key++) {
-    sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, '+');
   }
   return sorted;
 }
@@ -66,15 +63,17 @@ const createPaymentUrl = ({ orderId, amount, bankCode = '', ipAddr, returnUrl })
 
   vnp_Params = sortObject(vnp_Params);
 
-  // Nối string tự thủ công không dùng thư viện ngoài để tranh encode sai khác
-  let manualSignData = Object.keys(vnp_Params).map(key => key + '=' + vnp_Params[key]).join('&');
-
+  // Tạo query string từ các parameters đã sắp xếp
+  let signData = querystring.stringify(vnp_Params);
+  
+  // Tính toán HMAC SHA-512
   let hmac = crypto.createHmac('sha512', secretKey);
-  let signed = hmac.update(Buffer.from(manualSignData, 'utf-8')).digest('hex');
+  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
   vnp_Params['vnp_SecureHash'] = signed;
 
-  let manualQueryUrl = Object.keys(vnp_Params).map(key => key + '=' + vnp_Params[key]).join('&');
-  vnpUrl += '?' + manualQueryUrl;
+  // Tạo URL hoàn chỉnh
+  let queryUrl = querystring.stringify(vnp_Params);
+  vnpUrl += '?' + queryUrl;
 
   return vnpUrl;
 };
@@ -82,6 +81,7 @@ const createPaymentUrl = ({ orderId, amount, bankCode = '', ipAddr, returnUrl })
 const verifyReturnUrl = (vnp_Params) => {
   let secureHash = vnp_Params['vnp_SecureHash'];
 
+  // Loại bỏ các tham số không liên quan đến chữ ký
   let params = {};
   for (let key in vnp_Params) {
     if (key !== 'vnp_SecureHash' && key !== 'vnp_SecureHashType') {
@@ -89,13 +89,14 @@ const verifyReturnUrl = (vnp_Params) => {
     }
   }
 
+  // Sắp xếp và tạo query string
   params = sortObject(params);
   const secretKey = String(process.env.VNP_HASH_SECRET).trim().replace(/[\r\n\s]/g, '');
 
-  let manualSignData = Object.keys(params).map(key => key + '=' + params[key]).join('&');
+  let signData = querystring.stringify(params);
   
   let hmac = crypto.createHmac('sha512', secretKey);
-  let signed = hmac.update(Buffer.from(manualSignData, 'utf-8')).digest('hex');
+  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
   const vnp_Amount = params['vnp_Amount'] ? params['vnp_Amount'] : 0;
 

@@ -21,12 +21,6 @@ const Wishlist = sequelize.define(
   {
     tableName: 'wishlists',
     timestamps: true,
-    indexes: [
-      {
-        unique: true,
-        fields: ['user_id', 'product_id'],
-      },
-    ],
   }
 );
 

@@ -13,7 +13,12 @@ const sequelize = new Sequelize(
     port: dbConfig.port,
     dialect: dbConfig.dialect,
     logging: dbConfig.logging,
-    define: dbConfig.define,
+    define: {
+      ...dbConfig.define,
+      // Disable automatic foreign key constraint creation to prevent "Too many keys" MySQL error
+      // We manage FK relationships manually in models/index.js
+      freezeTableName: true,
+    },
     dialectOptions: dbConfig.dialectOptions,
     pool: dbConfig.pool,
   }

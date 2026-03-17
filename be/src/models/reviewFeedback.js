@@ -25,12 +25,6 @@ const ReviewFeedback = sequelize.define(
   {
     tableName: 'review_feedbacks',
     timestamps: true,
-    indexes: [
-      {
-        unique: true,
-        fields: ['review_id', 'user_id'],
-      },
-    ],
   }
 );
 

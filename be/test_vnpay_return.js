@@ -12,7 +12,7 @@ const expressQuery = {
   vnp_TransactionNo: '13955635',
   vnp_TransactionStatus: '00',
   vnp_TxnRef: 'ORD123',
-  vnp_SecureHash: '62eabb4132ab75dd06cfcdd4df4d6a5c1a82f3efbdc6c6fa71cd4fcccf085117f300067ce24df23351ecae9dbca81b854fa16900ee1b94cddbcab34c7c8ecdf6'
+  vnp_SecureHash: '9d090bac492169cf8f8ddf27401c66da04154e54ec6cbe4f7e72ccfa923c8ea7fec3dd5ec3a24c3ae88d806532d89d3fae3335b8432c262bdeb7c44a5bcecf8b'
 };
 
 process.env.VNP_TMN_CODE = 'GAKLNQMF';

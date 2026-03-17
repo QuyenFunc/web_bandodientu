@@ -23,7 +23,6 @@ const Product = sequelize.define(
     slug: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
     },
     description: {
       type: DataTypes.TEXT,
@@ -82,7 +81,6 @@ const Product = sequelize.define(
     sku: {
       type: DataTypes.STRING,
       allowNull: true,
-      unique: true,
     },
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'draft'),

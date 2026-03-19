@@ -141,9 +141,26 @@ const ProductDetailPage: React.FC = () => {
         newAttributes[name] = value;
       }
 
-      // Directly use the selected attributes for title generation
-      // No need for complex mapping - just pass the selected values as-is
       setMappedAttributes(newAttributes);
+
+      // Automatically resolve and update skuId if all attributes are selected
+      if (product && hasVariants(product) && product.attributes) {
+        const allSelected = areAllAttributesSelected(product.attributes, newAttributes);
+        if (allSelected) {
+          const matchingVariant = findVariantByAttributes(product.variants || [], newAttributes);
+          if (matchingVariant) {
+            // Update URL with new skuId (sync with handleVariantChange logic)
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.set('skuId', matchingVariant.id);
+            setSearchParams(newSearchParams);
+          }
+        } else if (skuId) {
+          // Clear skuId if selection becomes incomplete
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete('skuId');
+          setSearchParams(newSearchParams);
+        }
+      }
 
       return newAttributes;
     });
@@ -679,8 +696,8 @@ const ProductDetailPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Product Variant Selector */}
-          {product.isVariantProduct && (
+          {/* Product Variant Selector - Removed per user request as it's redundant with attribute selector */}
+          {/* {product.isVariantProduct && (
             <div className="mb-6">
               <ProductVariantSelector
                 product={product}
@@ -688,7 +705,7 @@ const ProductDetailPage: React.FC = () => {
                 onVariantChange={handleVariantChange}
               />
             </div>
-          )}
+          )} */}
 
           {/* Dynamic Attributes Selector */}
           {product.attributes && product.attributes.length > 0 && (

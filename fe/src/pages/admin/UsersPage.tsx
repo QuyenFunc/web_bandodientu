@@ -28,7 +28,9 @@ import {
   PhoneOutlined,
   CrownOutlined,
   TeamOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import {
   useGetAllUsersQuery,
   useUpdateUserMutation,
@@ -50,6 +52,7 @@ interface UserFormData {
 }
 
 const UsersPage: React.FC = () => {
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -162,7 +165,7 @@ const UsersPage: React.FC = () => {
     {
       title: 'Người dùng',
       key: 'user',
-      render: (_, record: User) => (
+      render: (_: any, record: User) => (
         <div className="flex items-center gap-3">
           <Avatar src={record.avatar} icon={<UserOutlined />} size={48} />
           <div>
@@ -202,7 +205,7 @@ const UsersPage: React.FC = () => {
       title: 'Trạng thái',
       key: 'status',
       width: 150,
-      render: (_, record: User) => (
+      render: (_: any, record: User) => (
         <div className="space-y-1">
           <div>
             <Tag color={record.isActive ? 'success' : 'error'}>
@@ -228,8 +231,14 @@ const UsersPage: React.FC = () => {
       title: 'Hành động',
       key: 'actions',
       width: 120,
-      render: (_, record: User) => (
+      render: (_: any, record: User) => (
         <Space>
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/admin/users/${record.id}`)}
+            size="small"
+          />
           <Button
             type="link"
             icon={<EditOutlined />}

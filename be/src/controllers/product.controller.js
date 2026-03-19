@@ -244,8 +244,9 @@ const getAllProducts = async (req, res, next) => {
 const getProductById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { skuId } = req.query;
 
-    const product = await Product.findByPk(id, {
+    let product = await Product.findByPk(id, {
       include: [
         {
           association: 'categories',
@@ -256,6 +257,8 @@ const getProductById = async (req, res, next) => {
         },
         {
           association: 'variants',
+          where: { isAvailable: true },
+          required: false,
         },
         {
           association: 'productSpecifications',
@@ -281,6 +284,48 @@ const getProductById = async (req, res, next) => {
       ],
     });
 
+    // Fallback search by slug if ID not found or not UUID
+    if (!product) {
+      product = await Product.findOne({
+        where: { slug: id },
+        include: [
+          {
+            association: 'categories',
+            through: { attributes: [] },
+          },
+          {
+            association: 'attributes',
+          },
+          {
+            association: 'variants',
+            where: { isAvailable: true },
+            required: false,
+          },
+          {
+            association: 'productSpecifications',
+          },
+          {
+            association: 'reviews',
+            include: [
+              {
+                association: 'user',
+                attributes: ['id', 'firstName', 'lastName', 'avatar'],
+              },
+            ],
+          },
+          {
+            association: 'warrantyPackages',
+            through: {
+              attributes: ['isDefault'],
+              as: 'productWarranty',
+            },
+            where: { isActive: true },
+            required: false,
+          },
+        ],
+      });
+    }
+
     if (!product) {
       throw new AppError('Không tìm thấy sản phẩm', 404);
     }
@@ -305,18 +350,87 @@ const getProductById = async (req, res, next) => {
       ratings.count = productJson.reviews.length;
     }
 
-    // Add ratings to product data
-    const productWithRatings = {
+    // Handle variant-based product (Sync logic with getProductBySlug)
+    let responseData = {
       ...productJson,
       ratings,
     };
+
+    if (
+      productJson.isVariantProduct &&
+      productJson.variants &&
+      productJson.variants.length > 0
+    ) {
+      // Find selected variant
+      let selectedVariant = null;
+
+      if (skuId) {
+        selectedVariant = productJson.variants.find((v) => v.id === skuId);
+      }
+
+      // If no variant found by skuId, use default or first variant
+      if (!selectedVariant) {
+        selectedVariant =
+          productJson.variants.find((v) => v.isDefault) ||
+          productJson.variants[0];
+      }
+
+      if (selectedVariant) {
+        // Override product data with variant data
+        responseData = {
+          ...responseData,
+          // Current variant info
+          currentVariant: {
+            id: selectedVariant.id,
+            name: selectedVariant.variantName,
+            fullName: `${productJson.baseName || productJson.name} - ${selectedVariant.variantName}`,
+            price: selectedVariant.price,
+            compareAtPrice: selectedVariant.compareAtPrice,
+            sku: selectedVariant.sku,
+            stockQuantity: selectedVariant.stockQuantity,
+            specifications: {
+              ...productJson.specifications,
+              ...selectedVariant.specifications,
+            },
+            images:
+              selectedVariant.images && selectedVariant.images.length > 0
+                ? selectedVariant.images
+                : productJson.images,
+          },
+          // All available variants
+          availableVariants: productJson.variants.map((v) => ({
+            id: v.id,
+            name: v.variantName,
+            price: v.price,
+            compareAtPrice: v.compareAtPrice,
+            stockQuantity: v.stockQuantity,
+            isDefault: v.isDefault,
+            sku: v.sku,
+          })),
+          // Override main product fields with selected variant
+          name: `${productJson.baseName || productJson.name} - ${selectedVariant.variantName}`,
+          price: selectedVariant.price,
+          compareAtPrice: selectedVariant.compareAtPrice,
+          stockQuantity: selectedVariant.stockQuantity,
+          sku: selectedVariant.sku,
+          specifications: {
+            ...productJson.specifications,
+            ...selectedVariant.specifications,
+          },
+          images:
+            selectedVariant.images && selectedVariant.images.length > 0
+              ? selectedVariant.images
+              : productJson.images,
+        };
+      }
+    }
 
     // Record recently viewed if user is logged in
     if (req.user) {
       try {
         await RecentlyViewed.upsert({
           userId: req.user.id,
-          productId: id,
+          productId: product.id,
           viewedAt: new Date(),
         });
       } catch (err) {
@@ -326,7 +440,7 @@ const getProductById = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      data: productWithRatings,
+      data: responseData,
     });
   } catch (error) {
     next(error);

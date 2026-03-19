@@ -62,6 +62,13 @@ router.put(
   adminController.updateUser
 );
 
+// GET /api/admin/users/:id - Lấy chi tiết user
+router.get(
+  '/users/:id',
+  validate(getByIdValidation),
+  adminController.getUserById
+);
+
 // DELETE /api/admin/users/:id - Xóa user
 router.delete(
   '/users/:id',

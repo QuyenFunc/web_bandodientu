@@ -64,6 +64,11 @@ export const adminUserApi = api.injectEndpoints({
       providesTags: ['User'],
     }),
 
+    getUserById: builder.query<{ status: string; data: { user: any } }, string>({
+      query: (id) => `/admin/users/${id}`,
+      providesTags: (_result, _error, id) => [{ type: 'User', id }],
+    }),
+
     updateUser: builder.mutation<
       { status: string; data: { user: User } },
       UpdateUserRequest
@@ -88,6 +93,7 @@ export const adminUserApi = api.injectEndpoints({
 
 export const {
   useGetAllUsersQuery,
+  useGetUserByIdQuery,
   useUpdateUserMutation,
   useDeleteUserMutation,
 } = adminUserApi;

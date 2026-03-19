@@ -30,7 +30,9 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({
     );
   }
 
-  if (error || !data || data.products.length === 0) {
+  const products = Array.isArray(data?.data) ? data.data : data?.data?.products || [];
+
+  if (error || !products || products.length === 0) {
     return null;
   }
 
@@ -38,8 +40,8 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({
     <div className="py-8">
       <h2 className="text-2xl font-bold mb-6">{title}</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {data.products.map((product: any) => (
-          <ProductCard key={product.id} product={product} />
+        {products.map((product: any) => (
+          <ProductCard key={product.id} {...product} />
         ))}
       </div>
     </div>

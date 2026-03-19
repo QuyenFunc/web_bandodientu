@@ -196,8 +196,8 @@ const ProductDetailPage: React.FC = () => {
         );
         if (!allSelected) {
           const missingAttributes = product.attributes
-            .filter((attr) => !selectedAttributes[attr.name])
-            .map((attr) => attr.name);
+            .filter((attr: any) => !selectedAttributes[attr.name])
+            .map((attr: any) => attr.name);
 
           dispatch(
             addNotification({
@@ -280,9 +280,13 @@ const ProductDetailPage: React.FC = () => {
           id: uuidv4(),
           productId: product.id,
           name: product.name,
-          price: getVariantPrice(product, selectedAttributes),
+          price: product.isVariantProduct && product.currentVariant
+            ? product.currentVariant.price
+            : getVariantPrice(product, selectedAttributes),
           quantity,
-          image: product.thumbnail,
+          image: product.isVariantProduct && product.currentVariant?.images?.[0]
+            ? product.currentVariant.images[0]
+            : product.thumbnail,
           variantId,
           attributes:
             Object.keys(selectedAttributes).length > 0
@@ -311,9 +315,13 @@ const ProductDetailPage: React.FC = () => {
         id: uuidv4(),
         productId: product.id,
         name: product.name,
-        price: getVariantPrice(product, selectedAttributes),
+        price: product.isVariantProduct && product.currentVariant
+          ? product.currentVariant.price
+          : getVariantPrice(product, selectedAttributes),
         quantity,
-        image: product.thumbnail,
+        image: product.isVariantProduct && product.currentVariant?.images?.[0]
+          ? product.currentVariant.images[0]
+          : product.thumbnail,
         variantId,
         attributes:
           Object.keys(selectedAttributes).length > 0
@@ -349,7 +357,7 @@ const ProductDetailPage: React.FC = () => {
       // Tìm variant ID dựa trên thuộc tính đã chọn
       let variantId: string | undefined;
       if (product.variants && Object.keys(selectedAttributes).length > 0) {
-        const selectedVariant = product.variants.find((variant) => {
+        const selectedVariant = product.variants.find((variant: any) => {
           if (!variant.attributes) return false;
           return Object.entries(selectedAttributes).every(
             ([key, value]) => variant.attributes[key] === value
@@ -374,9 +382,13 @@ const ProductDetailPage: React.FC = () => {
             id: uuidv4(),
             productId: product.id,
             name: product.name,
-            price: product.price,
+            price: product.isVariantProduct && product.currentVariant
+              ? product.currentVariant.price
+              : getVariantPrice(product, selectedAttributes),
             quantity,
-            image: product.thumbnail,
+            image: product.isVariantProduct && product.currentVariant?.images?.[0]
+              ? product.currentVariant.images[0]
+              : product.thumbnail,
             attributes:
               Object.keys(selectedAttributes).length > 0
                 ? selectedAttributes
@@ -400,9 +412,13 @@ const ProductDetailPage: React.FC = () => {
         id: uuidv4(),
         productId: product.id,
         name: product.name,
-        price: product.price,
+        price: product.isVariantProduct && product.currentVariant
+          ? product.currentVariant.price
+          : getVariantPrice(product, selectedAttributes),
         quantity,
-        image: product.thumbnail,
+        image: product.isVariantProduct && product.currentVariant?.images?.[0]
+          ? product.currentVariant.images[0]
+          : product.thumbnail,
         attributes:
           Object.keys(selectedAttributes).length > 0
             ? selectedAttributes
@@ -677,7 +693,7 @@ const ProductDetailPage: React.FC = () => {
           {/* Dynamic Attributes Selector */}
           {product.attributes && product.attributes.length > 0 && (
             <div className="mb-6">
-              {product.attributes.map((attribute) => {
+              {product.attributes.map((attribute: any) => {
                 const attributeValuesWithStock = getAttributeValuesWithStock(
                   product,
                   attribute.name,
@@ -910,7 +926,7 @@ const ProductDetailPage: React.FC = () => {
             Sản phẩm liên quan
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.slice(0, 4).map((product) => (
+            {relatedProducts.slice(0, 4).map((product: any) => (
               <ProductCard key={product.id} {...product} />
             ))}
           </div>

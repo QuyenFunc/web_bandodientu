@@ -43,6 +43,7 @@ const CreateProductPage = lazy(() => import('@/pages/admin/CreateProductPage'));
 const EditProductPage = lazy(() => import('@/pages/admin/EditProductPage'));
 const AdminOrdersPage = lazy(() => import('@/pages/admin/OrdersPage'));
 const AdminUsersPage = lazy(() => import('@/pages/admin/UsersPage'));
+const AdminUserDetailPage = lazy(() => import('@/pages/admin/UserDetailPage'));
 const AdminCategoriesPage = lazy(() => import('@/pages/admin/CategoriesPage'));
 const AdminWarrantyPackagesPage = lazy(
   () => import('@/pages/admin/WarrantyPackagesPage')
@@ -233,6 +234,7 @@ const AppRoutes: React.FC = () => {
           <Route path="orders" element={<AdminOrdersPage />} />
           <Route path="support" element={<SupportDashboard />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:id" element={<AdminUserDetailPage />} />
           <Route
             path="warranty-packages"
             element={<AdminWarrantyPackagesPage />}

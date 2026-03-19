@@ -9,6 +9,10 @@ const {
   ProductVariant,
   ProductSpecification,
   WarrantyPackage,
+  Address,
+  LoyaltyHistory,
+  SearchHistory,
+  RecentlyViewed,
 } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 const { catchAsync } = require('../utils/catchAsync');
@@ -385,6 +389,37 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'Xóa người dùng thành công',
+  });
+});
+
+/**
+ * User Management - Lấy chi tiết user
+ */
+const getUserById = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await User.findByPk(id, {
+    include: [
+      { model: Address, as: 'addresses' },
+      {
+        model: Order,
+        as: 'orders',
+        limit: 10,
+        order: [['createdAt', 'DESC']],
+      },
+      { model: LoyaltyHistory, as: 'loyaltyHistories', limit: 10 },
+      { model: SearchHistory, as: 'searchHistories', limit: 10 },
+      { model: RecentlyViewed, as: 'recentlyViewed', limit: 10 },
+    ],
+  });
+
+  if (!user) {
+    throw new AppError('Không tìm thấy người dùng', 404);
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: { user },
   });
 });
 
@@ -1842,6 +1877,7 @@ module.exports = {
   getAllUsers,
   updateUser,
   deleteUser,
+  getUserById,
   getProductById,
   createProduct,
   updateProduct,

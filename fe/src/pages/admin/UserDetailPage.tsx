@@ -126,11 +126,11 @@ const UserDetailPage: React.FC = () => {
               <Text type="secondary">Xem chi tiết thông tin và lịch sử hoạt động</Text>
             </div>
           </Space>
-          <div className="space-x-2">
+          {/* <div className="space-x-2">
              <Link to={`/admin/users/edit/${user.id}`}>
                <Button type="primary">Chỉnh sửa</Button>
              </Link>
-          </div>
+          </div> */}
         </div>
 
         <Row gutter={[24, 24]}>
@@ -154,28 +154,28 @@ const UserDetailPage: React.FC = () => {
                 {user.firstName} {user.lastName}
               </Title>
               <div className="mb-4">{getRoleTag(user.role)}</div>
-              
+
               <Divider />
-              
+
               <Row gutter={16}>
                 <Col span={12}>
-                  <Statistic 
-                    title="Đơn hàng" 
-                    value={user.orders?.length || 0} 
-                    prefix={<ShoppingOutlined />} 
+                  <Statistic
+                    title="Đơn hàng"
+                    value={user.orders?.length || 0}
+                    prefix={<ShoppingOutlined />}
                   />
                 </Col>
                 <Col span={12}>
-                  <Statistic 
-                    title="Điểm" 
-                    value={user.loyaltyPoints || 0} 
-                    valueStyle={{ color: '#faad14' }} 
+                  <Statistic
+                    title="Điểm"
+                    value={user.loyaltyPoints || 0}
+                    valueStyle={{ color: '#faad14' }}
                   />
                 </Col>
               </Row>
-              
+
               <Divider />
-              
+
               <Descriptions column={1} size="small" colon={false}>
                 <Descriptions.Item label={<MailOutlined />}>
                   {user.email}
@@ -192,14 +192,14 @@ const UserDetailPage: React.FC = () => {
             <Card title="Trạng thái tài khoản" className="mt-6 shadow-sm">
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="Hoạt động">
-                  {user.isActive ? 
-                    <Tag color="success" icon={<CheckCircleOutlined />}>Đang hoạt động</Tag> : 
+                  {user.isActive ?
+                    <Tag color="success" icon={<CheckCircleOutlined />}>Đang hoạt động</Tag> :
                     <Tag color="error" icon={<CloseCircleOutlined />}>Bị khóa</Tag>
                   }
                 </Descriptions.Item>
                 <Descriptions.Item label="Xác minh email">
-                  {user.isEmailVerified ? 
-                    <Tag color="success">Đã xác minh</Tag> : 
+                  {user.isEmailVerified ?
+                    <Tag color="success">Đã xác minh</Tag> :
                     <Tag color="warning">Chưa xác minh</Tag>
                   }
                 </Descriptions.Item>
@@ -278,13 +278,18 @@ const UserDetailPage: React.FC = () => {
                       items={[
                         ...(user.loyaltyHistories || []).map((h: any) => ({
                           color: h.type === 'earn' ? 'green' : 'gold',
-                          children: `${new Date(h.createdAt).toLocaleString('vi-VN')}: ${h.type === 'earn' ? 'Tích' : 'Dùng'} ${h.points} điểm - ${h.description}`,
+                          date: new Date(h.createdAt),
+                          children: `${new Date(h.createdAt).toLocaleString('vi-VN')}: ${h.type === 'earn' ? 'Tích' : 'Dùng'} ${h.points} điểm - ${h.description || 'N/A'}`,
                         })),
                         ...(user.searchHistories || []).map((s: any) => ({
                           color: 'blue',
-                          children: `${new Date(s.createdAt).toLocaleString('vi-VN')}: Tìm kiếm từ khóa "${s.query}"`,
+                          date: new Date(s.createdAt),
+                          children: `${new Date(s.createdAt).toLocaleString('vi-VN')}: Tìm kiếm từ khóa "${s.keyword || s.query || 'N/A'}"`,
                         })),
-                      ].sort((a, b) => new Date(b.children.split(': ')[0]).getTime() - new Date(a.children.split(': ')[0]).getTime())}
+                      ]
+                        .sort((a: any, b: any) => b.date.getTime() - a.date.getTime())
+                        .map(({ date, ...rest }) => rest)
+                      }
                     />
                   ),
                 },

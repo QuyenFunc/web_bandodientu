@@ -112,6 +112,10 @@ export const useProductForm = ({
           // Warranty không bắt buộc
           isStepValid = true;
           break;
+        case 'faqs':
+          // FAQs không bắt buộc
+          isStepValid = true;
+          break;
         case 'seo':
           // SEO không bắt buộc
           isStepValid = true;
@@ -138,6 +142,7 @@ export const useProductForm = ({
       'category',
       'images',
       'warranty',
+      'faqs',
       'seo',
     ];
     allSteps.forEach((step) => validateStep(step));

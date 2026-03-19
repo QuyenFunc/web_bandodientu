@@ -133,6 +133,7 @@ const OrdersPage: React.FC = () => {
       setSelectedOrder(order);
       form.setFieldsValue({
         status: order.status,
+        paymentStatus: order.paymentStatus,
         note: '',
       });
       setIsUpdateModalOpen(true);
@@ -150,6 +151,7 @@ const OrdersPage: React.FC = () => {
           id: selectedOrder.id,
           data: {
             status: values.status,
+            paymentStatus: values.paymentStatus,
             note: values.note || undefined,
           },
         }).unwrap();
@@ -271,23 +273,27 @@ const OrdersPage: React.FC = () => {
       dataIndex: 'paymentStatus',
       key: 'paymentStatus',
       width: 120,
-      render: (paymentStatus: string) => {
+      render: (paymentStatus: string, record: AdminOrder) => {
+        const isCOD = record.paymentMethod === 'cod';
         const config =
           PAYMENT_STATUS_CONFIG[
             paymentStatus as keyof typeof PAYMENT_STATUS_CONFIG
           ];
+        
+        let statusText = paymentStatus;
+        if (paymentStatus === 'pending') {
+          statusText = isCOD ? 'Thanh toán khi nhận hàng' : 'Chờ thanh toán';
+        } else if (paymentStatus === 'paid') {
+          statusText = 'Đã thanh toán';
+        } else if (paymentStatus === 'failed') {
+          statusText = 'Thanh toán thất bại';
+        } else if (paymentStatus === 'refunded') {
+          statusText = 'Đã hoàn tiền';
+        }
+
         return (
           <Tag color={config?.color} style={{ borderRadius: '16px' }}>
-            {config?.icon}{' '}
-            {paymentStatus === 'pending'
-              ? 'Chờ thanh toán'
-              : paymentStatus === 'paid'
-                ? 'Đã thanh toán'
-                : paymentStatus === 'failed'
-                  ? 'Thanh toán thất bại'
-                  : paymentStatus === 'refunded'
-                    ? 'Đã hoàn tiền'
-                    : paymentStatus}
+            {config?.icon} {statusText}
           </Tag>
         );
       },
@@ -516,9 +522,17 @@ const OrdersPage: React.FC = () => {
                       selectedOrder.paymentStatus as keyof typeof PAYMENT_STATUS_CONFIG
                     ]?.icon
                   }{' '}
-                  {t(
-                    `admin.orders.paymentStatus.${selectedOrder.paymentStatus}`
-                  )}
+                  {selectedOrder.paymentStatus === 'pending'
+                    ? selectedOrder.paymentMethod === 'cod' 
+                      ? 'Thanh toán khi nhận hàng' 
+                      : 'Chờ thanh toán'
+                    : selectedOrder.paymentStatus === 'paid'
+                      ? 'Đã thanh toán'
+                      : selectedOrder.paymentStatus === 'failed'
+                        ? 'Thanh toán thất bại'
+                        : selectedOrder.paymentStatus === 'refunded'
+                          ? 'Đã hoàn tiền'
+                          : selectedOrder.paymentStatus}
                 </Tag>
               </Descriptions.Item>
             </Descriptions>
@@ -713,21 +727,25 @@ const OrdersPage: React.FC = () => {
             <Form.Item
               name="status"
               label={t('admin.orders.updateStatus.newStatus')}
-              rules={[
-                {
-                  required: true,
-                  message: t('admin.orders.updateStatus.selectNewStatus'),
-                },
-              ]}
             >
-              <Select
-                placeholder={t('admin.orders.updateStatus.selectNewStatus')}
-              >
+              <Select placeholder={t('admin.orders.updateStatus.selectNewStatus')}>
                 {updateStatusOptions.map((option) => (
                   <Option key={option.value} value={option.value}>
                     {option.label}
                   </Option>
                 ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="paymentStatus"
+              label="Trạng thái thanh toán"
+            >
+              <Select placeholder="Chọn trạng thái thanh toán">
+                <Option value="pending">Chờ thanh toán / COD</Option>
+                <Option value="paid">Đã thanh toán</Option>
+                <Option value="failed">Thanh toán thất bại</Option>
+                <Option value="refunded">Đã hoàn tiền</Option>
               </Select>
             </Form.Item>
 

@@ -1641,28 +1641,25 @@ const getAllOrders = catchAsync(async (req, res) => {
  */
 const updateOrderStatus = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const { status, note } = req.body;
-
-  const validStatuses = [
-    'pending',
-    'processing',
-    'shipped',
-    'delivered',
-    'cancelled',
-  ];
-  if (!validStatuses.includes(status)) {
-    throw new AppError('Trạng thái đơn hàng không hợp lệ', 400);
-  }
+  const { status, paymentStatus, note } = req.body;
 
   const order = await Order.findByPk(id);
   if (!order) {
     throw new AppError('Không tìm thấy đơn hàng', 404);
   }
 
-  const updatedOrder = await order.update({
-    status,
-    note: note || order.note,
-  });
+  const updateData = {
+    status: status || order.status,
+    paymentStatus: paymentStatus || order.paymentStatus,
+    note: note || (note === '' ? null : order.note),
+  };
+
+  // Tự động cập nhật trạng thái thanh toán thành 'paid' nếu đơn hàng đã giao thành công và thanh toán bằng COD
+  if (status === 'delivered' && order.paymentMethod === 'cod') {
+    updateData.paymentStatus = 'paid';
+  }
+
+  const updatedOrder = await order.update(updateData);
 
   res.status(200).json({
     status: 'success',

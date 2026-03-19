@@ -70,7 +70,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'dashboard',
       path: '/admin/dashboard',
-      label: 'Dashboard',
+      label: 'Tổng quan',
       icon: (
         <svg
           className="w-5 h-5"
@@ -90,7 +90,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'products',
       path: '/admin/products',
-      label: 'Products',
+      label: 'Sản phẩm',
       icon: (
         <svg
           className="w-5 h-5"
@@ -130,7 +130,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'categories',
       path: '/admin/categories',
-      label: 'Categories',
+      label: 'Danh mục',
       icon: (
         <svg
           className="w-5 h-5"
@@ -150,7 +150,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'brands',
       path: '/admin/brands',
-      label: 'Brands',
+      label: 'Thương hiệu',
       icon: (
         <svg
           className="w-5 h-5"
@@ -176,7 +176,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'collections',
       path: '/admin/collections',
-      label: 'Collections',
+      label: 'Bộ sưu tập',
       icon: (
         <svg
           className="w-5 h-5"
@@ -196,7 +196,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'orders',
       path: '/admin/orders',
-      label: 'Orders',
+      label: 'Đơn hàng',
       icon: (
         <svg
           className="w-5 h-5"
@@ -216,7 +216,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'users',
       path: '/admin/users',
-      label: 'Users',
+      label: 'Người dùng',
       icon: (
         <svg
           className="w-5 h-5"
@@ -236,7 +236,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'warranty-packages',
       path: '/admin/warranty-packages',
-      label: 'Warranty Packages',
+      label: 'Gói bảo hành',
       icon: (
         <svg
           className="w-5 h-5"
@@ -256,7 +256,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'discount-codes',
       path: '/admin/discount-codes',
-      label: 'Discount Codes',
+      label: 'Mã giảm giá',
       icon: (
         <svg
           className="w-5 h-5"
@@ -273,52 +273,52 @@ const AdminLayout: React.FC = () => {
         </svg>
       ),
     },
-    {
-      key: 'support',
-      path: '/admin/support',
-      label: 'Hỗ trợ trực tuyến',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-          />
-        </svg>
-      ),
-    },
-/*
-    {
-      key: 'banners',
-      path: '/admin/banners',
-      label: 'Quản lý Banner',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-      ),
-    },
-*/
+    // {
+    //   key: 'support',
+    //   path: '/admin/support',
+    //   // label: 'Hỗ trợ trực tuyến',
+    //   icon: (
+    //     <svg
+    //       className="w-5 h-5"
+    //       fill="none"
+    //       stroke="currentColor"
+    //       viewBox="0 0 24 24"
+    //     >
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+    //       />
+    //     </svg>
+    //   ),
+    // },
+    /*
+        {
+          key: 'banners',
+          path: '/admin/banners',
+          label: 'Quản lý Banner',
+          icon: (
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          ),
+        },
+    */
     {
       key: 'email-campaigns',
       path: '/admin/email-campaigns',
-      label: 'Email Campaigns',
+      label: 'Chiến dịch Email',
       icon: (
         <svg
           className="w-5 h-5"
@@ -365,7 +365,7 @@ const AdminLayout: React.FC = () => {
                 />
 
                 <h1 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white">
-                  Admin Panel
+                  Bảng quản trị
                 </h1>
               </div>
               <div className="flex items-center space-x-2 md:space-x-4">
@@ -405,8 +405,8 @@ const AdminLayout: React.FC = () => {
                   <button
                     onClick={handleUserClick}
                     className={`group relative p-1.5 sm:p-2 rounded-xl transition-all duration-300 ${isAuthenticated
-                        ? 'bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-900/20 dark:to-primary-800/10 text-primary-600 dark:text-primary-400 hover:from-primary-200 hover:to-primary-100 dark:hover:from-primary-900/30 dark:hover:to-primary-800/20 border border-primary-200/50 dark:border-primary-700/30'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700'
+                      ? 'bg-gradient-to-r from-primary-100 to-primary-50 dark:from-primary-900/20 dark:to-primary-800/10 text-primary-600 dark:text-primary-400 hover:from-primary-200 hover:to-primary-100 dark:hover:from-primary-900/30 dark:hover:to-primary-800/20 border border-primary-200/50 dark:border-primary-700/30'
+                      : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700'
                       }`}
                     aria-label={t('header.actions.userAccount')}
                   >
@@ -482,8 +482,8 @@ const AdminLayout: React.FC = () => {
                       <Link
                         to={item.path}
                         className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                            ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-medium'
-                            : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
+                          ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-medium'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
                           }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
@@ -516,8 +516,8 @@ const AdminLayout: React.FC = () => {
                       <Link
                         to={item.path}
                         className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                            ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-medium'
-                            : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
+                          ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-medium'
+                          : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white'
                           }`}
                       >
                         <span

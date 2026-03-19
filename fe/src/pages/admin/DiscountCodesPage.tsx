@@ -55,6 +55,16 @@ const DiscountCodesPage: React.FC = () => {
 
   const discountCodes = discountCodesData?.data?.discountCodes || [];
 
+  const generateRandomCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    // Generate code with format: PREFIX_XXXX (e.g. DISCOUNT_A1B2) or just ABCD1234
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    form.setFieldsValue({ code: result });
+  };
+
   const handleCreate = () => {
     setEditingCode(null);
     form.resetFields();
@@ -306,16 +316,34 @@ const DiscountCodesPage: React.FC = () => {
         >
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="code"
-                label="Mã giảm giá"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập mã giảm giá' },
-                  { pattern: /^[A-Z0-9_]+$/, message: 'Mã chỉ bao gồm chữ in hoa, số và dấu gạch dưới' },
-                ]}
-              >
-                <Input placeholder="Ví dụ: SUMMER50K" style={{ textTransform: 'uppercase' }} />
-              </Form.Item>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                <Form.Item
+                  name="code"
+                  label="Mã giảm giá"
+                  rules={[
+                    { required: true, message: 'Vui lòng nhập mã giảm giá' },
+                    {
+                      pattern: /^[A-Z0-9_]+$/,
+                      message: 'Mã chỉ bao gồm chữ in hoa, số và dấu gạch dưới',
+                    },
+                  ]}
+                  getValueFromEvent={(e) => e.target.value.toUpperCase()}
+                  style={{ flex: 1, marginBottom: 24 }}
+                >
+                  <Input 
+                    placeholder="Ví dụ: SUMMER50K" 
+                    style={{ textTransform: 'uppercase' }} 
+                  />
+                </Form.Item>
+                <Button
+                  onClick={generateRandomCode}
+                  icon={<PlusOutlined />}
+                  title="Tạo mã ngẫu nhiên"
+                  style={{ marginBottom: 24 }}
+                >
+                  Tạo mã
+                </Button>
+              </div>
             </Col>
             <Col span={12}>
               <Form.Item

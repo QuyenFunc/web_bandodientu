@@ -114,160 +114,94 @@ const EditProductPage: React.FC = () => {
       if (!id) return;
 
       try {
-        // Lấy tất cả các giá trị từ form
         const formValues = form.getFieldsValue(true);
-        // Lấy các trường đã được chạm vào (touched)
-        const touchedFields = Object.keys(
-          form.getFieldsValue(true, (meta) => meta.touched)
-        );
-
-        // Khởi tạo object chứa dữ liệu cần cập nhật
-        const productData: any = { id };
+        const hasVariants = variants.length > 0;
 
         // Process description to convert base64 images if needed
-        if (touchedFields.includes('description') && formValues.description) {
-          let processedDescription = formValues.description;
-
-          if (hasBase64Images(processedDescription)) {
-            const result = await processDescriptionImages(
-              processedDescription,
-              {
-                productId: id,
-                category: 'product',
-                uploadImageFn: async ({ base64Data, options }) => {
-                  return await convertBase64ToImage({
-                    base64Data,
-                    options,
-                  }).unwrap();
-                },
-              }
-            );
-
-            if (result.hasChanges) {
-              processedDescription = result.processedDescription;
-            }
+        let processedDescription = formValues.description || '';
+        if (hasBase64Images(processedDescription)) {
+          const result = await processDescriptionImages(processedDescription, {
+            productId: id,
+            category: 'product' as const,
+            uploadImageFn: async ({ base64Data, options }) => {
+              return await convertBase64ToImage({
+                base64Data,
+                options,
+              }).unwrap();
+            },
+          });
+          if (result.hasChanges) {
+            processedDescription = result.processedDescription;
           }
-
-          productData.description = processedDescription;
         }
 
-        // Chỉ thêm các trường đã được chỉnh sửa vào productData
-        touchedFields.forEach((key) => {
-          // Skip description as it's already processed above
-          if (key === 'description') {
-            return;
-          } else if (key === 'price' && formValues[key] !== undefined) {
-            productData[key] = parseFloat(formValues[key].toString()) || 0;
-          } else if (
-            key === 'compareAtPrice' &&
-            formValues[key] !== undefined
-          ) {
-            const compareAtPrice = parseFloat(formValues[key].toString());
-            productData['comparePrice'] =
-              compareAtPrice > 0 ? compareAtPrice : undefined;
-          } else if (key === 'stockQuantity' && formValues[key] !== undefined) {
-            productData['stock'] = parseInt(formValues[key].toString()) || 0;
-          } else if (key === 'images' && formValues[key] !== undefined) {
-            const processedImages =
-              typeof formValues[key] === 'string'
-                ? formValues[key]
-                    .split('\n')
-                    .filter((img: string) => img.trim())
-                : Array.isArray(formValues[key])
-                  ? formValues[key]
-                  : [];
+        // Build the complete update object
+        const productData: any = {
+          id,
+          name: formValues.name,
+          baseName: formValues.baseName || formValues.name,
+          shortDescription: formValues.shortDescription,
+          description: processedDescription,
+          status: formValues.status,
+          featured: formValues.featured,
+          categoryIds: formValues.categoryIds || [],
+          searchKeywords: typeof formValues.searchKeywords === 'string'
+            ? formValues.searchKeywords.split(',').map((kw: string) => kw.trim()).filter((kw: string) => kw)
+            : formValues.searchKeywords || [],
+          seoTitle: formValues.seoTitle,
+          seoDescription: formValues.seoDescription,
+          seoKeywords: typeof formValues.seoKeywords === 'string'
+            ? formValues.seoKeywords.split(',').map((kw: string) => kw.trim()).filter((kw: string) => kw)
+            : formValues.seoKeywords || [],
+          warrantyPackageIds: formValues.warrantyPackageIds || [],
+          faqs: formValues.faqs || [],
+          thumbnail: formValues.thumbnail || '',
+          images: typeof formValues.images === 'string'
+            ? formValues.images.split('\n').filter((img: string) => img.trim())
+            : Array.isArray(formValues.images) ? formValues.images : [],
+          specifications: (formValues.specifications || []).map((spec: any) => ({
+            name: spec.name,
+            value: spec.value,
+            category: spec.category || 'General',
+          })),
+        };
 
-            productData[key] = processedImages;
-          } else if (
-            key === 'searchKeywords' &&
-            formValues[key] !== undefined
-          ) {
-            productData[key] =
-              typeof formValues[key] === 'string'
-                ? formValues[key]
-                    .split(',')
-                    .map((kw: string) => kw.trim())
-                    .filter((kw) => kw.length > 0)
-                : Array.isArray(formValues[key])
-                  ? formValues[key]
-                  : [];
-          } else if (key === 'seoKeywords' && formValues[key] !== undefined) {
-            productData[key] =
-              typeof formValues[key] === 'string'
-                ? formValues[key].split(',').map((kw: string) => kw.trim())
-                : Array.isArray(formValues[key])
-                  ? formValues[key]
-                  : [];
-          } else if (formValues[key] !== undefined) {
-            productData[key] = formValues[key];
-          }
-        });
-
-        // Always include warranty packages in edit mode to ensure sync
-        const currentWarrantyPackageIds = formValues.warrantyPackageIds || [];
-        productData.warrantyPackageIds = currentWarrantyPackageIds;
-
-        // Always include comparePrice in edit mode to ensure it's saved
-        if (formValues.compareAtPrice !== undefined) {
-          const compareAtPrice = parseFloat(
-            formValues.compareAtPrice.toString()
-          );
-          productData.compareAtPrice =
-            compareAtPrice > 0 ? compareAtPrice : null;
-          productData.comparePrice = compareAtPrice > 0 ? compareAtPrice : null;
+        // Price and Stock logic
+        if (hasVariants) {
+          productData.price = 0;
+          productData.stock = 0;
+          productData.stockQuantity = 0;
+        } else {
+          productData.price = parseFloat(formValues.price?.toString()) || 0;
+          productData.stock = parseInt(formValues.stockQuantity?.toString()) || 0;
+          productData.stockQuantity = parseInt(formValues.stockQuantity?.toString()) || 0;
         }
 
-        // Kiểm tra xem attributes có thay đổi không
-        const originalAttributes = productResponse?.data?.attributes || [];
-        const attributesChanged =
-          JSON.stringify(originalAttributes) !== JSON.stringify(attributes);
+        // Compare price
+        const compareAtPrice = parseFloat(formValues.compareAtPrice?.toString()) || 0;
+        productData.compareAtPrice = compareAtPrice > 0 ? compareAtPrice : null;
+        productData.comparePrice = compareAtPrice > 0 ? compareAtPrice : null;
 
-        // Chỉ thêm attributes vào request nếu chúng đã thay đổi
-        if (attributesChanged) {
-          productData.attributes = attributes.map((attr) => ({
-            name: attr.name,
-            value: attr.value,
-          }));
-        }
+        // Attributes and Variants - Always send if they exist to be safe, or do a shallow content check
+        productData.attributes = attributes.map((attr: any) => ({
+          name: attr.name,
+          values: Array.isArray(attr.value) ? attr.value : [attr.value],
+        }));
 
-        // Kiểm tra xem variants có thay đổi không
-        const originalVariants = productResponse?.data?.variants || [];
-        const variantsChanged =
-          JSON.stringify(originalVariants) !== JSON.stringify(variants);
-
-        // Chỉ thêm variants vào request nếu chúng đã thay đổi
-        if (variantsChanged) {
-          productData.variants = variants.map((variant) => ({
-            id: variant.id,
+        if (hasVariants) {
+          productData.variants = variants.map((variant: any, index: number) => ({
+            id: variant.id && !variant.id.startsWith('var-') ? variant.id : undefined,
             name: variant.name,
-            price: variant.price || 0,
-            stock: variant.stock,
-            sku:
-              variant.sku ||
-              `VAR-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            price: parseFloat(variant.price?.toString()) || 0,
+            stockQuantity: parseInt(variant.stock?.toString()) || 0,
+            sku: variant.sku || `VAR-${id}-${index}-${Date.now()}`,
             attributes: variant.attributes || {},
+            isDefault: index === 0,
+            isAvailable: true,
           }));
         }
 
-        // Kiểm tra xem specifications có thay đổi không
-        const originalSpecifications =
-          productResponse?.data?.productSpecifications || [];
-        const currentSpecifications = formValues.specifications || [];
-        const specificationsChanged =
-          JSON.stringify(originalSpecifications) !==
-          JSON.stringify(currentSpecifications);
-
-        // Chỉ thêm specifications vào request nếu chúng đã thay đổi
-        if (specificationsChanged || touchedFields.includes('specifications')) {
-          productData.specifications = currentSpecifications.map(
-            (spec: any) => ({
-              name: spec.name,
-              value: spec.value,
-              category: spec.category || 'General',
-            })
-          );
-        }
-
+        console.log('Updating product with data:', productData);
         await updateProduct(productData).unwrap();
         message.success('Cập nhật sản phẩm thành công!');
         navigate('/admin/products');
@@ -313,9 +247,9 @@ const EditProductPage: React.FC = () => {
         Array.isArray(product.images)
       ) {
         const imageElements = product.images
-          .filter((img) => img.includes('data:image'))
+          .filter((img: any) => img.includes('data:image'))
           .map(
-            (img) =>
+            (img: any) =>
               `<img src="${img}" alt="Product image" style="max-width: 100%; height: auto;" />`
           )
           .join('<br/>');
@@ -483,7 +417,11 @@ const EditProductPage: React.FC = () => {
     return 'Cập nhật sản phẩm thất bại. Vui lòng thử lại.';
   };
 
-  const categories = categoriesResponse?.data || [];
+  const categories: any[] = Array.isArray(categoriesResponse?.data) 
+    ? categoriesResponse.data 
+    : categoriesResponse?.data 
+      ? [categoriesResponse.data] 
+      : [];
 
   // Handle loading and error states
   if (isLoadingProduct) {
@@ -524,9 +462,9 @@ const EditProductPage: React.FC = () => {
       label: '2. Thuộc tính',
       children: (
         <ProductAttributesSection
-          attributes={attributes}
+          attributes={attributes as any}
           onAddAttribute={() => openAttributeModal()}
-          onEditAttribute={(attribute) => openAttributeModal(attribute)}
+          onEditAttribute={(attribute: any) => openAttributeModal(attribute)}
           onDeleteAttribute={handleDeleteAttribute}
         />
       ),
@@ -536,9 +474,9 @@ const EditProductPage: React.FC = () => {
       label: '3. Biến thể',
       children: (
         <ProductVariantsSection
-          variants={variants}
+          variants={variants as any}
           onAddVariant={() => openVariantModal()}
-          onEditVariant={(variant) => openVariantModal(variant)}
+          onEditVariant={(variant: any) => openVariantModal(variant)}
           onDeleteVariant={handleDeleteVariant}
         />
       ),
@@ -647,7 +585,7 @@ const EditProductPage: React.FC = () => {
         <AttributeModal
           visible={attributeModalVisible}
           onClose={closeAttributeModal}
-          attribute={editingAttribute}
+          attribute={editingAttribute as any}
           onSave={handleAddAttribute}
         />
       )}
@@ -656,9 +594,9 @@ const EditProductPage: React.FC = () => {
         <VariantModal
           visible={variantModalVisible}
           onClose={closeVariantModal}
-          variant={editingVariant}
+          variant={editingVariant as any}
           onSave={handleAddVariant}
-          attributes={attributes}
+          attributes={attributes as any}
         />
       )}
     </div>

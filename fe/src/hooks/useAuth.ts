@@ -2,6 +2,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { logout as logoutAction } from '@/features/auth/authSlice';
 import { useLogoutMutation } from '@/services/authApi';
+import { clearWishlistLocal } from '@/features/wishlist/wishlistSlice';
+import { initializeCart } from '@/features/cart/cartSlice';
+import { api } from '@/services/api';
 
 /**
  * Custom hook để quản lý authentication
@@ -30,6 +33,14 @@ export const useAuth = () => {
 
       // Clear Redux state
       dispatch(logoutAction());
+      dispatch(clearWishlistLocal()); // Xóa danh sách yêu thích khỏi Redux
+      dispatch(initializeCart());     // Reset giỏ hàng về trạng thái ban đầu
+      dispatch(api.util.resetApiState()); // Reset toàn bộ cache của RTK Query
+      
+      // Xóa các dữ liệu khác khỏi localStorage nếu cần
+      localStorage.removeItem('wishlist');
+      localStorage.removeItem('recentSearches');
+      localStorage.removeItem('cartItems');
 
       console.log('✅ Logout successful');
     } catch (error) {

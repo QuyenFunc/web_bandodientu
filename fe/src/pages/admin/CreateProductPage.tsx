@@ -94,7 +94,6 @@ const CreateProductPage: React.FC = () => {
       category: false,
       images: false,
       warranty: false,
-      warranty: false,
       faqs: false,
       seo: false,
     }
@@ -489,8 +488,6 @@ const CreateProductPage: React.FC = () => {
     'variants',
     'pricing',
     'category',
-    'images',
-    'warranty',
     'images',
     'warranty',
     'faqs',

@@ -73,7 +73,8 @@ export interface AdminOrdersParams {
 }
 
 export interface UpdateOrderStatusRequest {
-  status: string;
+  status?: string;
+  paymentStatus?: string;
   note?: string;
 }
 

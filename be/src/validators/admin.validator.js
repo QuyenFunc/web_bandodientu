@@ -153,8 +153,14 @@ const updateOrderStatusValidation = [
   param('id').isUUID().withMessage('Order ID không hợp lệ'),
 
   body('status')
+    .optional()
     .isIn(['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
     .withMessage('Trạng thái đơn hàng không hợp lệ'),
+
+  body('paymentStatus')
+    .optional()
+    .isIn(['pending', 'paid', 'failed', 'refunded'])
+    .withMessage('Trạng thái thanh toán không hợp lệ'),
 
   body('note')
     .optional()

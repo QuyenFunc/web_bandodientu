@@ -4,7 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useDispatch } from 'react-redux';
 import { toggleSearch } from '@/features/ui/uiSlice';
-import { useSearchProductsQuery } from '@/services/productApi';
+import { useSearchProductsQuery, Product } from '@/services/productApi';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  useSaveSearchMutation, 
+  useGetSearchHistoryQuery,
+  useDeleteSearchHistoryMutation,
+  useClearAllSearchHistoryMutation
+} from '@/services/searchHistoryApi';
+import { v4 as uuidv4 } from 'uuid';
 
 interface SearchBarProps {
   className?: string;
@@ -23,30 +31,56 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isActive, setIsActive] = useState(isExpanded);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [sessionId, setSessionId] = useState<string>('');
+  
+  const { isLoggedIn } = useAuth();
+  const [saveSearch] = useSaveSearchMutation();
+  const [deleteSearch] = useDeleteSearchHistoryMutation();
+  const [clearAllSearch] = useClearAllSearchHistoryMutation();
+  
+  const { data: historyData } = useGetSearchHistoryQuery(
+    { limit: 5 },
+    { skip: !isActive }
+  );
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Load recent searches on initial render
+  // Load recent searches and session ID on initial render
   useEffect(() => {
     try {
-      // For testing - uncomment to reset searches
-      // localStorage.removeItem('recentSearches');
-      // localStorage.setItem('recentSearches', JSON.stringify(['Test search 1', 'Test search 2']));
+      // Handle Session ID
+      let currentSessionId = localStorage.getItem('search_session_id');
+      if (!currentSessionId) {
+        currentSessionId = uuidv4();
+        localStorage.setItem('search_session_id', currentSessionId);
+      }
+      setSessionId(currentSessionId);
 
+      // Handle Local Searches
       const storedSearches = localStorage.getItem('recentSearches');
       if (storedSearches) {
         const parsedSearches = JSON.parse(storedSearches);
         setRecentSearches(parsedSearches);
       } else {
-        // Initialize with empty array if not exists
         localStorage.setItem('recentSearches', JSON.stringify([]));
       }
     } catch (error) {
-      console.error('Error loading recent searches:', error);
+      console.error('Error loading search initial state:', error);
     }
   }, []);
+
+  // Update recentSearches when historyData changes (from server)
+  useEffect(() => {
+    if (historyData?.data) {
+      const serverSearches = historyData.data.map((item: any) => item.keyword);
+      // Combine with local searches, unique
+      const localSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+      const combined = Array.from(new Set([...serverSearches, ...localSearches])).slice(0, 5);
+      setRecentSearches(combined);
+    }
+  }, [historyData]);
 
   // Reload recent searches when search becomes active
   useEffect(() => {
@@ -121,9 +155,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
-  const handleSuggestionClick = (id: number) => {
+  const handleSuggestionClick = (id: string) => {
     // Find the product name to save as search term
-    const product = suggestions.find((p) => p.id === id);
+    const product = suggestions.find((p: Product) => p.id === id);
     if (product && product.name) {
       // Save the product name as a search term
       saveSearchTerm(product.name);
@@ -140,10 +174,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   // Clear all recent searches
-  const clearRecentSearches = () => {
+  const clearRecentSearches = async () => {
     try {
       localStorage.setItem('recentSearches', JSON.stringify([]));
       setRecentSearches([]);
+      
+      if (isLoggedIn) {
+        await clearAllSearch().unwrap();
+      }
+      
       console.log('Cleared all recent searches');
     } catch (error) {
       console.error('Error clearing recent searches:', error);
@@ -151,13 +190,21 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   // Remove a single search term
-  const removeSearchTerm = (termToRemove: string) => {
+  const removeSearchTerm = async (termToRemove: string) => {
     try {
       const updatedSearches = recentSearches.filter(
         (term) => term !== termToRemove
       );
       localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
       setRecentSearches(updatedSearches);
+
+      if (isLoggedIn && historyData?.data) {
+        const itemToDelete = historyData.data.find((item: any) => item.keyword === termToRemove);
+        if (itemToDelete) {
+          await deleteSearch(itemToDelete.id).unwrap();
+        }
+      }
+
       console.log('Removed search term:', termToRemove);
     } catch (error) {
       console.error('Error removing search term:', error);
@@ -177,8 +224,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
-  // Save search term to localStorage
-  const saveSearchTerm = (term: string) => {
+  // Save search term to localStorage and Server
+  const saveSearchTerm = async (term: string, resultsCount: number = 0) => {
     try {
       const storedSearches = getRecentSearches();
       // Add to beginning and remove duplicates
@@ -186,15 +233,16 @@ const SearchBar: React.FC<SearchBarProps> = ({
         term,
         ...storedSearches.filter((s) => s !== term),
       ].slice(0, 5);
-      console.log('Saving updated searches:', updatedSearches);
       localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
-
-      // Update state to reflect changes
       setRecentSearches(updatedSearches);
 
-      // Verify it was saved correctly
-      const verifySearches = localStorage.getItem('recentSearches');
-      console.log('Verification - saved searches:', verifySearches);
+      // Save to server
+      await saveSearch({ 
+        keyword: term, 
+        resultsCount,
+        sessionId: !isLoggedIn ? sessionId : undefined 
+      }).unwrap();
+
     } catch (error) {
       console.error('Error saving search term:', error);
     }
@@ -204,10 +252,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      // Save search term to localStorage
-      saveSearchTerm(searchTerm.trim());
+      const term = searchTerm.trim();
+      const resultsCount = searchResults?.data?.total || 0;
+      
+      // Save search term
+      saveSearchTerm(term, resultsCount);
+      
       // Navigate to search results
-      navigate(`/shop?search=${encodeURIComponent(searchTerm.trim())}`);
+      navigate(`/shop?search=${encodeURIComponent(term)}`);
       setIsActive(false);
       dispatch(toggleSearch());
     }
@@ -345,7 +397,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   </div>
                 ) : (
                   <ul>
-                    {suggestions.map((product) => (
+                    {suggestions.map((product: Product) => (
                       <li key={product.id}>
                         <button
                           onClick={() => handleSuggestionClick(product.id)}
@@ -369,8 +421,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                             </p>
                             <div className="flex items-center justify-between mt-1">
                               <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-                                {product.categoryName ||
-                                  product.categories?.[0]?.name}
+                                {product.categoryName}
                               </p>
                               <p className="text-primary-600 dark:text-primary-400 font-medium">
                                 {new Intl.NumberFormat('vi-VN', {

@@ -165,6 +165,29 @@ router.get('/', productController.getAllProducts);
 
 /**
  * @swagger
+ * /api/products/recently-viewed:
+ *   get:
+ *     summary: Get recently viewed products for the current user
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of products to return
+ *     responses:
+ *       200:
+ *         description: List of recently viewed products
+ *       401:
+ *         description: Not authenticated
+ */
+router.get('/recently-viewed', authenticate, productController.getRecentlyViewed);
+
+/**
+ * @swagger
  * /api/products/featured:
  *   get:
  *     summary: Get featured products

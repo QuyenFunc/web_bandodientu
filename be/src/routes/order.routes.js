@@ -21,6 +21,7 @@ router.get('/number/:number', orderController.getOrderByNumber);
 router.get('/:id', orderController.getOrderById);
 router.post('/:id/cancel', orderController.cancelOrder);
 router.post('/:id/repay', orderController.repayOrder);
+router.post('/:id/receive', orderController.confirmReceived);
 
 // Admin routes
 router.get('/admin/all', authorize('admin'), orderController.getAllOrders);

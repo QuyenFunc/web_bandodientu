@@ -154,7 +154,7 @@ export const createProductFiltersParams = (
   }
 
   // Array filters
-  const arrayFilters = ['brand', 'color', 'size'];
+  const arrayFilters = ['brand', 'collection', 'color', 'size'];
   arrayFilters.forEach((filter) => {
     if (filters[filter] && Array.isArray(filters[filter])) {
       filters[filter].forEach((value: string) => {

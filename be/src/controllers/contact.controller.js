@@ -30,6 +30,12 @@ const subscribeNewsletter = catchAsync(async (req, res) => {
     await subscriber.save();
   }
 
+  // Send welcome email (non-blocking)
+  const emailService = require('../services/email/emailService');
+  emailService.sendNewsletterWelcomeEmail(email).catch(err => {
+    console.error('Error sending welcome email:', err);
+  });
+
   res.status(200).json({
     status: 'success',
     message: 'Thank you for subscribing to our newsletter!',

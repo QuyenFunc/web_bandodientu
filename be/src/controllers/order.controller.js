@@ -5,10 +5,16 @@ const {
   CartItem,
   Product,
   ProductVariant,
+  User,
+  LoyaltyHistory,
   sequelize,
 } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
 const emailService = require('../services/email/emailService');
+
+// Loyalty configuration
+const POINTS_EARN_RATE = 100000; // 1 point per 100,000 VND spent
+const POINTS_VALUE = 1000; // 1 point = 1,000 VND discount
 
 // Create order from cart
 const createOrder = async (req, res, next) => {
@@ -40,6 +46,7 @@ const createOrder = async (req, res, next) => {
       paymentMethod,
       notes,
       discountCode,
+      pointsToUse = 0,
     } = req.body;
 
     // Get active cart
@@ -158,8 +165,24 @@ const createOrder = async (req, res, next) => {
       await codeData.update({ usedCount: codeData.usedCount + 1 }, { transaction });
     }
 
+    // Calculate Point Discount
+    let pointsDiscount = 0;
+    const pointsToUseInt = parseInt(pointsToUse) || 0;
+    if (pointsToUseInt > 0) {
+      const user = await User.findByPk(userId, { transaction });
+      if (user.loyaltyPoints < pointsToUseInt) {
+        throw new AppError('Bạn không đủ điểm tích lũy', 400);
+      }
+      pointsDiscount = pointsToUseInt * POINTS_VALUE;
+      if (pointsDiscount > subtotal - discount) {
+        pointsDiscount = subtotal - discount;
+        // Adjust points used if discount exceeds subtotal
+        // This is a safety check
+      }
+    }
+
     // Calculate total
-    const total = subtotal + tax + shippingCost - discount;
+    const total = subtotal + tax + shippingCost - discount - pointsDiscount;
 
     // Generate order number
     const date = new Date();
@@ -179,6 +202,22 @@ const createOrder = async (req, res, next) => {
         transaction,
       }
     );
+
+    // Update User Loyalty Points if used
+    if (pointsToUseInt > 0) {
+      const user = await User.findByPk(userId, { transaction });
+      await user.update({
+        loyaltyPoints: user.loyaltyPoints - pointsToUseInt
+      }, { transaction });
+
+      // Record loyalty history
+      await LoyaltyHistory.create({
+        userId,
+        points: -pointsToUseInt,
+        type: 'spend',
+        description: `Sử dụng điểm cho đơn hàng ${orderNumber}`
+      }, { transaction });
+    }
 
     // Create order
     const order = await Order.create(
@@ -213,6 +252,8 @@ const createOrder = async (req, res, next) => {
         discount,
         discountCodeId,
         total,
+        pointsUsed: pointsToUseInt,
+        pointsDiscount,
         notes,
       },
       { transaction }
@@ -252,6 +293,14 @@ const createOrder = async (req, res, next) => {
     // NOTE: CartItems are NOT cleared here anymore.
     // They will be cleared ONLY AFTER successful payment in the payment webhook (confirmPayment / vnpayReturn).
     // This allows the user to retain their cart items if they cancel/fail the payment window and try again.
+
+    // Update LoyaltyHistory with orderId now that we have it
+    if (pointsToUseInt > 0) {
+      await LoyaltyHistory.update(
+        { orderId: order.id },
+        { where: { userId, type: 'spend', description: `Sử dụng điểm cho đơn hàng ${orderNumber}` }, transaction }
+      );
+    }
 
     // Commit the transaction
     await transaction.commit();
@@ -455,6 +504,38 @@ const cancelOrder = async (req, res, next) => {
       }
     }
 
+    // 1. Refund loyalty points if used during purchase
+    if (order.pointsUsed > 0) {
+      const user = await User.findByPk(userId, { transaction });
+      await user.update({
+        loyaltyPoints: user.loyaltyPoints + order.pointsUsed
+      }, { transaction });
+
+      await LoyaltyHistory.create({
+        userId,
+        orderId: order.id,
+        points: order.pointsUsed,
+        type: 'refund',
+        description: `Hoàn điểm cho đơn hàng bị hủy ${order.number}`
+      }, { transaction });
+    }
+
+    // 2. Deduct earned points if the order was already delivered (pointsEarned > 0)
+    if (order.pointsEarned > 0) {
+      const user = await User.findByPk(userId, { transaction });
+      await user.update({
+        loyaltyPoints: Math.max(0, user.loyaltyPoints - order.pointsEarned)
+      }, { transaction });
+
+      await LoyaltyHistory.create({
+        userId,
+        orderId: order.id,
+        points: -order.pointsEarned,
+        type: 'refund',
+        description: `Thu hồi điểm tích lũy do hủy/trả đơn hàng ${order.number}`
+      }, { transaction });
+    }
+
     await transaction.commit();
 
     // Send cancellation email
@@ -535,7 +616,39 @@ const updateOrderStatus = async (req, res, next) => {
     }
 
     // Update order status
-    await order.update({ status });
+    const previousStatus = order.status;
+    const updateData = { status };
+    
+    // Automatically set payment status to paid if COD order is delivered
+    if (status === 'delivered' && order.paymentMethod === 'cod') {
+      updateData.paymentStatus = 'paid';
+    }
+    
+    await order.update(updateData);
+
+    // Award loyalty points if status changed to delivered
+    if (status === 'delivered' && previousStatus !== 'delivered') {
+      const pointsEarned = Math.floor(parseFloat(order.total) / POINTS_EARN_RATE);
+      if (pointsEarned > 0) {
+        const user = await User.findByPk(order.userId);
+        if (user) {
+          await user.update({
+            loyaltyPoints: user.loyaltyPoints + pointsEarned
+          });
+
+          await LoyaltyHistory.create({
+            userId: order.userId,
+            orderId: order.id,
+            points: pointsEarned,
+            type: 'earn',
+            description: `Tích điểm từ đơn hàng ${order.number}`
+          });
+
+          // Update order's record of points earned
+          await order.update({ pointsEarned });
+        }
+      }
+    }
 
     // Send status update email
     await emailService.sendOrderStatusUpdateEmail(order.user.email, {
@@ -614,6 +727,91 @@ const repayOrder = async (req, res, next) => {
   }
 };
 
+const confirmReceived = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const order = await Order.findOne({
+      where: { id, userId },
+    });
+
+    if (!order) {
+      throw new AppError('Không tìm thấy đơn hàng', 404);
+    }
+
+    if (order.status === 'delivered' && order.pointsEarned !== 0) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'Đơn hàng đã được xác nhận và tích điểm trước đó',
+        data: order
+      });
+    }
+
+    if (order.status !== 'shipped' && order.status !== 'processing' && order.status !== 'delivered') {
+      throw new AppError('Chỉ có thể xác nhận đơn hàng khi đang giao, đang xử lý hoặc đã giao hàng', 400);
+    }
+
+    const previousStatus = order.status;
+    const updateData = { status: 'delivered' };
+
+    // Automatically set payment status to paid if COD order
+    if (order.paymentMethod === 'cod') {
+      updateData.paymentStatus = 'paid';
+    }
+
+    await order.update(updateData);
+    await order.reload();
+
+    let earnedPointsTotal = order.pointsEarned || 0;
+    let newPointsAwarded = 0;
+
+    // Award loyalty points if they haven't been awarded yet (0 means not processed)
+    if (earnedPointsTotal === 0) {
+      const orderTotal = parseFloat(order.total);
+      newPointsAwarded = Math.floor(orderTotal / POINTS_EARN_RATE);
+      
+      if (newPointsAwarded > 0) {
+        const user = await User.findByPk(userId);
+        if (user) {
+          await user.update({
+            loyaltyPoints: user.loyaltyPoints + newPointsAwarded
+          });
+
+          await LoyaltyHistory.create({
+            userId,
+            orderId: order.id,
+            points: newPointsAwarded,
+            type: 'earn',
+            description: `Tích điểm từ đơn hàng ${order.number} (Người dùng xác nhận)`
+          });
+
+          earnedPointsTotal = newPointsAwarded;
+          await order.update({ pointsEarned: earnedPointsTotal });
+        }
+      } else if (orderTotal > 0) {
+        // Mark as processed even if 0 points
+        earnedPointsTotal = -1;
+        await order.update({ pointsEarned: -1 });
+      }
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Xác nhận đã nhận hàng thành công',
+      pointsEarned: newPointsAwarded > 0 ? newPointsAwarded : 0,
+      data: {
+        id: order.id,
+        number: order.number,
+        status: 'delivered',
+        pointsEarned: earnedPointsTotal
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -623,4 +821,5 @@ module.exports = {
   getAllOrders,
   updateOrderStatus,
   repayOrder,
+  confirmReceived,
 };

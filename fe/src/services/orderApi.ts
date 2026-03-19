@@ -61,6 +61,9 @@ export interface Order {
   trackingNumber?: string;
   shippingProvider?: string;
   estimatedDelivery?: string;
+  pointsEarned?: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
   items?: OrderItem[];
   createdAt: string;
   updatedAt: string;
@@ -223,6 +226,22 @@ export const orderApi = api.injectEndpoints({
         body: data,
       }),
     }),
+
+    // Confirm received order
+    confirmReceived: builder.mutation<
+      { status: string; message: string; pointsEarned: number; data: any },
+      string
+    >({
+      query: (id) => ({
+        url: `/orders/${id}/receive`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: 'Order', id },
+        { type: 'Order', id: 'LIST' },
+        { type: 'User', id: 'PROFILE' },
+      ],
+    }),
   }),
 });
 
@@ -234,4 +253,5 @@ export const {
   useCancelOrderMutation,
   useRepayOrderMutation,
   useApplyDiscountCodeMutation,
+  useConfirmReceivedMutation,
 } = orderApi;

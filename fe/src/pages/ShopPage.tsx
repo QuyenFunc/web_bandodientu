@@ -6,12 +6,14 @@ import FilterPanel from '@/components/features/FilterPanel';
 import Pagination from '@/components/common/Pagination';
 import Select from '@/components/common/Select';
 import Button from '@/components/common/Button';
-import { PremiumButton } from '@/components/common';
+import { PremiumButton, BannerDisplay } from '@/components/common';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { Product, ProductFilters } from '@/types/product.types';
 import { Category } from '@/types/category.types';
 import { useGetProductsQuery } from '@/services/productApi';
 import { useGetCategoriesQuery } from '@/services/categoryApi';
+import { useGetBrandsQuery } from '@/services/brandApi';
+import { useGetCollectionsQuery } from '@/services/collectionApi';
 
 const sortOptions = [
   { value: 'newest', label: 'Newest' },
@@ -27,6 +29,8 @@ const ShopPage: React.FC = () => {
 
   // Get filter values from URL
   const categoryId = searchParams.get('category') || undefined;
+  const brandId = searchParams.getAll('brand');
+  const collectionId = searchParams.getAll('collection');
   const search = searchParams.get('search') || undefined;
   const minPrice = searchParams.get('minPrice')
     ? Number(searchParams.get('minPrice'))
@@ -43,6 +47,8 @@ const ShopPage: React.FC = () => {
     Record<string, string[]>
   >({
     categories: categoryId ? [categoryId] : [],
+    brand: brandId,
+    collection: collectionId,
   });
 
   // Price range for filter panel
@@ -58,6 +64,8 @@ const ShopPage: React.FC = () => {
     error: productsError,
   } = useGetProductsQuery({
     categoryId,
+    brand: brandId.length > 0 ? brandId : undefined,
+    collection: collectionId.length > 0 ? collectionId : undefined,
     search,
     minPrice,
     maxPrice,
@@ -69,17 +77,26 @@ const ShopPage: React.FC = () => {
   const { data: categoriesData, isLoading: isCategoriesLoading } =
     useGetCategoriesQuery();
 
+  const { data: brandsData, isLoading: isBrandsLoading } = useGetBrandsQuery({
+    isActive: true,
+  });
+
+  const { data: collectionsData, isLoading: isCollectionsLoading } =
+    useGetCollectionsQuery({ isActive: true });
+
   // Update selected filters when URL params change
   useEffect(() => {
     setSelectedFilters({
       categories: categoryId ? [categoryId] : [],
+      brand: brandId,
+      collection: collectionId,
     });
 
     setPriceRange({
       min: minPrice || 0,
       max: maxPrice || 10000000, // 10 triệu VND
     });
-  }, [categoryId, minPrice, maxPrice, searchParams]);
+  }, [categoryId, searchParams, minPrice, maxPrice]);
 
   // Update URL when filters change
   const updateFilters = (newFilters: Partial<ProductFilters>) => {
@@ -131,6 +148,17 @@ const ShopPage: React.FC = () => {
       } else {
         updatedParams.delete('category');
       }
+    } else if (groupId === 'brand' || groupId === 'collection') {
+      const currentValues = updatedParams.getAll(groupId);
+      if (isSelected) {
+        if (!currentValues.includes(optionId)) {
+          updatedParams.append(groupId, optionId);
+        }
+      } else {
+        const newValues = currentValues.filter((v) => v !== optionId);
+        updatedParams.delete(groupId);
+        newValues.forEach((v) => updatedParams.append(groupId, v));
+      }
     }
 
     // Reset to page 1 when filters change
@@ -157,9 +185,27 @@ const ShopPage: React.FC = () => {
       id: 'categories',
       name: 'Danh mục',
       options:
-        categoriesData?.map((category) => ({
+        categoriesData?.map((category: any) => ({
           id: category.id,
           name: `${category.name} (${category.productCount || 0})`,
+        })) || [],
+    },
+    {
+      id: 'brand',
+      name: 'Thương hiệu',
+      options:
+        brandsData?.data?.map((brand: any) => ({
+          id: brand.id,
+          name: brand.name,
+        })) || [],
+    },
+    {
+      id: 'collection',
+      name: 'Bộ sưu tập',
+      options:
+        collectionsData?.data?.map((collection: any) => ({
+          id: collection.id,
+          name: collection.name,
         })) || [],
     },
   ];
@@ -268,6 +314,9 @@ const ShopPage: React.FC = () => {
               onFilterChange={handleFilterChange}
               onClearFilters={handleClearFilters}
             />
+            
+            {/* Sidebar Banners */}
+            <BannerDisplay position="sidebar" className="mt-8" />
           </div>
 
           {/* Filters - Mobile */}
@@ -403,7 +452,7 @@ const ShopPage: React.FC = () => {
                       : 'space-y-8'
                   }
                 >
-                  {productsData?.data?.products?.map((product) =>
+                  {productsData?.data?.products?.map((product: Product) =>
                     viewMode === 'grid' ? (
                       <ProductCard key={product.id} {...product} />
                     ) : (

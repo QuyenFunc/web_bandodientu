@@ -184,6 +184,12 @@ const Product = sequelize.define(
       defaultValue: false,
       field: 'is_variant_product',
     },
+    // Brand ID
+    brandId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: 'brand_id',
+    },
     // FAQs for the product
     faqs: {
       type: DataTypes.TEXT,

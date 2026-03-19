@@ -6,12 +6,14 @@ import uiReducer from '@/features/ui/uiSlice';
 import wishlistReducer from '@/features/wishlist/wishlistSlice';
 import { api } from '@/services/api';
 import { attributeApi } from '@/services/attributeApi';
+import { bannerApi } from '@/services/bannerApi';
 import { configureStore } from '@reduxjs/toolkit';
 
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
     [attributeApi.reducerPath]: attributeApi.reducer,
+    [bannerApi.reducerPath]: bannerApi.reducer,
     auth: authReducer,
     cart: cartReducer,
     ui: uiReducer,
@@ -20,7 +22,7 @@ export const store = configureStore({
     wishlist: wishlistReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware, attributeApi.middleware),
+    getDefaultMiddleware().concat(api.middleware, attributeApi.middleware, bannerApi.middleware),
 });
 
 // Disable auto-refetch to prevent unnecessary API calls

@@ -159,6 +159,21 @@ const Order = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    pointsEarned: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'pointsEarned',
+    },
+    pointsUsed: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'pointsUsed',
+    },
+    pointsDiscount: {
+      type: DataTypes.DECIMAL(19, 2),
+      defaultValue: 0,
+      field: 'pointsDiscount',
+    },
   },
   {
     tableName: 'orders',

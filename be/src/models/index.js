@@ -25,6 +25,14 @@ const News = require('./news');
 const NewsletterSubscriber = require('./newsletterSubscriber');
 const Feedback = require('./feedback');
 const ChatMessage = require('./chatMessage');
+const Brand = require('./brand');
+const Collection = require('./collection');
+const ProductCollection = require('./productCollection');
+const SearchHistory = require('./searchHistory');
+const LoyaltyHistory = require('./loyaltyHistory');
+const RecentlyViewed = require('./recentlyViewed');
+const Banner = require('./banner');
+const EmailCampaign = require('./emailCampaign');
 
 // User - Address relationship
 User.hasMany(Address, { foreignKey: 'userId', as: 'addresses' });
@@ -202,6 +210,44 @@ User.hasMany(Image, { foreignKey: 'userId', as: 'userImages' });
 User.hasMany(ChatMessage, { foreignKey: 'userId', as: 'chatMessages' });
 ChatMessage.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// Brand - Product relationship
+Brand.hasMany(Product, { foreignKey: 'brandId', as: 'products' });
+Product.belongsTo(Brand, { foreignKey: 'brandId', as: 'brand' });
+
+// Product - Collection relationship (many-to-many)
+Product.belongsToMany(Collection, {
+  through: ProductCollection,
+  foreignKey: 'productId',
+  otherKey: 'collectionId',
+  as: 'collections',
+});
+Collection.belongsToMany(Product, {
+  through: ProductCollection,
+  foreignKey: 'collectionId',
+  otherKey: 'productId',
+  as: 'products',
+});
+
+// User - SearchHistory relationship
+User.hasMany(SearchHistory, { foreignKey: 'userId', as: 'searchHistories' });
+SearchHistory.belongsTo(User, { foreignKey: 'userId' });
+
+// User - LoyaltyHistory relationship
+User.hasMany(LoyaltyHistory, { foreignKey: 'userId', as: 'loyaltyHistories' });
+LoyaltyHistory.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Order - LoyaltyHistory relationship
+Order.hasMany(LoyaltyHistory, { foreignKey: 'orderId', as: 'loyaltyHistories' });
+LoyaltyHistory.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
+
+// User - RecentlyViewed relationship
+User.hasMany(RecentlyViewed, { foreignKey: 'userId', as: 'recentlyViewed' });
+RecentlyViewed.belongsTo(User, { foreignKey: 'userId' });
+
+// Product - RecentlyViewed relationship
+Product.hasMany(RecentlyViewed, { foreignKey: 'productId', as: 'recentlyViewed' });
+RecentlyViewed.belongsTo(Product, { foreignKey: 'productId' });
+
 // Export models
 module.exports = {
   sequelize,
@@ -231,4 +277,12 @@ module.exports = {
   ChatMessage,
   Feedback,
   DiscountCode,
+  Brand,
+  Collection,
+  ProductCollection,
+  SearchHistory,
+  LoyaltyHistory,
+  RecentlyViewed,
+  Banner,
+  EmailCampaign,
 };

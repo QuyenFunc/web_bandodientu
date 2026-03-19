@@ -24,6 +24,7 @@ import {
 import { RootState } from '@/store';
 import { v4 as uuidv4 } from 'uuid';
 import ProductImageGallery from '@/components/product/ProductImageGallery';
+import RecentlyViewedProducts from '@/components/products/RecentlyViewedProducts';
 
 import { addItem, setServerCart } from '@/features/cart/cartSlice';
 import { addNotification } from '@/features/ui/uiSlice';
@@ -913,6 +914,13 @@ const ProductDetailPage: React.FC = () => {
               <ProductCard key={product.id} {...product} />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Recently viewed products */}
+      {isAuthenticated && (
+        <div className="mt-16">
+          <RecentlyViewedProducts limit={5} />
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 const stripeService = require('../services/payment/stripeService');
 const vnpayService = require('../services/payment/vnpayService');
+const momoService = require('../services/payment/momoService');
 const { Order, User, OrderItem, Product, ProductVariant, Cart, CartItem } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
 const { Op } = require('sequelize');
@@ -940,6 +941,122 @@ const vnpayReturn = async (req, res, next) => {
   }
 };
 
+// Create MoMo Payment URL
+const createMomoUrl = async (req, res, next) => {
+  try {
+    const { orderId } = req.body;
+    
+    const order = await Order.findByPk(orderId);
+    if (!order) {
+      throw new AppError('Không tìm thấy đơn hàng', 404);
+    }
+
+    const result = await momoService.createPaymentUrl({
+      orderId: order.number, // Use order number for MoMo
+      amount: order.total,
+      orderInfo: `Thanh toán đơn hàng ${order.number}`,
+      extraData: `orderId=${order.id}`, // Pass internal UUID in extraData
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Handle MoMo Return (GET)
+const momoReturn = async (req, res, next) => {
+  try {
+    const { resultCode, extraData } = req.query;
+    
+    // Extract internal order ID from extraData
+    const orderIdMatch = extraData.match(/orderId=([^&]+)/);
+    const orderId = orderIdMatch ? orderIdMatch[1] : null;
+
+    if (resultCode == 0) {
+      if (orderId) {
+        const order = await Order.findByPk(orderId);
+        if (order && order.paymentStatus !== 'paid') {
+          await order.update({
+            status: 'processing',
+            paymentStatus: 'paid',
+            paymentProvider: 'momo',
+            updatedAt: new Date(),
+          });
+
+          // Reduce inventory
+          const orderItems = await OrderItem.findAll({ where: { orderId: order.id } });
+          for (const item of orderItems) {
+            if (item.variantId) {
+              await ProductVariant.decrement({ stockQuantity: item.quantity }, { where: { id: item.variantId } });
+            } else {
+              await Product.decrement({ stockQuantity: item.quantity }, { where: { id: item.productId } });
+            }
+          }
+          
+          await clearUserCart(order.userId);
+        }
+      }
+      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=success`);
+    } else {
+      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=failed`);
+    }
+  } catch (error) {
+    console.error('MoMo return error:', error);
+    return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=error`);
+  }
+};
+
+// Handle MoMo IPN (POST)
+const momoIPN = async (req, res, next) => {
+  try {
+    console.log('MoMo IPN received:', req.body);
+    const isValid = momoService.verifySignature(req.body);
+    
+    if (!isValid) {
+      return res.status(400).json({ message: 'Invalid signature' });
+    }
+
+    const { resultCode, extraData, transId } = req.body;
+    const orderIdMatch = extraData.match(/orderId=([^&]+)/);
+    const orderId = orderIdMatch ? orderIdMatch[1] : null;
+
+    if (resultCode == 0 && orderId) {
+      const order = await Order.findByPk(orderId);
+      if (order && order.paymentStatus !== 'paid') {
+        await order.update({
+          status: 'processing',
+          paymentStatus: 'paid',
+          paymentTransactionId: transId,
+          paymentProvider: 'momo',
+          updatedAt: new Date(),
+        });
+
+        // Reduce inventory
+        const orderItems = await OrderItem.findAll({ where: { orderId: order.id } });
+        for (const item of orderItems) {
+          if (item.variantId) {
+            await ProductVariant.decrement({ stockQuantity: item.quantity }, { where: { id: item.variantId } });
+          } else {
+            await Product.decrement({ stockQuantity: item.quantity }, { where: { id: item.productId } });
+          }
+        }
+        
+        await clearUserCart(order.userId);
+      }
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('MoMo IPN error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 // IPN if needed can be added similar to vnpayReturn but using server-to-server POST
 
 module.exports = {
@@ -953,4 +1070,7 @@ module.exports = {
   handleSePayWebhook,
   createVnpayUrl,
   vnpayReturn,
+  createMomoUrl,
+  momoReturn,
+  momoIPN,
 };

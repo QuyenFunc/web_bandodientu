@@ -21,6 +21,10 @@ router.post(
 // VNPay return IPN/redirect route (no authentication)
 router.get('/vnpay/return', paymentController.vnpayReturn);
 
+// MoMo return/IPN routes (no authentication)
+router.get('/momo/return', paymentController.momoReturn);
+router.post('/momo/ipn', paymentController.momoIPN);
+
 // Authenticated routes
 router.use(authenticate);
 
@@ -33,6 +37,9 @@ router.post('/confirm-payment', paymentController.confirmPayment);
 // VNPay create url
 router.post('/vnpay/create-url', paymentController.createVnpayUrl);
 
+// MoMo create url
+router.post('/momo/create-url', paymentController.createMomoUrl);
+
 // Customer management
 router.post('/create-customer', paymentController.createCustomer);
 router.get('/payment-methods', paymentController.getPaymentMethods);
@@ -42,3 +49,4 @@ router.post('/create-setup-intent', paymentController.createSetupIntent);
 router.post('/refund', authorize('admin'), paymentController.createRefund);
 
 module.exports = router;
+

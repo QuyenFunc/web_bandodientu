@@ -74,6 +74,11 @@ const User = sequelize.define(
       allowNull: true,
       field: 'stripe_customer_id',
     },
+    loyaltyPoints: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: 'loyaltyPoints',
+    },
   },
   {
     tableName: 'users',

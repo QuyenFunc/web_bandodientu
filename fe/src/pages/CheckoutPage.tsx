@@ -25,6 +25,8 @@ import { useCreateOrderMutation, useApplyDiscountCodeMutation } from '@/services
 import { cartApi, useGetCartCountQuery } from '@/services/cartApi';
 import { useProvinces } from '@/hooks/useProvinces';
 import { useCreateVnpayUrlMutation } from '@/services/vnpayApi';
+import { useCreateMomoUrlMutation } from '@/services/momoApi';
+import { useGetLoyaltyInfoQuery } from '@/services/loyaltyApi';
 
 const CheckoutPage: React.FC = () => {
   const { t } = useTranslation();
@@ -124,14 +126,24 @@ const CheckoutPage: React.FC = () => {
 
   const [createOrder] = useCreateOrderMutation();
   const [createVnpayUrl] = useCreateVnpayUrlMutation();
+  const [createMomoUrl] = useCreateMomoUrlMutation();
 
   // Lấy số lượng giỏ hàng từ server
   const { data: serverCartCount } = useGetCartCountQuery();
+
+  // Loyalty points data
+  const { data: loyaltyData } = useGetLoyaltyInfoQuery(undefined, {
+    skip: !user,
+  });
+  const availablePoints = loyaltyData?.data?.points || 0;
+  const [pointsToUse, setPointsToUse] = useState<number>(0);
+  const [pointsError, setPointsError] = useState('');
 
   // Payment methods with i18n
   const paymentMethods = [
     { value: 'cod', label: 'Thanh toán khi nhận hàng (COD)' },
     { value: 'vnpay', label: 'Thanh toán trực tuyến VNPay' },
+    { value: 'momo', label: 'Thanh toán MoMo' },
     { value: 'stripe', label: t('checkout.paymentMethod.creditCard') },
     { value: 'bank_transfer', label: t('checkout.paymentMethod.bankTransfer') },
     { value: 'installment', label: 'Trả góp 0% qua thẻ tín dụng' },
@@ -276,7 +288,11 @@ const CheckoutPage: React.FC = () => {
   const shippingCost = selectedShipping?.price || 0;
   const tax = 0; // 0% tax - taxes are not applied per request
   const discountAmount = appliedDiscount ? appliedDiscount.amount : 0;
-  const total = subtotal + shippingCost + tax - discountAmount;
+  
+  // Point discount calculation (1 point = 1,000 VND)
+  const pointsDiscount = pointsToUse * 1000;
+  
+  const total = subtotal + shippingCost + tax - discountAmount - pointsDiscount;
 
   // Handle form input changes
   const handleInputChange = (name: string, value: string) => {
@@ -458,6 +474,30 @@ const CheckoutPage: React.FC = () => {
     setDiscountError('');
   };
 
+  const handleApplyPoints = (val: number) => {
+    if (val < 0) {
+      setPointsError('Số điểm không hợp lệ');
+      setPointsToUse(0);
+      return;
+    }
+    if (val > availablePoints) {
+      setPointsError(`Bạn chỉ có tối đa ${availablePoints} điểm`);
+      setPointsToUse(availablePoints);
+      return;
+    }
+    
+    // Check if points discount exceeds subtotal
+    if (val * 1000 > subtotal - discountAmount) {
+      const maxPoints = Math.floor((subtotal - discountAmount) / 1000);
+      setPointsToUse(maxPoints);
+      setPointsError(`Giảm giá bằng điểm không được vượt quá giá trị đơn hàng`);
+      return;
+    }
+
+    setPointsToUse(val);
+    setPointsError('');
+  };
+
   // Create order
   const handleCreateOrder = async () => {
     if (!validateForm()) {
@@ -507,6 +547,7 @@ const CheckoutPage: React.FC = () => {
         paymentMethod: formData.paymentMethod,
         notes: formData.notes,
         discountCode: appliedDiscount ? appliedDiscount.code : undefined,
+        pointsToUse: pointsToUse,
       };
 
       const response = await createOrder(orderData).unwrap();
@@ -628,6 +669,38 @@ const CheckoutPage: React.FC = () => {
             addNotification({
               type: 'error',
               message: 'Không thể tạo mã thanh toán VNPay',
+              duration: 5000,
+            })
+          );
+        }
+      }
+      return;
+    }
+
+    if (formData.paymentMethod === 'momo') {
+      let order = currentOrder;
+
+      // Nếu chưa có order (thanh toán mới), tạo order mới
+      if (!order) {
+        order = await handleCreateOrder();
+      }
+
+      if (order) {
+        try {
+          const res = await createMomoUrl({
+            orderId: order.id
+          }).unwrap();
+
+          if (res.data?.payUrl) {
+            window.location.href = res.data.payUrl;
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to create MoMo payment URL', error);
+          dispatch(
+            addNotification({
+              type: 'error',
+              message: 'Không thể tạo mã thanh toán MoMo',
               duration: 5000,
             })
           );
@@ -1016,7 +1089,7 @@ const CheckoutPage: React.FC = () => {
                   <CustomButton
                     variant={appliedDiscount ? "danger" : "primary"}
                     onClick={appliedDiscount ? handleRemoveDiscount : handleApplyDiscount}
-                    isProcessing={isValidatingCode}
+                    isLoading={isValidatingCode}
                     className="h-[42px] px-4"
                   >
                     {appliedDiscount ? "Hủy" : "Áp dụng"}
@@ -1029,6 +1102,46 @@ const CheckoutPage: React.FC = () => {
                   <p className="text-green-600 text-sm mt-1 flex items-center">
                     <CheckCircleOutlined className="mr-1" />
                     Đã áp dụng mã <strong>{appliedDiscount.code}</strong>. Giảm {formatPrice(appliedDiscount.amount)}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Loyalty Points Section */}
+            {user && availablePoints > 0 && !isRepayingOrder && (
+              <div className="mb-6 border-t border-neutral-200 dark:border-neutral-700 pt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Sử dụng điểm tích lũy (Có {availablePoints} điểm)
+                  </span>
+                  <span className="text-xs text-neutral-500">1 điểm = 1,000đ</span>
+                </div>
+                <div className="flex space-x-2 items-end">
+                  <div className="flex-grow">
+                    <Input
+                      type="number"
+                      placeholder="Số điểm muốn dùng"
+                      value={pointsToUse.toString()}
+                      min={0}
+                      max={availablePoints}
+                      onChange={(e) => handleApplyPoints(parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <CustomButton
+                    variant="secondary"
+                    onClick={() => handleApplyPoints(availablePoints)}
+                    className="h-[42px] px-4 text-xs"
+                  >
+                    Dùng hết
+                  </CustomButton>
+                </div>
+                {pointsError && (
+                  <p className="text-red-500 text-xs mt-1">{pointsError}</p>
+                )}
+                {pointsToUse > 0 && !pointsError && (
+                  <p className="text-green-600 text-sm mt-1 flex items-center">
+                    <CheckCircleOutlined className="mr-1" />
+                    Đã áp dụng {pointsToUse} điểm. Giảm {formatPrice(pointsToUse * 1000)}
                   </p>
                 )}
               </div>
@@ -1054,6 +1167,12 @@ const CheckoutPage: React.FC = () => {
                     <div className="flex justify-between text-green-600 font-medium">
                       <span>Mã giảm giá ({appliedDiscount.code})</span>
                       <span>-{formatPrice(appliedDiscount.amount)}</span>
+                    </div>
+                  )}
+                  {pointsToUse > 0 && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>Giảm giá bằng điểm</span>
+                      <span>-{formatPrice(pointsToUse * 1000)}</span>
                     </div>
                   )}
                   {tax > 0 && (
@@ -1090,7 +1209,7 @@ const CheckoutPage: React.FC = () => {
               </PremiumButton>
             )}
 
-            {(['bank_transfer', 'vnpay', 'installment', 'cod'].includes(formData.paymentMethod)) && (!currentOrder || formData.paymentMethod === 'vnpay') && (
+            {(['bank_transfer', 'vnpay', 'momo', 'installment', 'cod'].includes(formData.paymentMethod)) && (!currentOrder || ['vnpay', 'momo'].includes(formData.paymentMethod)) && (
               <PremiumButton
                 variant="primary"
                 size="large"

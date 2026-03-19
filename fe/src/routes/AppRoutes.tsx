@@ -23,6 +23,8 @@ const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const WishlistPage = lazy(() => import('@/pages/WishlistPage'));
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
 const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
+const BrandsPage = lazy(() => import('@/pages/BrandsPage'));
+const CollectionsPage = lazy(() => import('@/pages/CollectionsPage'));
 const DealsPage = lazy(() => import('@/pages/DealsPage'));
 const NewArrivalsPage = lazy(() => import('@/pages/NewArrivalsPage'));
 const BestSellersPage = lazy(() => import('@/pages/BestSellersPage'));
@@ -48,9 +50,15 @@ const AdminWarrantyPackagesPage = lazy(
 const AdminDiscountCodesPage = lazy(
   () => import('@/pages/admin/DiscountCodesPage')
 );
+const AdminBrandsPage = lazy(() => import('@/pages/admin/BrandsPage'));
+const AdminCollectionsPage = lazy(() => import('@/pages/admin/CollectionsPage'));
 const AdminNewsPage = lazy(() => import('@/pages/admin/NewsPage'));
 const CreateNewsPage = lazy(() => import('@/pages/admin/CreateNewsPage'));
 const SupportDashboard = lazy(() => import('@/pages/admin/SupportDashboard'));
+const AdminBannersPage = lazy(() => import('@/pages/admin/BannersPage'));
+const AdminEmailCampaignsPage = lazy(
+  () => import('@/pages/admin/EmailCampaignsPage')
+);
 
 const SimpleNamingTestPage = lazy(
   () => import('@/pages/admin/SimpleNamingTestPage')
@@ -83,6 +91,10 @@ const AppRoutes: React.FC = () => {
           {/* Category pages */}
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="categories/:slug" element={<CategoryPage />} />
+
+          {/* Brand & Collection pages */}
+          <Route path="brands" element={<BrandsPage />} />
+          <Route path="collections" element={<CollectionsPage />} />
 
           {/* Shop sections */}
           <Route path="deals" element={<DealsPage />} />
@@ -228,6 +240,13 @@ const AppRoutes: React.FC = () => {
           <Route
             path="discount-codes"
             element={<AdminDiscountCodesPage />}
+          />
+          <Route path="brands" element={<AdminBrandsPage />} />
+          <Route path="collections" element={<AdminCollectionsPage />} />
+          <Route path="banners" element={<AdminBannersPage />} />
+          <Route
+            path="email-campaigns"
+            element={<AdminEmailCampaignsPage />}
           />
 
           {/* Test Pages */}

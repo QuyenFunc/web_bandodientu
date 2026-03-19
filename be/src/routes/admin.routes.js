@@ -4,6 +4,8 @@ const router = express.Router();
 // Import controllers
 const adminController = require('../controllers/admin.controller');
 const discountCodeController = require('../controllers/discountCode.controller');
+const brandController = require('../controllers/brand.controller');
+const collectionController = require('../controllers/collection.controller');
 
 // Import middlewares
 const { adminAuthenticate } = require('../middlewares/adminAuth');
@@ -190,5 +192,21 @@ router.delete(
   validate(deleteValidation),
   discountCodeController.deleteDiscountCode
 );
+
+/**
+ * BRAND MANAGEMENT ROUTES
+ */
+router.get('/brands', brandController.getAllBrands);
+router.post('/brands', brandController.createBrand);
+router.put('/brands/:id', brandController.updateBrand);
+router.delete('/brands/:id', brandController.deleteBrand);
+
+/**
+ * COLLECTION MANAGEMENT ROUTES
+ */
+router.get('/collections', collectionController.getAllCollections);
+router.post('/collections', collectionController.createCollection);
+router.put('/collections/:id', collectionController.updateCollection);
+router.delete('/collections/:id', collectionController.deleteCollection);
 
 module.exports = router;

@@ -1,13 +1,27 @@
 const nodemailer = require('nodemailer');
+const logger = require('../../utils/logger');
 
-// Create transporter
+// Create transporter with connection pooling for better performance
 const createTransporter = () => {
-  // For development, use a test account
-  if (process.env.NODE_ENV === 'development') {
+  const isGmail = process.env.EMAIL_HOST === 'smtp.gmail.com';
+  
+  const config = {
+    pool: true, // Enable pooling
+    maxConnections: 3, // Max concurrent connections
+    maxMessages: 100, // Max messages per connection
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT || (isGmail ? 587 : 465),
+    secure: process.env.EMAIL_SECURE === 'true' || (!isGmail && process.env.EMAIL_PORT === '465'),
+    auth: {
+      user: process.env.EMAIL_USERNAME,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  };
+
+  if (isGmail) {
     return nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.ethereal.email',
-      port: process.env.EMAIL_PORT || 587,
-      secure: false,
+      service: 'gmail',
+      pool: true,
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
@@ -15,21 +29,22 @@ const createTransporter = () => {
     });
   }
 
-  // For production, use configured email service
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
+  return nodemailer.createTransport(config);
+};
+
+// Singleton transporter instance
+let transporterInstance = null;
+const getTransporter = () => {
+  if (!transporterInstance) {
+    transporterInstance = createTransporter();
+  }
+  return transporterInstance;
 };
 
 // Send email
 const sendEmail = async (options) => {
-  const transporter = createTransporter();
+  const transporter = getTransporter();
+  logger.info(`[EmailService] Sending single email to ${options.email}...`);
 
   const mailOptions = {
     from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM}>`,
@@ -38,7 +53,100 @@ const sendEmail = async (options) => {
     html: options.html,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    logger.info(`[EmailService] Single email sent successfully: ${info.messageId}`);
+    return info;
+  } catch (error) {
+    logger.error(`[EmailService] Failed to send single email to ${options.email}: ${error.message}`);
+    throw error;
+  }
+};
+
+// Send newsletter welcome email
+const sendNewsletterWelcomeEmail = async (email) => {
+  await sendEmail({
+    email,
+    subject: 'Cảm ơn bạn đã đăng ký nhận bản tin!',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+        <div style="background: white; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <h2 style="color: #4f6ef7; margin-bottom: 8px; font-size: 24px;">Chào mừng bạn!</h2>
+          <p style="color: #555; margin-bottom: 24px;">Cảm ơn bạn đã đăng ký nhận bản tin từ chúng tôi. Bạn sẽ nhận được những thông tin mới nhất về sản phẩm, khuyến mãi và tin tức từ cửa hàng.</p>
+          
+          <div style="background: #f0f4ff; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+            <p style="color: #4f6ef7; font-weight: bold; margin: 0;">Khám phá ngay các sản phẩm mới nhất của chúng tôi!</p>
+            <a href="${process.env.FRONTEND_URL}/shop" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background-color: #4f6ef7; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Đi đến cửa hàng</a>
+          </div>
+
+          <p style="color: #aaa; font-size: 12px; text-align: center; margin-top: 16px;">Nếu bạn không muốn nhận email nữa, bạn có thể hủy đăng ký bất kỳ lúc nào.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
+// Send bulk campaign email in batches to avoid rate limits
+const sendBulkCampaignEmail = async (emails, subject, content) => {
+  const transporter = getTransporter();
+  logger.info(`[EmailService] Starting bulk email send to ${emails.length} recipients in batches...`);
+  
+  const results = [];
+  const batchSize = 5; // Send 5 emails at a time
+  const delay = 1000; // 1 second delay between batches
+
+  for (let i = 0; i < emails.length; i += batchSize) {
+    const currentBatch = emails.slice(i, i + batchSize);
+    logger.info(`[EmailService] Sending batch ${Math.floor(i / batchSize) + 1} (${currentBatch.length} emails)...`);
+
+    const batchPromises = currentBatch.map(email => {
+      const mailOptions = {
+        from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM}>`,
+        to: email,
+        subject: subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+              ${content}
+            </div>
+            <div style="margin-top: 20px; text-align: center; color: #888; font-size: 12px;">
+              <p>Bạn nhận được email này vì bạn là thành viên của hệ thống chúng tôi.</p>
+              <p>&copy; ${new Date().getFullYear()} ${process.env.EMAIL_FROM_NAME}. All rights reserved.</p>
+            </div>
+          </div>
+        `,
+      };
+      
+      return transporter.sendMail(mailOptions)
+        .then(info => {
+          logger.info(`[EmailService] Successfully sent to ${email}`);
+          return { email, success: true, messageId: info.messageId };
+        })
+        .catch(err => {
+          logger.error(`[EmailService] Failed to send to ${email}: ${err.message}`);
+          return { email, success: false, error: err.message };
+        });
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+
+    // Wait before next batch if there are more emails
+    if (i + batchSize < emails.length) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  const successCount = results.filter(r => r.success).length;
+  const failCount = results.length - successCount;
+  
+  logger.info(`[EmailService] Bulk send completed. Total: ${results.length}, Success: ${successCount}, Failed: ${failCount}`);
+  
+  if (successCount === 0 && results.length > 0) {
+    throw new Error('All emails failed to send. Check logs for details.');
+  }
+
+  return results;
 };
 
 // Send OTP verification email
@@ -226,5 +334,7 @@ module.exports = {
   sendOrderConfirmationEmail,
   sendOrderStatusUpdateEmail,
   sendOrderCancellationEmail,
+  sendNewsletterWelcomeEmail,
+  sendBulkCampaignEmail,
 };
 

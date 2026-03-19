@@ -5,6 +5,7 @@ const {
   ProductVariant,
   ProductSpecification,
   Review,
+  RecentlyViewed,
   sequelize,
 } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
@@ -25,6 +26,8 @@ const getAllProducts = async (req, res, next) => {
       inStock,
       featured,
       status,
+      brand,
+      collection,
     } = req.query;
 
     // Build filter conditions
@@ -96,7 +99,55 @@ const getAllProducts = async (req, res, next) => {
           through: { attributes: [] },
         });
       }
+    }
+
+    // Brand filter
+    if (brand) {
+      const brands = Array.isArray(brand) ? brand : [brand];
+      const brandConditions = brands.map((b) => {
+        const isValidUUID =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            b
+          );
+        return isValidUUID ? { id: b } : { slug: b };
+      });
+
+      includeConditions.push({
+        association: 'brand',
+        where: { [Op.or]: brandConditions },
+        required: true,
+      });
     } else {
+      includeConditions.push({
+        association: 'brand',
+        required: false,
+      });
+    }
+
+    // Collection filter
+    if (collection) {
+      const collections = Array.isArray(collection) ? collection : [collection];
+      const collectionConditions = collections.map((c) => {
+        const isValidUUID =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            c
+          );
+        return isValidUUID ? { id: c } : { slug: c };
+      });
+
+      includeConditions.push({
+        association: 'collections',
+        where: { [Op.or]: collectionConditions },
+        through: { attributes: [] },
+        required: true,
+      });
+    }
+
+    // Always include categories if not already included by filter
+    const categoryIncluded = includeConditions.some(
+      (inc) => inc.association === 'categories'
+    );
+    if (!categoryIncluded) {
       includeConditions.push({
         association: 'categories',
         through: { attributes: [] },
@@ -260,6 +311,19 @@ const getProductById = async (req, res, next) => {
       ratings,
     };
 
+    // Record recently viewed if user is logged in
+    if (req.user) {
+      try {
+        await RecentlyViewed.upsert({
+          userId: req.user.id,
+          productId: id,
+          viewedAt: new Date(),
+        });
+      } catch (err) {
+        console.error('Error recording recently viewed:', err);
+      }
+    }
+
     res.status(200).json({
       status: 'success',
       data: productWithRatings,
@@ -407,6 +471,19 @@ const getProductBySlug = async (req, res, next) => {
               ? selectedVariant.images
               : productJson.images,
         };
+      }
+    }
+
+    // Record recently viewed if user is logged in
+    if (req.user) {
+      try {
+        await RecentlyViewed.upsert({
+          userId: req.user.id,
+          productId: product.id,
+          viewedAt: new Date(),
+        });
+      } catch (err) {
+        console.error('Error recording recently viewed:', err);
       }
     }
 
@@ -1540,10 +1617,74 @@ const getProductFilters = async (req, res, next) => {
   }
 };
 
+// Get recently viewed products
+const getRecentlyViewed = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { limit = 10 } = req.query;
+
+    const recentlyViewed = await RecentlyViewed.findAll({
+      where: { userId },
+      limit: parseInt(limit),
+      order: [['viewedAt', 'DESC']],
+      include: [
+        {
+          model: Product,
+          attributes: ['id', 'name', 'slug', 'price', 'compareAtPrice', 'thumbnail'],
+          include: [
+            {
+              association: 'reviews',
+              attributes: ['rating'],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Process products to add ratings
+    const products = recentlyViewed.map((rv) => {
+      const product = rv.Product;
+      const productJson = product.toJSON();
+
+      const ratings = {
+        average: 0,
+        count: 0,
+      };
+
+      if (productJson.reviews && productJson.reviews.length > 0) {
+        const totalRating = productJson.reviews.reduce(
+          (sum, review) => sum + review.rating,
+          0
+        );
+        ratings.average = parseFloat(
+          (totalRating / productJson.reviews.length).toFixed(1)
+        );
+        ratings.count = productJson.reviews.length;
+      }
+
+      delete productJson.reviews;
+
+      return {
+        ...productJson,
+        ratings,
+        viewedAt: rv.viewedAt,
+      };
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllProducts,
   getProductById,
   getProductBySlug,
+  getRecentlyViewed,
   createProduct,
   updateProduct,
   deleteProduct,

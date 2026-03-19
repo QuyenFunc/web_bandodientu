@@ -96,6 +96,14 @@
       "title": "Mua Sắm Theo Danh Mục",
       "productsCount": "Sản Phẩm"
     },
+    "brands": {
+      "title": "Thương Hiệu Nổi Bật",
+      "viewAll": "Xem Tất Cả"
+    },
+    "collections": {
+      "title": "Bộ Sưu Tập Mới",
+      "viewAll": "Xem Tất Cả"
+    },
     "promotion": {
       "badge": "Ưu Đãi Có Thời Hạn",
       "title": "Giảm 20% Cho Tất Cả Hàng Mới Về",
@@ -539,7 +547,21 @@
     "ordersTotal": "đơn hàng tổng cộng",
     "previous": "Trước",
     "next": "Tiếp",
-    "tryAgain": "Thử Lại"
+    "tryAgain": "Thử Lại",
+    "paymentMethod": "Phương thức thanh toán",
+    "paymentMethods": {
+      "cod": "Thanh toán khi nhận hàng",
+      "paypal": "PayPal",
+      "bank_transfer": "Chuyển khoản ngân hàng",
+      "vnpay": "VNPAY",
+      "momo": "MoMo",
+      "installment": "Trả góp"
+    },
+    "confirmReceived": "Đã nhận hàng",
+    "confirming": "Đang xác nhận...",
+    "confirmReceivedPrompt": "Bạn xác nhận đã nhận được đơn hàng này?",
+    "receivedSuccess": "Đã xác nhận nhận hàng thành công!",
+    "receivedWithPoints": "Xác nhận nhận hàng thành công! Bạn đã nhận được {{points}} điểm tích lũy."
   },
   "payment": {
     "initializingPayment": "Đang khởi tạo thanh toán...",

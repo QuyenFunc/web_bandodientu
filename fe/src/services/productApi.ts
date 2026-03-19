@@ -57,9 +57,11 @@ export const productApi = api.injectEndpoints({
     }),
 
     getFeaturedProducts: builder.query<any, { limit?: number } | void>({
-      query: (params = {}) => {
+      query: (params) => {
         const queryParams = new URLSearchParams();
-        if (params.limit) queryParams.append('limit', params.limit.toString());
+        if (params && typeof params === 'object' && 'limit' in params && params.limit) {
+          queryParams.append('limit', params.limit.toString());
+        }
 
         return {
           url: `/products/featured?${queryParams.toString()}`,
@@ -71,9 +73,11 @@ export const productApi = api.injectEndpoints({
     }),
 
     getNewArrivals: builder.query<any, { limit?: number } | void>({
-      query: (params = {}) => {
+      query: (params) => {
         const queryParams = new URLSearchParams();
-        if (params.limit) queryParams.append('limit', params.limit.toString());
+        if (params && typeof params === 'object' && 'limit' in params && params.limit) {
+          queryParams.append('limit', params.limit.toString());
+        }
 
         return {
           url: `/products/new-arrivals?${queryParams.toString()}`,
@@ -190,6 +194,21 @@ export const productApi = api.injectEndpoints({
       },
       providesTags: ['Product'],
     }),
+    getRecentlyViewed: builder.query<any, { limit?: number } | void>({
+      query: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params && 'limit' in params && params.limit) {
+          queryParams.append('limit', params.limit.toString());
+        }
+
+        return {
+          url: `/products/recently-viewed?${queryParams.toString()}`,
+          method: 'GET',
+        };
+      },
+      transformResponse: transformProductsResponse,
+      providesTags: (result) => generateProductTags(result, 'RECENTLY_VIEWED'),
+    }),
   }),
 });
 
@@ -206,6 +225,7 @@ export const {
   useGetProductReviewsSummaryQuery,
   useSearchProductsQuery,
   useGetProductFiltersQuery,
+  useGetRecentlyViewedQuery,
 } = productApi;
 
 export type { Product } from '@/types/product.types';

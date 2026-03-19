@@ -96,6 +96,14 @@
       "title": "Shop by Category",
       "productsCount": "Products"
     },
+    "brands": {
+      "title": "Featured Brands",
+      "viewAll": "View All"
+    },
+    "collections": {
+      "title": "New Collections",
+      "viewAll": "View All"
+    },
     "promotion": {
       "badge": "Limited Time Offer",
       "title": "Get 20% Off on All New Arrivals",
@@ -538,7 +546,21 @@
     "ordersTotal": "orders total",
     "previous": "Previous",
     "next": "Next",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "paymentMethod": "Payment Method",
+    "paymentMethods": {
+      "cod": "Cash on Delivery",
+      "paypal": "PayPal",
+      "bank_transfer": "Bank Transfer",
+      "vnpay": "VNPAY",
+      "momo": "MoMo",
+      "installment": "Installment"
+    },
+    "confirmReceived": "Confirm Received",
+    "confirming": "Confirming...",
+    "confirmReceivedPrompt": "Are you sure you have received this order?",
+    "receivedSuccess": "Delivery confirmed successfully!",
+    "receivedWithPoints": "Delivery confirmed! You have earned {{points}} loyalty points."
   },
   "payment": {
     "initializingPayment": "Initializing payment...",

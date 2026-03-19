@@ -21,6 +21,12 @@ const attributeRoutes = require('./attributeRoutes');
 const imageRoutes = require('./image.routes');
 const newsRoutes = require('./news.routes');
 const contactRoutes = require('./contact.routes');
+const brandRoutes = require('./brand.routes');
+const collectionRoutes = require('./collection.routes');
+const searchHistoryRoutes = require('./searchHistory.routes');
+const loyaltyRoutes = require('./loyalty.routes');
+const bannerRoutes = require('./banner.routes');
+const emailCampaignRoutes = require('./emailCampaign.routes');
 
 // API routes
 router.use('/auth', authRoutes);
@@ -42,6 +48,12 @@ router.use('/attributes', attributeRoutes);
 router.use('/images', imageRoutes);
 router.use('/news', newsRoutes);
 router.use('/contact', contactRoutes);
+router.use('/brands', brandRoutes);
+router.use('/collections', collectionRoutes);
+router.use('/search-history', searchHistoryRoutes);
+router.use('/loyalty', loyaltyRoutes);
+router.use('/banners', bannerRoutes);
+router.use('/email-campaigns', emailCampaignRoutes);
 
 // Health check route
 router.get('/health', (req, res) => {

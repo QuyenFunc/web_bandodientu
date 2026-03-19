@@ -8,6 +8,7 @@ import {
   useGetUserOrdersQuery,
   useCancelOrderMutation,
   useRepayOrderMutation,
+  useConfirmReceivedMutation,
 } from '@/services/orderApi';
 import { formatPrice } from '@/utils/format';
 import { useSelector } from 'react-redux';
@@ -42,6 +43,7 @@ const OrdersPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
   const [repayingOrder, setRepayingOrder] = useState<string | null>(null);
+  const [confirmingOrder, setConfirmingOrder] = useState<string | null>(null);
   
   // Review Modal state
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -66,6 +68,9 @@ const OrdersPage: React.FC = () => {
 
   // Repay order mutation
   const [repayOrder] = useRepayOrderMutation();
+
+  // Confirm received mutation
+  const [confirmReceived] = useConfirmReceivedMutation();
 
   // Toggle order details
   const toggleOrderDetails = (orderId: string) => {
@@ -114,6 +119,29 @@ const OrdersPage: React.FC = () => {
       toast.error(t('payment.errors.initializationFailed'));
     } finally {
       setRepayingOrder(null);
+    }
+  };
+
+  // Handle confirm received
+  const handleConfirmReceived = async (orderId: string) => {
+    if (!confirm(t('orders.confirmReceivedPrompt'))) return;
+
+    setConfirmingOrder(orderId);
+    try {
+      const response = await confirmReceived(orderId).unwrap();
+      const points = response.pointsEarned || 0;
+      
+      if (points > 0) {
+        toast.success(t('orders.receivedWithPoints', { points }));
+      } else {
+        toast.success(t('orders.receivedSuccess'));
+      }
+      refetch();
+    } catch (error) {
+      console.error('Failed to confirm delivery:', error);
+      toast.error(t('common.error'));
+    } finally {
+      setConfirmingOrder(null);
     }
   };
 
@@ -326,6 +354,11 @@ const OrdersPage: React.FC = () => {
                           {t('orders.placedOn', {
                             date: formatDate(order.createdAt),
                           })}
+                          {order.paymentMethod && (
+                            <span className="ml-2 pl-2 border-l border-neutral-300 dark:border-neutral-700">
+                              {t(`orders.paymentMethods.${order.paymentMethod.toLowerCase()}`, { defaultValue: order.paymentMethod })}
+                            </span>
+                          )}
                         </p>
                       </div>
                       
@@ -373,6 +406,21 @@ const OrdersPage: React.FC = () => {
                           {cancellingOrder === order.id
                             ? t('orders.cancelling')
                             : t('orders.cancelOrder')}
+                        </Button>
+                      )}
+
+                      {(order.status === 'shipped' || (order.status === 'delivered' && !order.pointsEarned)) && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleConfirmReceived(order.id)}
+                          disabled={confirmingOrder === order.id}
+                          className="bg-green-600 hover:bg-green-700 text-white border-none shadow-sm flex items-center gap-1"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          {confirmingOrder === order.id
+                            ? t('orders.confirming')
+                            : t('orders.confirmReceived')}
                         </Button>
                       )}
                     </div>

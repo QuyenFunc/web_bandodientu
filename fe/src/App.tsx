@@ -49,7 +49,7 @@ const AppContent: React.FC = () => {
           <LoginSuccess />
           <AppRoutes />
           <ChatWidgetPortal />
-          <SupportChat />
+          {/* <SupportChat /> */}
         </StripeProvider>
       </AuthProvider>
     </HelmetProvider>

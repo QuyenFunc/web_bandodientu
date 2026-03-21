@@ -484,6 +484,7 @@
       "selectLabel": "Chọn Phương Thức Thanh Toán",
       "creditCard": "Thẻ Tín Dụng",
       "paypal": "PayPal",
+      "vnpay": "VNPay",
       "bankTransfer": "Chuyển Khoản Ngân Hàng"
     },
     "creditCard": {
@@ -675,6 +676,7 @@
       "paypal": "PayPal",
       "bank_transfer": "Chuyển khoản ngân hàng",
       "momo": "MoMo",
+      "vnpay": "VNPay",
       "installment": "Trả góp"
     },
     "confirmReceived": "Đã nhận hàng",

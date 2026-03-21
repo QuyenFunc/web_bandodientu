@@ -363,6 +363,7 @@
       "selectLabel": "Select Payment Method",
       "creditCard": "Credit Card",
       "paypal": "PayPal",
+      "vnpay": "VNPay",
       "bankTransfer": "Bank Transfer"
     },
     "creditCard": {
@@ -553,6 +554,7 @@
       "paypal": "PayPal",
       "bank_transfer": "Bank Transfer",
       "momo": "MoMo",
+      "vnpay": "VNPay",
       "installment": "Installment"
     },
     "confirmReceived": "Confirm Received",

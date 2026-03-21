@@ -142,7 +142,7 @@ const CheckoutPage: React.FC = () => {
   // Payment methods with i18n
   const paymentMethods = [
     { value: 'cod', label: 'Thanh toán khi nhận hàng (COD)' },
-    { value: 'vnpay', label: 'Thanh toán VNPay' },
+    { value: 'vnpay', label: t('checkout.paymentMethod.vnpay') },
     { value: 'momo', label: 'Thanh toán MoMo' },
     { value: 'installment', label: 'Trả góp 0% qua thẻ tín dụng' },
   ];

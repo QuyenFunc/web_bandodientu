@@ -14,6 +14,7 @@ import CustomButton from '@/components/common/Button';
 import PremiumButton from '@/components/common/PremiumButton';
 import Input from '@/components/common/Input';
 import Select from '@/components/common/Select';
+import AddressPicker from '@/components/common/AddressPicker';
 import CartItem from '@/components/features/CartItem';
 import StripePaymentForm from '@/components/payment/StripePaymentForm';
 import BankTransferQR from '@/components/payment/BankTransferQR';
@@ -23,7 +24,6 @@ import { addNotification } from '@/features/ui/uiSlice';
 import { formatPrice } from '@/utils/format';
 import { useCreateOrderMutation, useApplyDiscountCodeMutation } from '@/services/orderApi';
 import { cartApi, useGetCartCountQuery } from '@/services/cartApi';
-import { useProvinces } from '@/hooks/useProvinces';
 import { useCreateVnpayUrlMutation } from '@/services/vnpayApi';
 import { useCreateMomoUrlMutation } from '@/services/momoApi';
 import { useGetLoyaltyInfoQuery } from '@/services/loyaltyApi';
@@ -203,21 +203,7 @@ const CheckoutPage: React.FC = () => {
   const [currentOrder, setCurrentOrder] = useState<any>(null);
   const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
 
-  // Provinces hook
-  const {
-    provinces,
-    districts,
-    wards,
-    loadingProvinces,
-    loadingDistricts,
-    loadingWards,
-    fetchDistricts,
-    fetchWards
-  } = useProvinces();
-
-  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>('');
-  const [selectedDistrictCode, setSelectedDistrictCode] = useState<string>('');
-  const [selectedWardCode, setSelectedWardCode] = useState<string>('');
+  // Removed Provinces hook
 
   // Discount code states
   const [discountCodeInput, setDiscountCodeInput] = useState('');
@@ -282,10 +268,41 @@ const CheckoutPage: React.FC = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const selectedShipping = shippingMethods.find(
-    (method) => method.value === formData.shippingMethod
-  );
-  const shippingCost = selectedShipping?.price || 0;
+
+  // Tính phí vận chuyển tự động theo khoảng cách tuyến tính sử dụng API LocationIQ
+  let shippingCost = 0;
+  let finalDistance = 0;
+
+  if (formData.address) {
+    const lat = (formData as any).lat;
+    const lon = (formData as any).lon;
+    
+    if (lat && lon) {
+      const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const deg2rad = (deg: number) => deg * (Math.PI / 180);
+        const R = 6371; 
+        const dLat = deg2rad(lat2 - lat1);
+        const dLon = deg2rad(lon2 - lon1); 
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+          Math.sin(dLon/2) * Math.sin(dLon/2); 
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        return R * c;
+      };
+
+      const calculateShippingFee = (distanceInKm: number) => {
+        if (distanceInKm <= 3) return 15000; // 3km đầu tiên đồng giá 15k
+        const fee = 15000 + Math.ceil(distanceInKm - 3) * 5000; // km thứ 4 trở đi cộng thêm 5k/km
+        return Math.min(fee, 100000); // max 100k
+      };
+
+      // Tọa độ gốc cửa hàng: 144 Đ. Xuân Thủy, Cầu Giấy, HN (21.0378, 105.7827)
+      finalDistance = calculateDistance(21.0378, 105.7827, parseFloat(lat), parseFloat(lon));
+      shippingCost = calculateShippingFee(finalDistance);
+    }
+  }
+
   const tax = 0; // 0% tax - taxes are not applied per request
   const discountAmount = appliedDiscount ? appliedDiscount.amount : 0;
   
@@ -299,12 +316,12 @@ const CheckoutPage: React.FC = () => {
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
 
-      // Update derived fields logic
-      if (['addressDetail', 'ward'].includes(name)) {
-        updated.address = [updated.addressDetail, updated.ward].filter(Boolean).join(', ');
+      // Auto-fill mock fields to bypass backend validation
+      if (name === 'address') {
+        let parts = value.split(',');
+        updated.state = parts.length > 2 ? parts[parts.length - 2].trim() : 'Việt Nam';
+        updated.city = parts.length > 3 ? parts[parts.length - 3].trim() : 'Thành phố';
       }
-      if (name === 'district') updated.city = value;
-      if (name === 'province') updated.state = value;
 
       // Auto-fill billing address if same as shipping
       if (updated.sameAsShipping && name.startsWith('shipping')) {
@@ -324,48 +341,7 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  // Handle Province change
-  const handleProvinceChange = (provinceCode: string) => {
-    setSelectedProvinceCode(provinceCode);
-    setSelectedDistrictCode('');
-    setSelectedWardCode('');
-
-    // Tìm tên tỉnh
-    const province = provinces.find(p => p.code.toString() === provinceCode);
-    if (province) {
-      handleInputChange('province', province.name);
-      handleInputChange('district', '');
-      handleInputChange('ward', '');
-    }
-
-    fetchDistricts(provinceCode);
-  };
-
-  // Handle District change
-  const handleDistrictChange = (districtCode: string) => {
-    setSelectedDistrictCode(districtCode);
-    setSelectedWardCode('');
-
-    // Tìm tên huyện
-    const district = districts.find(d => d.code.toString() === districtCode);
-    if (district) {
-      handleInputChange('district', district.name);
-      handleInputChange('ward', '');
-    }
-
-    fetchWards(districtCode);
-  };
-
-  // Handle Ward change
-  const handleWardChange = (wardCode: string) => {
-    setSelectedWardCode(wardCode);
-
-    // Tìm tên xã
-    const ward = wards.find(w => w.code.toString() === wardCode);
-    if (ward) {
-      handleInputChange('ward', ward.name);
-    }
-  };
+  // Removed old province handlers
 
   // Handle same as shipping checkbox
   const handleSameAsShipping = (checked: boolean) => {
@@ -395,9 +371,7 @@ const CheckoutPage: React.FC = () => {
       'lastName',
       'email',
       'phone',
-      'addressDetail',
-      'city',
-      'state',
+      'address',
     ];
 
     requiredFields.forEach((field) => {
@@ -548,6 +522,7 @@ const CheckoutPage: React.FC = () => {
         notes: formData.notes,
         discountCode: appliedDiscount ? appliedDiscount.code : undefined,
         pointsToUse: pointsToUse,
+        shippingCost: shippingCost,
       };
 
       const response = await createOrder(orderData).unwrap();
@@ -862,43 +837,17 @@ const CheckoutPage: React.FC = () => {
                   error={errors.phone}
                   required
                 />
-                <Select
-                  label="Tỉnh / Thành phố"
-                  value={selectedProvinceCode}
-                  onChange={handleProvinceChange}
-                  options={provinces.map(p => ({ value: p.code.toString(), label: p.name }))}
-                  error={errors.state}
-                  placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh / thành phố"}
-                  required
-                />
-                <Select
-                  label="Quận / Huyện"
-                  value={selectedDistrictCode}
-                  onChange={handleDistrictChange}
-                  options={districts.map(d => ({ value: d.code.toString(), label: d.name }))}
-                  error={errors.city}
-                  disabled={!selectedProvinceCode}
-                  placeholder={loadingDistricts ? "Đang tải..." : "Chọn quận / huyện"}
-                  required
-                />
-                <Select
-                  label="Phường / Xã"
-                  value={selectedWardCode}
-                  onChange={handleWardChange}
-                  options={wards.map(w => ({ value: w.code.toString(), label: w.name }))}
-                  disabled={!selectedDistrictCode}
-                  placeholder={loadingWards ? "Đang tải..." : "Chọn phường / xã"}
-                  required
-                />
                 <div className="md:col-span-2">
-                  <Input
-                    label="Số nhà, Tên đường"
-                    value={formData.addressDetail}
-                    onChange={(e) =>
-                      handleInputChange('addressDetail', e.target.value)
-                    }
-                    error={errors.addressDetail}
-                    placeholder="Ví dụ: Số 123, Đường ABC"
+                  <AddressPicker
+                    label="Địa chỉ giao hàng"
+                    value={formData.address}
+                    onChange={(val, lat, lon) => {
+                      handleInputChange('address', val);
+                      if (lat && lon) {
+                        setFormData(prev => ({ ...prev, lat, lon }));
+                      }
+                    }}
+                    error={errors.address}
                     required
                   />
                 </div>
@@ -906,45 +855,7 @@ const CheckoutPage: React.FC = () => {
             </div>
           )}
 
-          {/* Shipping Method - Ẩn khi thanh toán lại */}
-          {/* HIDDEN TEMPORARILY */}
-          {/* {!isRepayingOrder && (
-            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-neutral-800 dark:text-neutral-100 mb-6">
-                {t('checkout.shippingMethod.title')}
-              </h2>
-
-              <div className="space-y-3">
-                {shippingMethods.map((method) => (
-                  <label
-                    key={method.value}
-                    className="flex items-center p-3 border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700"
-                  >
-                    <input
-                      type="radio"
-                      name="shippingMethod"
-                      value={method.value}
-                      checked={formData.shippingMethod === method.value}
-                      onChange={(e) =>
-                        handleInputChange('shippingMethod', e.target.value)
-                      }
-                      className="mr-3"
-                    />
-                    <div className="flex-grow">
-                      <div className="font-medium text-neutral-800 dark:text-neutral-100">
-                        {method.label}
-                      </div>
-                    </div>
-                    <div className="font-semibold text-neutral-800 dark:text-neutral-100">
-                      {method.price === 0
-                        ? t('checkout.shippingMethod.freeLabel')
-                        : formatPrice(method.price)}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )} */}
+          {/* Đã xóa phương thức giao hàng tĩnh theo yêu cầu, phí giao hàng được tính tự động. */}
 
           {/* Payment Method Selection */}
           <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-6">
@@ -1156,7 +1067,14 @@ const CheckoutPage: React.FC = () => {
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
-                    <span>{t('checkout.orderSummary.shipping')}</span>
+                    <div className="flex flex-col">
+                      <span>{t('checkout.orderSummary.shipping')}</span>
+                      {finalDistance > 0 && (
+                        <span className="text-base font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1.5 rounded-md mt-1.5 shadow-sm border border-emerald-100 dark:border-emerald-800 inline-flex items-center">
+                          📍 Khoảng cách: {finalDistance.toFixed(1)} km - Phí: {formatPrice(shippingCost)}
+                        </span>
+                      )}
+                    </div>
                     <span>
                       {shippingCost === 0
                         ? t('checkout.orderSummary.freeShipping')

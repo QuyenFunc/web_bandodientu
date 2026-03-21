@@ -27,6 +27,7 @@ const searchHistoryRoutes = require('./searchHistory.routes');
 const loyaltyRoutes = require('./loyalty.routes');
 const bannerRoutes = require('./banner.routes');
 const emailCampaignRoutes = require('./emailCampaign.routes');
+const locationRoutes = require('./location.routes');
 
 // API routes
 router.use('/auth', authRoutes);
@@ -54,6 +55,7 @@ router.use('/search-history', searchHistoryRoutes);
 router.use('/loyalty', loyaltyRoutes);
 router.use('/banners', bannerRoutes);
 router.use('/email-campaigns', emailCampaignRoutes);
+router.use('/location', locationRoutes);
 
 // Health check route
 router.get('/health', (req, res) => {

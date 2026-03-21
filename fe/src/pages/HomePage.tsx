@@ -116,7 +116,7 @@ const HomePage: React.FC = () => {
       {/* Featured Products */}
       <PageSection
         title={t('homepage.featuredProducts.title')}
-        className="py-16 bg-neutral-50 dark:bg-neutral-900"
+        className="py-12 bg-neutral-50 dark:bg-neutral-900"
         headerActions={
           <Link
             to="/shop"
@@ -173,7 +173,7 @@ const HomePage: React.FC = () => {
       {/* Categories */}
       <PageSection
         title={t('homepage.categories.title')}
-        className="py-16 bg-white dark:bg-neutral-800"
+        className="py-12 bg-white dark:bg-neutral-800"
       >
         {categories.isLoading ? (
           <CategoryGrid>
@@ -210,10 +210,10 @@ const HomePage: React.FC = () => {
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6">
-                  <h3 className="text-xl font-bold text-white mb-1 drop-shadow-md">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-0.5 drop-shadow-md truncate">
                     {category.name}
                   </h3>
-                  <p className="text-white text-sm drop-shadow-md">
+                  <p className="text-white text-xs md:text-sm drop-shadow-md">
                     {category.count} {t('homepage.categories.productsCount')}
                   </p>
                 </div>
@@ -226,7 +226,7 @@ const HomePage: React.FC = () => {
       {/* Brands Section */}
       <PageSection
         title={t('homepage.brands.title')}
-        className="py-16 bg-neutral-50 dark:bg-neutral-900"
+        className="py-12 bg-neutral-50 dark:bg-neutral-900"
         headerActions={
           <Link
             to="/shop"
@@ -281,7 +281,7 @@ const HomePage: React.FC = () => {
       {/* Collections Section */}
       <PageSection
         title={t('homepage.collections.title')}
-        className="py-16 bg-white dark:bg-neutral-800"
+        className="py-12 bg-white dark:bg-neutral-800"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {collections.isLoading

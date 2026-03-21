@@ -114,6 +114,28 @@
       "shopNewArrivals": "Mua Hàng Mới Về",
       "imageAlt": "Ưu đãi đặc biệt - Phụ nữ với túi mua sắm"
     },
+    "bestSellers": {
+      "title": "Sản Phẩm Bán Chạy",
+      "subtitle": "Khám phá những sản phẩm phổ biến nhất được hàng ngàn khách hàng yêu thích.",
+      "badge": "Sản phẩm yêu thích",
+      "stats": "Đang hiển thị {{current}} trên {{total}} sản phẩm",
+      "browse": "Khám phá các sản phẩm bán chạy nhất của chúng tôi",
+      "sortBy": "Sắp xếp theo",
+      "noProducts": {
+        "title": "Chưa có sản phẩm bán chạy",
+        "message": "Vui lòng quay lại sau để xem các sản phẩm phổ biến nhất"
+      },
+      "error": {
+        "title": "Lỗi Tải Sản Phẩm",
+        "message": "Chúng tôi gặp sự cố khi tải danh sách bán chạy. Vui lòng thử lại sau."
+      },
+      "sort": {
+        "popular": "Phổ biến nhất",
+        "price_asc": "Giá: Thấp đến Cao",
+        "price_desc": "Giá: Cao đến Thấp",
+        "newest": "Mới nhất"
+      }
+    },
     "newsletter": {
       "title": "Đăng Ký Nhận Bản Tin",
       "description": "Cập nhật những sản phẩm mới nhất, ưu đãi độc quyền và mẹo mua sắm của chúng tôi.",
@@ -289,7 +311,6 @@
     "goHome": "Về Trang Chủ",
     "login": "Đăng Nhập"
   },
-
   "cart": {
     "title": "Giỏ Hàng Của Bạn",
     "emptyCart": {
@@ -320,9 +341,108 @@
       "cleared": "Đã xóa tất cả sản phẩm trong giỏ hàng",
       "serverError": "Không thể xóa giỏ hàng trên server. Đã xóa giỏ hàng local.",
       "loadError": "Không thể tải giỏ hàng từ server. Đang sử dụng dữ liệu local."
+    },
+    "voucher": {
+      "title": "Mã giảm giá",
+      "placeholder": "Nhập mã voucher...",
+      "apply": "Áp dụng",
+      "remove": "Huỷ",
+      "appliedSuccess": "Áp dụng mã giảm giá thành công! 🎉",
+      "removedSuccess": "Đã huỷ mã giảm giá",
+      "invalid": "Mã giảm giá không hợp lệ",
+      "cancelled": "Mã giảm giá bị huỷ: {{message}}",
+      "discountLabel": "Giảm giá ({{code}})"
+    },
+    "validation": {
+      "outOfStock": "Hết hàng",
+      "stockIssues": "Một số sản phẩm trong giỏ có thay đổi:",
+      "outOfStockAction": "❌ Hết hàng — vui lòng xoá khỏi giỏ",
+      "onlyLeft": "📦 Chỉ còn {{max}} sản phẩm, bạn đang đặt {{qty}}",
+      "priceChanged": "💸 Giá đã thay đổi: {{old}} → {{new}}",
+      "cartHasOutOfStock": "Giỏ có sản phẩm hết hàng"
     }
   },
-
+  "shop": {
+    "title": "Cửa Hàng Sản Phẩm",
+    "subtitle": "Khám phá bộ sưu tập sản phẩm của chúng tôi",
+    "stats": "Hiển thị {{current}} trong tổng số {{total}} sản phẩm",
+    "filtersButton": "Bộ lọc sản phẩm",
+    "viewMode": "Chế độ xem",
+    "sortBy": "Sắp xếp theo",
+    "noProducts": {
+      "title": "Không tìm thấy sản phẩm",
+      "message": "Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn",
+      "clearFilters": "Xóa bộ lọc"
+    },
+    "sort": {
+      "newest": "Mới nhất",
+      "price_asc": "Giá: Thấp đến Cao",
+      "price_desc": "Giá: Cao đến Thấp",
+      "popular": "Phổ biến nhất"
+    },
+    "filters": {
+      "title": "Bộ lọc sản phẩm",
+      "close": "Đóng bộ lọc",
+      "priceRange": "Khoảng Giá",
+      "minPrice": "Tối thiểu (VND)",
+      "maxPrice": "Tối đa (VND)",
+      "applyPrice": "Áp dụng khoảng giá",
+      "clearAll": "Xóa tất cả bộ lọc",
+      "presets": {
+        "under100k": "Dưới 100K",
+        "100k_500k": "100K - 500K",
+        "500k_1m": "500K - 1M",
+        "1m_5m": "1M - 5M",
+        "5m_10m": "5M - 10M",
+        "over10m": "Trên 10M"
+      }
+    }
+  },
+  "productDetail": {
+    "notFound": {
+      "title": "Không tìm thấy sản phẩm",
+      "message": "Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.",
+      "continueShopping": "Tiếp tục mua sắm"
+    },
+    "breadcrumb": {
+      "home": "Trang chủ"
+    },
+    "viewReviews": "Xem đánh giá",
+    "stock": {
+      "inStock": "Còn hàng",
+      "outOfStock": "Hết hàng"
+    },
+    "quantityLabel": "Số lượng",
+    "addToCart": "Thêm vào giỏ hàng",
+    "buyNow": "Mua ngay",
+    "relatedProducts": "Sản phẩm liên quan",
+    "recentlyViewed": "Sản phẩm vừa xem",
+    "customerReviews": "Đánh giá từ khách hàng",
+    "selectVariant": "Vui lòng chọn: {{attributes}}"
+  },
+  "footer": {
+    "hotline": "Hotline",
+    "hnStore": "Cửa hàng Hà Nội",
+    "hcmStore": "Cửa hàng TP. HCM",
+    "directions": "Chỉ đường",
+    "usefulInfo": "Thông tin hữu ích",
+    "feedback": {
+      "title": "Phản hồi, góp ý",
+      "description": "Đội ngũ Kiểm Soát Chất Lượng của chúng tôi sẵn sàng lắng nghe quý khách.",
+      "sendButton": "Gửi phản hồi"
+    },
+    "policies": {
+      "warranty": "Chính sách bảo hành",
+      "returns": "Chính sách đổi trả",
+      "shipping": "Chính sách vận chuyển",
+      "privacy": "Chính sách bảo mật",
+      "payment": "Chính sách thanh toán",
+      "inspection": "Chính sách kiểm hàng",
+      "guide": "Hướng dẫn mua hàng online",
+      "about": "Về chúng tôi"
+    },
+    "copyright": "Tất cả các quyền được bảo lưu."
+  },
   "checkout": {
     "title": "Thanh Toán",
     "emptyCart": {
@@ -579,6 +699,22 @@
     }
   },
   "admin": {
+    "title": "Bảng quản trị",
+    "menu": "Menu quản trị",
+    "backToStore": "Về trang shop",
+    "nav": {
+      "dashboard": "Tổng quan",
+      "products": "Sản phẩm",
+      "news": "Tin tức",
+      "categories": "Danh mục",
+      "brands": "Thương hiệu",
+      "collections": "Bộ sưu tập",
+      "orders": "Đơn hàng",
+      "users": "Người dùng",
+      "warranty": "Gói bảo hành",
+      "discounts": "Mã giảm giá",
+      "email": "Chiến dịch Email"
+    },
     "dashboard": {
       "title": "Bảng Điều Khiển Admin",
       "lastUpdated": "Cập nhật lần cuối",
@@ -609,11 +745,11 @@
         "noRecentOrders": "Không có đơn hàng gần đây",
         "noProductData": "Không có dữ liệu sản phẩm"
       },
-      "orderStatus": {
+      "status": {
         "pending": "Chờ xử lý",
         "processing": "Đang xử lý",
-        "shipped": "Đã gửi",
-        "delivered": "Đã giao",
+        "shipped": "Đã giao cho vận chuyển",
+        "delivered": "Đã giao hàng",
         "cancelled": "Đã hủy"
       },
       "errors": {
@@ -634,6 +770,13 @@
         "update": "Cập nhật",
         "delete": "Xóa"
       },
+      "status": {
+        "pending": "Chờ xử lý",
+        "processing": "Đang xử lý",
+        "shipped": "Đã giao cho vận chuyển",
+        "delivered": "Đã giao hàng",
+        "cancelled": "Đã hủy"
+      },
       "table": {
         "orderNumber": "Đơn Hàng",
         "customer": "Khách Hàng",
@@ -643,13 +786,6 @@
         "status": "Trạng Thái",
         "payment": "Thanh Toán",
         "actions": "Thao Tác"
-      },
-      "status": {
-        "pending": "Chờ xử lý",
-        "processing": "Đang xử lý",
-        "shipped": "Đã gửi hàng",
-        "delivered": "Đã giao hàng",
-        "cancelled": "Đã hủy"
       },
       "paymentStatus": {
         "pending": "Chờ thanh toán",
@@ -698,6 +834,12 @@
           "shipping": "Phí vận chuyển",
           "discount": "Giảm giá",
           "total": "Tổng cộng"
+        },
+        "paymentInfo": {
+          "title": "Thông tin thanh toán",
+          "method": "Phương thức",
+          "transaction": "Giao dịch",
+          "cod": "Thanh toán khi nhận hàng (COD)"
         }
       },
       "updateStatus": {
@@ -716,6 +858,66 @@
         "updateError": "Có lỗi xảy ra khi cập nhật trạng thái",
         "loadError": "Lỗi khi tải danh sách đơn hàng. Vui lòng thử lại.",
         "retry": "Thử lại"
+      }
+    },
+    "products": {
+      "title": "Quản lý sản phẩm",
+      "subtitle": "Quản lý danh sách sản phẩm của bạn",
+      "stats": "{{totalItems}} sản phẩm • {{totalPages}} trang",
+      "actions": {
+        "export": "Xuất dữ liệu",
+        "add": "Thêm sản phẩm",
+        "view": "Xem chi tiết",
+        "edit": "Chỉnh sửa",
+        "clone": "Nhân bản (Clone)",
+        "delete": "Xóa",
+        "retry": "Thử lại"
+      },
+      "table": {
+        "image": "Hình ảnh",
+        "name": "Tên sản phẩm",
+        "category": "Danh mục",
+        "price": "Giá",
+        "stock": "Kho",
+        "status": "Trạng thái",
+        "actions": "Hành động"
+      },
+      "filters": {
+        "searchPlaceholder": "Tìm kiếm sản phẩm...",
+        "categoryPlaceholder": "Danh mục",
+        "statusPlaceholder": "Trạng thái",
+        "allCategories": "Tất cả danh mục",
+        "allStatus": "Tất cả trạng thái"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "inactive": "Không hoạt động",
+        "draft": "Bản nháp"
+      },
+      "messages": {
+        "deleteSuccess": "Xóa sản phẩm thành công",
+        "deleteError": "Xóa sản phẩm thất bại",
+        "statusSuccess": "Cập nhật trạng thái thành công",
+        "statusError": "Cập nhật trạng thái thất bại",
+        "cloneSuccess": "Nhân bản sản phẩm thành công (Bản nháp)",
+        "cloneError": "Nhân bản sản phẩm thất bại",
+        "loadError": "Không thể tải danh sách sản phẩm. Vui lòng thử lại.",
+        "deleteTitle": "Xóa sản phẩm",
+        "deleteDescription": "Bạn có chắc chắn muốn xóa sản phẩm này?"
+      },
+      "modal": {
+        "viewTitle": "Chi tiết sản phẩm",
+        "productName": "Tên sản phẩm",
+        "category": "Danh mục",
+        "price": "Giá",
+        "stock": "Kho",
+        "status": "Trạng thái",
+        "description": "Mô tả",
+        "close": "Đóng",
+        "edit": "Chỉnh sửa"
+      },
+      "pagination": {
+        "total": "{{start}}-{{end}} của {{total}} sản phẩm"
       }
     }
   },

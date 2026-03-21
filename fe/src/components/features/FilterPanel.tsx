@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Button from '@/components/common/Button';
 import { formatPrice } from '@/utils/format';
+import { useTranslation } from 'react-i18next';
 
 interface PriceRange {
   min: number;
@@ -43,6 +44,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   isMobile = false,
   onCloseMobile,
 }) => {
+  const { t } = useTranslation();
   const [localPriceRange, setLocalPriceRange] =
     useState<PriceRange>(priceRange);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
@@ -79,12 +81,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       {isMobile && (
         <div className="flex justify-between items-center mb-4 border-b border-neutral-200 dark:border-neutral-700 pb-3">
           <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
-            Bộ lọc sản phẩm
+            {t('shop.filters.title')}
           </h2>
           <button
             onClick={onCloseMobile}
             className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-            aria-label="Đóng bộ lọc"
+            aria-label={t('shop.filters.close')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -108,18 +110,18 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         {/* Price Range Filter */}
         <div>
           <h3 className="text-md font-medium text-neutral-800 dark:text-neutral-100 mb-3">
-            Khoảng Giá
+            {t('shop.filters.priceRange')}
           </h3>
 
           {/* Quick Price Presets */}
           <div className="grid grid-cols-2 gap-2 mb-4">
             {[
-              { label: 'Dưới 100K', min: 0, max: 100000 },
-              { label: '100K - 500K', min: 100000, max: 500000 },
-              { label: '500K - 1M', min: 500000, max: 1000000 },
-              { label: '1M - 5M', min: 1000000, max: 5000000 },
-              { label: '5M - 10M', min: 5000000, max: 10000000 },
-              { label: 'Trên 10M', min: 10000000, max: 100000000 },
+              { label: t('shop.filters.presets.under100k'), min: 0, max: 100000 },
+              { label: t('shop.filters.presets.100k_500k'), min: 100000, max: 500000 },
+              { label: t('shop.filters.presets.500k_1m'), min: 500000, max: 1000000 },
+              { label: t('shop.filters.presets.1m_5m'), min: 1000000, max: 5000000 },
+              { label: t('shop.filters.presets.5m_10m'), min: 5000000, max: 10000000 },
+              { label: t('shop.filters.presets.over10m'), min: 10000000, max: 100000000 },
             ].map((preset) => (
               <button
                 key={preset.label}
@@ -141,7 +143,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <div className="flex space-x-3 mb-3">
             <div className="w-1/2">
               <label className="text-sm text-neutral-500 dark:text-neutral-400 mb-1 block">
-                Tối thiểu (VND)
+                {t('shop.filters.minPrice')}
               </label>
               <input
                 type="number"
@@ -154,7 +156,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             </div>
             <div className="w-1/2">
               <label className="text-sm text-neutral-500 dark:text-neutral-400 mb-1 block">
-                Tối đa (VND)
+                {t('shop.filters.maxPrice')}
               </label>
               <input
                 type="number"
@@ -177,7 +179,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             onClick={handlePriceRangeApply}
             fullWidth
           >
-            Áp dụng khoảng giá
+            {t('shop.filters.applyPrice')}
           </Button>
         </div>
 
@@ -246,7 +248,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         {/* Clear Filters Button */}
         <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700">
           <Button variant="ghost" size="sm" onClick={onClearFilters} fullWidth>
-            Xóa tất cả bộ lọc
+            {t('shop.filters.clearAll')}
           </Button>
         </div>
       </div>

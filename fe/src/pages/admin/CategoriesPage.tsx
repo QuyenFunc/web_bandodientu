@@ -31,6 +31,7 @@ import {
   useDeleteCategoryMutation,
 } from '@/services/categoryApi';
 import type { Category } from '@/types/category.types';
+import ImageUpload from '@/components/common/ImageUpload';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -364,41 +365,14 @@ const CategoriesPage: React.FC = () => {
               name="image"
               label={<span className="dark:text-neutral-300">Hình ảnh</span>}
             >
-              <div className="flex flex-col gap-2">
-                <Input 
-                  placeholder="Nhập URL hình ảnh hoặc tải lên bên dưới" 
-                  value={form.getFieldValue('image')}
-                  onChange={(e) => form.setFieldsValue({ image: e.target.value })}
-                />
-                <Upload
-                  name="file"
-                  action={`${import.meta.env.VITE_API_URL || 'http://localhost:8888'}/api/upload/categories/single`}
-                  headers={{
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                  }}
-                  listType="picture-card"
-                  fileList={fileList}
-                  onChange={({ fileList: newFileList, file }) => {
-                    setFileList(newFileList);
-                    if (file.status === 'done' && file.response?.data?.url) {
-                      form.setFieldsValue({ image: file.response.data.url });
-                      message.success('Tải ảnh lên thành công!');
-                    } else if (file.status === 'error') {
-                      message.error('Tải ảnh lên thất bại!');
-                    } else if (newFileList.length === 0) {
-                      form.setFieldsValue({ image: '' });
-                    }
-                  }}
-                  maxCount={1}
-                >
-                  {fileList.length < 1 && (
-                    <div className="flex flex-col items-center justify-center">
-                      <PlusOutlined className="text-lg" />
-                      <div className="mt-1 text-xs">Tải ảnh lên</div>
-                    </div>
-                  )}
-                </Upload>
-              </div>
+              <ImageUpload
+                type="categories"
+                multiple={false}
+                value={form.getFieldValue('image')}
+                onChange={(val) => {
+                  form.setFieldsValue({ image: val });
+                }}
+              />
             </Form.Item>
 
             <Form.Item

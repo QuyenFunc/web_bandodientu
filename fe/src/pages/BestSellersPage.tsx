@@ -4,9 +4,12 @@ import ProductCard from '@/components/features/ProductCard';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Select from '@/components/common/Select';
 import Pagination from '@/components/common/Pagination';
+import { useTranslation } from 'react-i18next';
+import { Product } from '@/types/product';
 
 const BestSellersPage: React.FC = () => {
-  const [sortOption, setSortOption] = useState('popular');
+  const { t } = useTranslation();
+  const [sortOption, setSortOption] = useState<'popular' | 'price_asc' | 'price_desc' | 'newest'>('popular');
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 12;
 
@@ -23,14 +26,14 @@ const BestSellersPage: React.FC = () => {
   });
 
   const sortOptions = [
-    { value: 'popular', label: 'Most Popular' },
-    { value: 'price_asc', label: 'Price: Low to High' },
-    { value: 'price_desc', label: 'Price: High to Low' },
-    { value: 'newest', label: 'Newest' },
+    { value: 'popular', label: t('bestSellers.sort.popular') },
+    { value: 'price_asc', label: t('bestSellers.sort.price_asc') },
+    { value: 'price_desc', label: t('bestSellers.sort.price_desc') },
+    { value: 'newest', label: t('bestSellers.sort.newest') },
   ];
 
   const handleSortChange = (value: string) => {
-    setSortOption(value);
+    setSortOption(value as any);
     setCurrentPage(1);
   };
 
@@ -52,11 +55,10 @@ const BestSellersPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">
-          Error Loading Products
+          {t('bestSellers.error.title')}
         </h1>
         <p className="text-neutral-600 dark:text-neutral-400">
-          We encountered an error while loading the best sellers. Please try
-          again later.
+          {t('bestSellers.error.message')}
         </p>
       </div>
     );
@@ -66,12 +68,12 @@ const BestSellersPage: React.FC = () => {
     <div className="container mx-auto px-4 py-16">
       {/* Hero section */}
       <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-8 mb-12 text-white text-center">
-        <h1 className="text-4xl font-bold mb-4">Best Sellers</h1>
+        <h1 className="text-4xl font-bold mb-4">{t('bestSellers.title')}</h1>
         <p className="text-lg max-w-2xl mx-auto mb-6">
-          Discover our most popular products loved by thousands of customers.
+          {t('bestSellers.subtitle')}
         </p>
         <div className="inline-block bg-white text-amber-600 font-bold py-3 px-6 rounded-full text-lg">
-          Customer Favorites
+          {t('bestSellers.badge')}
         </div>
       </div>
 
@@ -79,15 +81,15 @@ const BestSellersPage: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8">
         <p className="text-neutral-600 dark:text-neutral-400 mb-4 md:mb-0">
           {productsData?.total
-            ? `Showing ${productsData.products.length} of ${productsData.total} products`
-            : 'Browse our best selling products'}
+            ? t('bestSellers.stats', { current: productsData.products.length, total: productsData.total })
+            : t('bestSellers.browse')}
         </p>
         <div className="w-full md:w-48">
           <Select
             options={sortOptions}
             value={sortOption}
             onChange={handleSortChange}
-            placeholder="Sort By"
+            placeholder={t('bestSellers.sortBy')}
           />
         </div>
       </div>
@@ -110,16 +112,16 @@ const BestSellersPage: React.FC = () => {
             />
           </svg>
           <h3 className="text-xl font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-            No best sellers available
+            {t('bestSellers.noProducts.title')}
           </h3>
           <p className="text-neutral-500 dark:text-neutral-400 mb-6">
-            Check back soon for our most popular products
+            {t('bestSellers.noProducts.message')}
           </p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {productsData?.products.map((product) => (
+            {productsData?.products.map((product: Product) => (
               <ProductCard key={product.id} {...product} />
             ))}
           </div>

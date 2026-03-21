@@ -315,4 +315,7 @@ router.delete('/items/:id', cartController.removeCartItem);
  */
 router.delete('/', cartController.clearCart);
 
+// Validate cart: check stock changes, price changes
+router.get('/validate', cartController.validateCart);
+
 module.exports = router;

@@ -705,6 +705,70 @@ const mergeCart = async (req, res, next) => {
   }
 };
 
+// Validate cart items (check stock and price changes)
+const validateCart = async (req, res, next) => {
+  try {
+    let cart;
+
+    if (req.user) {
+      cart = await Cart.findOne({ where: { userId: req.user.id, status: 'active' } });
+    } else {
+      const { sessionId } = req.cookies;
+      if (!sessionId) {
+        return res.status(200).json({ status: 'success', data: { hasIssues: false, items: [] } });
+      }
+      cart = await Cart.findOne({ where: { sessionId, status: 'active' } });
+    }
+
+    if (!cart) {
+      return res.status(200).json({ status: 'success', data: { hasIssues: false, items: [] } });
+    }
+
+    const cartItems = await CartItem.findAll({
+      where: { cartId: cart.id },
+      include: [
+        { model: Product, attributes: ['id', 'name', 'price', 'inStock', 'stockQuantity'] },
+        { model: ProductVariant, attributes: ['id', 'name', 'price', 'stockQuantity'] },
+      ],
+    });
+
+    const validatedItems = cartItems.map((item) => {
+      const currentPrice = item.ProductVariant ? item.ProductVariant.price : item.Product.price;
+      const currentStock = item.ProductVariant
+        ? item.ProductVariant.stockQuantity
+        : item.Product.stockQuantity;
+      const isInStock = item.Product.inStock && currentStock > 0;
+      const priceChanged = parseFloat(currentPrice) !== parseFloat(item.price);
+      const outOfStock = !isInStock;
+      const quantityExceedsStock = isInStock && item.quantity > currentStock;
+
+      return {
+        id: item.id,
+        productId: item.productId,
+        variantId: item.variantId,
+        name: item.Product.name,
+        savedPrice: parseFloat(item.price),
+        currentPrice: parseFloat(currentPrice),
+        quantity: item.quantity,
+        maxStock: currentStock,
+        priceChanged,
+        outOfStock,
+        quantityExceedsStock,
+        hasIssue: priceChanged || outOfStock || quantityExceedsStock,
+      };
+    });
+
+    const hasIssues = validatedItems.some((i) => i.hasIssue);
+
+    res.status(200).json({
+      status: 'success',
+      data: { hasIssues, items: validatedItems },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCart,
   getCartCount,
@@ -714,4 +778,5 @@ module.exports = {
   clearCart,
   syncCart,
   mergeCart,
+  validateCart,
 };

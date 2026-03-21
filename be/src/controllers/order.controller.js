@@ -16,6 +16,41 @@ const emailService = require('../services/email/emailService');
 const POINTS_EARN_RATE = 100000; // 1 point per 100,000 VND spent
 const POINTS_VALUE = 1000; // 1 point = 1,000 VND discount
 
+/**
+ * Helper function to clear user cart after successful order creation/payment
+ * @param {string} userId - ID of the user whose cart should be cleared
+ */
+async function clearUserCart(userId) {
+  if (!userId) {
+    console.warn('clearUserCart: userId is missing');
+    return;
+  }
+  
+  try {
+    // Find all active carts for this user just in case
+    const carts = await Cart.findAll({
+      where: { userId, status: 'active' }
+    });
+
+    if (carts && carts.length > 0) {
+      for (const cart of carts) {
+        // Mark as converted (turned into an order)
+        await cart.update({ status: 'converted' });
+        
+        // Also destroy items to be double sure count returns 0
+        await CartItem.destroy({
+          where: { cartId: cart.id }
+        });
+        console.log(`[SUCCESS] Cart ${cart.id} cleared for user ${userId}`);
+      }
+    } else {
+      console.log(`[INFO] No active cart found to clear for user ${userId}`);
+    }
+  } catch (error) {
+    console.error(`[ERROR] Error clearing cart for user ${userId}:`, error.message);
+  }
+}
+
 // Create order from cart
 const createOrder = async (req, res, next) => {
   const transaction = await sequelize.transaction();
@@ -47,6 +82,7 @@ const createOrder = async (req, res, next) => {
       notes,
       discountCode,
       pointsToUse = 0,
+      shippingCost: clientShippingCost = 0,
     } = req.body;
 
     // Get active cart
@@ -88,7 +124,7 @@ const createOrder = async (req, res, next) => {
     // Check stock and calculate totals
     let subtotal = 0;
     const tax = 0; // Calculate tax if needed
-    const shippingCost = 0; // Calculate shipping if needed
+    const shippingCost = parseFloat(clientShippingCost) || 0; // Receive from client or calculate
     let discount = 0; // Apply discount if needed
 
     for (const item of cart.items) {
@@ -290,9 +326,16 @@ const createOrder = async (req, res, next) => {
       // This prevents inventory issues when customers don't complete payment
     }
 
-    // NOTE: CartItems are NOT cleared here anymore.
+    // NOTE: CartItems are NOT cleared here anymore for ONLINE payments (vnpay, momo, stripe).
     // They will be cleared ONLY AFTER successful payment in the payment webhook (confirmPayment / vnpayReturn).
     // This allows the user to retain their cart items if they cancel/fail the payment window and try again.
+    
+    // BUT we SHOULD clear for COD and other manual methods that don't have a payment webhook.
+    const manualPaymentMethods = ['cod', 'bank_transfer', 'installment'];
+    if (manualPaymentMethods.includes(paymentMethod)) {
+      await clearUserCart(userId);
+      console.log(`[SUCCESS] Cart cleared for user ${userId} because payment method is ${paymentMethod}`);
+    }
 
     // Update LoyaltyHistory with orderId now that we have it
     if (pointsToUseInt > 0) {
@@ -390,18 +433,36 @@ const getOrderById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const role = req.user.role;
 
-    const order = await Order.findOne({
-      where: { id, userId },
+    const order = await Order.findByPk(id, {
       include: [
         {
+          model: User,
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone'],
+        },
+        {
           association: 'items',
+          include: [
+            {
+              model: Product,
+              attributes: ['id', 'name', 'images', 'thumbnail', 'slug'],
+            },
+            {
+              model: ProductVariant,
+              attributes: ['id', 'name', 'sku'],
+            },
+          ],
         },
       ],
     });
 
     if (!order) {
       throw new AppError('Không tìm thấy đơn hàng', 404);
+    }
+
+    if (order.userId !== userId && role !== 'admin') {
+      throw new AppError('Bạn không có quyền truy cập đơn hàng này', 403);
     }
 
     res.status(200).json({
@@ -822,4 +883,5 @@ module.exports = {
   updateOrderStatus,
   repayOrder,
   confirmReceived,
+  clearUserCart, // Export for use in payment controller if needed
 };

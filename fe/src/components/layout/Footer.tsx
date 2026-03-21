@@ -95,7 +95,7 @@ const Footer: React.FC = () => {
           <div>
             <div className="mb-8">
               <h4 className="font-bold text-neutral-900 dark:text-neutral-100 text-lg mb-2">
-                Hotline
+                {t('footer.hotline')}
               </h4>
               <a
                 href="tel:1900633579"
@@ -114,7 +114,7 @@ const Footer: React.FC = () => {
                 <div className="text-sm text-neutral-600 dark:text-neutral-400 space-y-2">
                   <div className="flex items-start gap-2">
                     <span className="mt-1">🏪</span>
-                    <p>53 Thái Hà, Trung Liệt, Đống Đa (Chỉ đường)</p>
+                    <p>53 Thái Hà, Trung Liệt, Đống Đa ({t('footer.directions')})</p>
                   </div>
                 </div>
               </div>
@@ -126,11 +126,11 @@ const Footer: React.FC = () => {
                 <div className="text-sm text-neutral-600 dark:text-neutral-400 space-y-2">
                   <div className="flex items-start gap-2">
                     <span className="mt-1">🏪</span>
-                    <p>5 - 7 Nguyễn Huy Tưởng, P.6, Q.Bình Thạnh (Chỉ đường)</p>
+                    <p>5 - 7 Nguyễn Huy Tưởng, P.6, Q.Bình Thạnh ({t('footer.directions')})</p>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="mt-1">🏪</span>
-                    <p>95 Trần Thiện Chánh, P.12, Q.10 (Chỉ đường)</p>
+                    <p>95 Trần Thiện Chánh, P.12, Q.10 ({t('footer.directions')})</p>
                   </div>
                 </div>
               </div>
@@ -172,8 +172,7 @@ const Footer: React.FC = () => {
             </h4>
             <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl p-6 border border-neutral-100 dark:border-neutral-800">
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6 leading-relaxed">
-                Đội ngũ Kiểm Soát Chất Lượng của chúng tôi sẵn sàng lắng nghe quý
-                khách.
+                {t('footer.feedback.description')}
               </p>
               <button
                 className="w-full bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 font-medium py-3 px-6 rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all duration-300 flex items-center justify-center gap-2 group"
@@ -193,7 +192,7 @@ const Footer: React.FC = () => {
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                Gửi phản hồi
+                {t('footer.feedback.sendButton')}
               </button>
             </div>
           </div>
@@ -210,8 +209,7 @@ const Footer: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="text-sm text-neutral-500 dark:text-neutral-500">
               <p className="mb-2">
-                &copy; {new Date().getFullYear()} {t('header.brand')}. All rights
-                reserved.
+                &copy; {new Date().getFullYear()} {t('header.brand')}. {t('footer.copyright')}
               </p>
               <p className="mb-1">
                 Công ty TNHH Công nghệ Think Việt Nam - GPĐKKD: 0107273909 do sở

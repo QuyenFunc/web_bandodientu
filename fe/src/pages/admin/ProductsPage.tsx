@@ -8,6 +8,7 @@ import {
   useLazyGetAdminProductsQuery,
 } from '@/services/adminProductApi';
 import { useGetAllCategoriesQuery } from '@/services/categoryApi';
+import { useTranslation } from 'react-i18next';
 import ProductExportModal from '@/components/admin/ProductExportModal';
 import { calculatePriceRange } from '@/utils/priceUtils';
 import {
@@ -42,15 +43,18 @@ import {
 const { Title } = Typography;
 
 // Status options
-const statusOptions = [
-  { value: 'all', label: 'Tất cả trạng thái' },
-  { value: 'active', label: 'Hoạt động' },
-  { value: 'inactive', label: 'Không hoạt động' },
-  { value: 'draft', label: 'Bản nháp' },
-];
+// Status options will be handled inside component due to hooks
 
 const ProductsPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  
+  const statusOptions = [
+    { value: 'all', label: t('admin.products.filters.allStatus') },
+    { value: 'active', label: t('admin.products.status.active') },
+    { value: 'inactive', label: t('admin.products.status.inactive') },
+    { value: 'draft', label: t('admin.products.status.draft') },
+  ];
 
   // State for filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,7 +114,7 @@ const ProductsPage: React.FC = () => {
 
   // Tạo options cho dropdown danh mục
   const categoryOptions = [
-    { value: 'all', label: 'Tất cả danh mục' },
+    { value: 'all', label: t('admin.products.filters.allCategories') },
     ...(Array.isArray(apiCategories)
       ? apiCategories.map((cat: any) => ({
           value: cat.id,
@@ -149,10 +153,10 @@ const ProductsPage: React.FC = () => {
   const handleDeleteProduct = async (productId: string) => {
     try {
       await deleteProduct(productId).unwrap();
-      message.success('Xóa sản phẩm thành công');
+      message.success(t('admin.products.messages.deleteSuccess'));
       refetch();
     } catch (error) {
-      message.error('Xóa sản phẩm thất bại');
+      message.error(t('admin.products.messages.deleteError'));
       console.error('Failed to delete product:', error);
     }
   };
@@ -161,9 +165,9 @@ const ProductsPage: React.FC = () => {
   const handleStatusChange = async (productId: string, newStatus: string) => {
     try {
       await updateProductStatus({ id: productId, status: newStatus }).unwrap();
-      message.success('Cập nhật trạng thái thành công');
+      message.success(t('admin.products.messages.statusSuccess'));
     } catch (error) {
-      message.error('Cập nhật trạng thái thất bại');
+      message.error(t('admin.products.messages.statusError'));
       console.error('Failed to change status:', error);
     }
   };
@@ -172,10 +176,10 @@ const ProductsPage: React.FC = () => {
   const handleCloneProduct = async (productId: string) => {
     try {
       await cloneProduct(productId).unwrap();
-      message.success('Nhân bản sản phẩm thành công (Bản nháp)');
+      message.success(t('admin.products.messages.cloneSuccess'));
       refetch();
     } catch (error) {
-      message.error('Nhân bản sản phẩm thất bại');
+      message.error(t('admin.products.messages.cloneError'));
       console.error('Failed to clone product:', error);
     }
   };
@@ -251,7 +255,7 @@ const ProductsPage: React.FC = () => {
   // Table columns
   const columns = [
     {
-      title: 'Hình ảnh',
+      title: t('admin.products.table.image'),
       dataIndex: 'images',
       key: 'images',
       width: 80,
@@ -267,7 +271,7 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      title: 'Tên sản phẩm',
+      title: t('admin.products.table.name'),
       dataIndex: 'name',
       key: 'name',
       sorter: true,
@@ -278,7 +282,7 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      title: 'Danh mục',
+      title: t('admin.products.table.category'),
       dataIndex: 'categories',
       key: 'categories',
       render: (categories: any[]) => (
@@ -296,7 +300,7 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      title: 'Giá',
+      title: t('admin.products.table.price'),
       dataIndex: 'price',
       key: 'price',
       sorter: true,
@@ -307,7 +311,7 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      title: 'Kho',
+      title: t('admin.products.table.stock'),
       dataIndex: 'stockQuantity',
       key: 'stock',
       sorter: true,
@@ -323,7 +327,7 @@ const ProductsPage: React.FC = () => {
       },
     },
     {
-      title: 'Trạng thái',
+      title: t('admin.products.table.status'),
       dataIndex: 'status',
       key: 'status',
       width: 150,
@@ -347,7 +351,7 @@ const ProductsPage: React.FC = () => {
       ),
     },
     {
-      title: 'Hành động',
+      title: t('admin.products.table.actions'),
       key: 'actions',
       width: 150,
       render: (_: any, record: any) => (
@@ -356,7 +360,7 @@ const ProductsPage: React.FC = () => {
             type="link"
             icon={<EyeOutlined />}
             onClick={() => openQuickView(record)}
-            title="Xem chi tiết"
+            title={t('admin.products.actions.view')}
             size="small"
           />
           <Button
@@ -366,7 +370,7 @@ const ProductsPage: React.FC = () => {
               console.log('Edit button clicked, record.id:', record.id);
               navigate(`/admin/products/edit/${record.id}`);
             }}
-            title="Chỉnh sửa"
+            title={t('admin.products.actions.edit')}
             size="small"
           />
           <Button
@@ -374,23 +378,23 @@ const ProductsPage: React.FC = () => {
             icon={<CopyOutlined />}
             onClick={() => handleCloneProduct(record.id)}
             loading={isCloning}
-            title="Nhân bản (Clone)"
+            title={t('admin.products.actions.clone')}
             size="small"
             style={{ color: '#1890ff' }}
           />
           <Popconfirm
-            title="Xóa sản phẩm"
-            description="Bạn có chắc chắn muốn xóa sản phẩm này?"
+            title={t('admin.products.messages.deleteTitle')}
+            description={t('admin.products.messages.deleteDescription')}
             onConfirm={() => handleDeleteProduct(record.id)}
-            okText="Xóa"
-            cancelText="Hủy"
+            okText={t('admin.products.actions.delete')}
+            cancelText={t('common.cancel')}
             okButtonProps={{ danger: true }}
           >
             <Button
               type="link"
               danger
               icon={<DeleteOutlined />}
-              title="Xóa"
+              title={t('admin.products.actions.delete')}
               size="small"
             />
           </Popconfirm>
@@ -415,13 +419,13 @@ const ProductsPage: React.FC = () => {
     return (
       <div style={{ padding: 24 }}>
         <Alert
-          message="Lỗi tải dữ liệu"
-          description="Không thể tải danh sách sản phẩm. Vui lòng thử lại."
+          message={t('admin.products.messages.loadError')}
+          description={t('admin.products.messages.loadError')}
           type="error"
           showIcon
           action={
             <Button size="small" onClick={() => refetch()}>
-              Thử lại
+              {t('admin.products.actions.retry')}
             </Button>
           }
         />
@@ -449,12 +453,12 @@ const ProductsPage: React.FC = () => {
               style={{ margin: 0 }}
               className="text-xl md:text-2xl"
             >
-              Quản lý sản phẩm
+              {t('admin.products.title')}
             </Title>
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
               {pagination?.totalItems
-                ? `${pagination.totalItems} sản phẩm • ${pagination.totalPages} trang`
-                : 'Quản lý danh sách sản phẩm của bạn'}
+                ? t('admin.products.stats', { totalItems: pagination.totalItems, totalPages: pagination.totalPages })
+                : t('admin.products.subtitle')}
             </p>
           </Col>
           <Col xs={24} sm={12} className="flex justify-start sm:justify-end gap-2">
@@ -464,7 +468,7 @@ const ProductsPage: React.FC = () => {
               onClick={() => setIsExportModalOpen(true)}
               size="large"
             >
-              Xuất dữ liệu
+              {t('admin.products.actions.export')}
             </Button>
             <Button
               type="primary"
@@ -472,7 +476,7 @@ const ProductsPage: React.FC = () => {
               onClick={() => navigate('/admin/products/create')}
               size="large"
             >
-              Thêm sản phẩm
+              {t('admin.products.actions.add')}
             </Button>
           </Col>
         </Row>
@@ -483,7 +487,7 @@ const ProductsPage: React.FC = () => {
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={10} lg={8}>
             <Input
-              placeholder="Tìm kiếm sản phẩm..."
+              placeholder={t('admin.products.filters.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               allowClear
@@ -493,7 +497,7 @@ const ProductsPage: React.FC = () => {
           <Col xs={12} md={7} lg={4}>
             <Select
               style={{ width: '100%' }}
-              placeholder="Danh mục"
+              placeholder={t('admin.products.filters.categoryPlaceholder')}
               value={categoryFilter}
               onChange={setCategoryFilter}
               options={categoryOptions}
@@ -503,7 +507,7 @@ const ProductsPage: React.FC = () => {
           <Col xs={12} md={7} lg={4}>
             <Select
               style={{ width: '100%' }}
-              placeholder="Trạng thái"
+              placeholder={t('admin.products.filters.statusPlaceholder')}
               value={statusFilter}
               onChange={setStatusFilter}
               options={statusOptions}
@@ -541,7 +545,7 @@ const ProductsPage: React.FC = () => {
               showQuickJumper
               responsive
               showTotal={(total, range) =>
-                `${range[0]}-${range[1]} của ${total} sản phẩm`
+                t('admin.products.pagination.total', { start: range[0], end: range[1], total })
               }
             />
           </div>
@@ -550,12 +554,12 @@ const ProductsPage: React.FC = () => {
 
       {/* Quick View Modal */}
       <Modal
-        title="Chi tiết sản phẩm"
+        title={t('admin.products.modal.viewTitle')}
         open={isQuickViewOpen}
         onCancel={() => setIsQuickViewOpen(false)}
         footer={[
           <Button key="close" onClick={() => setIsQuickViewOpen(false)}>
-            Đóng
+            {t('admin.products.modal.close')}
           </Button>,
           <Button
             key="edit"
@@ -565,7 +569,7 @@ const ProductsPage: React.FC = () => {
               navigate(`/admin/products/edit/${selectedProduct?.id}`);
             }}
           >
-            Chỉnh sửa
+            {t('admin.products.modal.edit')}
           </Button>,
         ]}
         width={600}
@@ -588,10 +592,10 @@ const ProductsPage: React.FC = () => {
                   style={{ width: '100%' }}
                 >
                   <div>
-                    <strong>Tên sản phẩm:</strong> {selectedProduct.name}
+                    <strong>{t('admin.products.modal.productName')}:</strong> {selectedProduct.name}
                   </div>
                   <div>
-                    <strong>Danh mục:</strong>{' '}
+                    <strong>{t('admin.products.modal.category')}:</strong>{' '}
                     {selectedProduct.categories &&
                     selectedProduct.categories.length > 0 ? (
                       selectedProduct.categories.map(
@@ -606,7 +610,7 @@ const ProductsPage: React.FC = () => {
                     )}
                   </div>
                   <div>
-                    <strong>Giá:</strong>{' '}
+                    <strong>{t('admin.products.modal.price')}:</strong>{' '}
                     <span style={{ fontWeight: 500, color: '#52c41a' }}>
                       {
                         calculatePriceRange(
@@ -617,7 +621,7 @@ const ProductsPage: React.FC = () => {
                     </span>
                   </div>
                   <div>
-                    <strong>Kho:</strong>{' '}
+                    <strong>{t('admin.products.modal.stock')}:</strong>{' '}
                     <span
                       style={{
                         color:
@@ -633,16 +637,14 @@ const ProductsPage: React.FC = () => {
                     </span>
                   </div>
                   <div>
-                    <strong>Trạng thái:</strong>{' '}
+                    <strong>{t('admin.products.modal.status')}:</strong>{' '}
                     <Tag color={getStatusColor(selectedProduct.status)}>
-                      {statusOptions.find(
-                        (s) => s.value === selectedProduct.status
-                      )?.label || selectedProduct.status}
+                      {selectedProduct.status ? t(`admin.products.status.${selectedProduct.status}`) : ''}
                     </Tag>
                   </div>
                   {selectedProduct.description && (
                     <div>
-                      <strong>Mô tả:</strong>
+                      <strong>{t('admin.products.modal.description')}:</strong>
                       <p style={{ marginTop: 8 }}>
                         {selectedProduct.description}
                       </p>

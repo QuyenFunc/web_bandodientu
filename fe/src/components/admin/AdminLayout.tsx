@@ -70,7 +70,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'dashboard',
       path: '/admin/dashboard',
-      label: 'Tổng quan',
+      label: t('admin.nav.dashboard'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -90,7 +90,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'products',
       path: '/admin/products',
-      label: 'Sản phẩm',
+      label: t('admin.nav.products'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -110,7 +110,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'news',
       path: '/admin/news',
-      label: 'Tin tức',
+      label: t('admin.nav.news'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -130,7 +130,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'categories',
       path: '/admin/categories',
-      label: 'Danh mục',
+      label: t('admin.nav.categories'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -150,7 +150,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'brands',
       path: '/admin/brands',
-      label: 'Thương hiệu',
+      label: t('admin.nav.brands'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -176,7 +176,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'collections',
       path: '/admin/collections',
-      label: 'Bộ sưu tập',
+      label: t('admin.nav.collections'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -196,7 +196,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'orders',
       path: '/admin/orders',
-      label: 'Đơn hàng',
+      label: t('admin.nav.orders'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -216,7 +216,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'users',
       path: '/admin/users',
-      label: 'Người dùng',
+      label: t('admin.nav.users'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -236,7 +236,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'warranty-packages',
       path: '/admin/warranty-packages',
-      label: 'Gói bảo hành',
+      label: t('admin.nav.warranty'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -256,7 +256,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'discount-codes',
       path: '/admin/discount-codes',
-      label: 'Mã giảm giá',
+      label: t('admin.nav.discounts'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -318,7 +318,7 @@ const AdminLayout: React.FC = () => {
     {
       key: 'email-campaigns',
       path: '/admin/email-campaigns',
-      label: 'Chiến dịch Email',
+      label: t('admin.nav.email'),
       icon: (
         <svg
           className="w-5 h-5"
@@ -352,9 +352,9 @@ const AdminLayout: React.FC = () => {
     >
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
         {/* Admin Header */}
-        <div className="bg-white dark:bg-neutral-800 shadow-sm border-b border-neutral-200 dark:border-neutral-700">
-          <div className="px-4 md:px-6 py-4">
-            <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-neutral-800 shadow-sm border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-30">
+          <div className="px-4 md:px-6 h-16">
+            <div className="flex items-center justify-between h-full">
               <div className="flex items-center space-x-4">
                 {/* Mobile menu button */}
                 <Button
@@ -364,9 +364,7 @@ const AdminLayout: React.FC = () => {
                   onClick={() => setMobileMenuOpen(true)}
                 />
 
-                <h1 className="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white">
-                  Bảng quản trị
-                </h1>
+                  {t('admin.title')}
               </div>
               <div className="flex items-center space-x-2 md:space-x-4">
                 {/* Theme toggle button */}
@@ -436,7 +434,7 @@ const AdminLayout: React.FC = () => {
                           className="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                           onClick={() => setShowUserDropdown(false)}
                         >
-                          Trang cửa hàng
+                          {t('admin.backToStore')}
                         </Link>
                         <div className="border-t border-neutral-200 dark:border-neutral-700 mt-2">
                           <button
@@ -461,7 +459,7 @@ const AdminLayout: React.FC = () => {
         <div className="flex flex-col md:flex-row">
           {/* Mobile Sidebar Drawer */}
           <Drawer
-            title="Admin Menu"
+            title={t('admin.menu')}
             placement="left"
             onClose={() => setMobileMenuOpen(false)}
             open={mobileMenuOpen}
@@ -506,7 +504,7 @@ const AdminLayout: React.FC = () => {
           </Drawer>
 
           {/* Desktop Sidebar */}
-          <div className="hidden md:block w-64 bg-white dark:bg-neutral-800 min-h-screen shadow-sm border-r border-neutral-200 dark:border-neutral-700">
+          <div className="hidden md:block w-64 bg-white dark:bg-neutral-800 shadow-sm border-r border-neutral-200 dark:border-neutral-700 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto overflow-x-hidden">
             <nav className="px-6 py-6">
               <ul className="space-y-2">
                 {adminNavItems.map((item) => {

@@ -13,9 +13,9 @@ import {
   Image,
   Card,
   Typography,
-  Upload,
   Select,
 } from 'antd';
+import ImageUpload from '@/components/common/ImageUpload';
 import {
   PlusOutlined,
   EditOutlined,
@@ -129,19 +129,14 @@ const CollectionsPage: React.FC = () => {
       // For now, let's assume they might be in the record or we'd need another API call
       productIds: collection.Products?.map((p: any) => p.id) || [],
     });
-    
-    if (collection.thumbnail) {
-      setFileList([
-        {
-          uid: '-1',
-          name: 'thumbnail',
-          status: 'done',
-          url: collection.thumbnail,
-        },
-      ]);
-    } else {
-      setFileList([]);
-    }
+  };
+
+  // Helper to get full image URL
+  const getFullImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8888';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
   // Table columns
@@ -154,7 +149,7 @@ const CollectionsPage: React.FC = () => {
       render: (thumbnail: string, record: any) =>
         thumbnail ? (
           <Image
-            src={thumbnail}
+            src={getFullImageUrl(thumbnail)}
             alt={record.name}
             width={60}
             height={40}
@@ -306,41 +301,14 @@ const CollectionsPage: React.FC = () => {
 
             <Form.Item
               name="thumbnail"
-              label="Ảnh bìa"
+              label="Ảnh bìa bộ sưu tập"
             >
-              <div className="flex flex-col gap-2">
-                <Input 
-                  placeholder="URL ảnh bìa" 
-                  value={form.getFieldValue('thumbnail')}
-                  onChange={(e) => form.setFieldsValue({ thumbnail: e.target.value })}
-                />
-                <Upload
-                  name="file"
-                  action={`${import.meta.env.VITE_API_URL || 'http://localhost:8888'}/api/upload/collections/single`}
-                  headers={{
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                  }}
-                  listType="picture-card"
-                  fileList={fileList}
-                  onChange={({ fileList: newFileList, file }) => {
-                    setFileList(newFileList);
-                    if (file.status === 'done' && file.response?.data?.url) {
-                      form.setFieldsValue({ thumbnail: file.response.data.url });
-                      message.success('Tải ảnh lên thành công!');
-                    } else if (file.status === 'error') {
-                      message.error('Tải ảnh lên thất bại!');
-                    }
-                  }}
-                  maxCount={1}
-                >
-                  {fileList.length < 1 && (
-                    <div>
-                      <PlusOutlined />
-                      <div style={{ marginTop: 8 }}>Tải lên</div>
-                    </div>
-                  )}
-                </Upload>
-              </div>
+              <ImageUpload
+                type="collections"
+                multiple={false}
+                value={form.getFieldValue('thumbnail')}
+                onChange={(val) => form.setFieldsValue({ thumbnail: val })}
+              />
             </Form.Item>
 
             <Form.Item

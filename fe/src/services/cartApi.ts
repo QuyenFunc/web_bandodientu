@@ -142,6 +142,28 @@ export const cartApi = api.injectEndpoints({
       transformResponse: (response: CartResponse) => response.data,
       invalidatesTags: ['Cart', 'CartCount'],
     }),
+
+    validateCart: builder.query<{
+      hasIssues: boolean;
+      items: {
+        id: string;
+        productId: string;
+        variantId?: string;
+        name: string;
+        savedPrice: number;
+        currentPrice: number;
+        quantity: number;
+        maxStock: number;
+        priceChanged: boolean;
+        outOfStock: boolean;
+        quantityExceedsStock: boolean;
+        hasIssue: boolean;
+      }[];
+    }, void>({
+      query: () => '/cart/validate',
+      transformResponse: (response: any) => response.data,
+      providesTags: ['Cart'],
+    }),
   }),
 });
 
@@ -154,4 +176,5 @@ export const {
   useClearCartMutation,
   useSyncCartMutation,
   useMergeCartMutation,
+  useValidateCartQuery,
 } = cartApi;

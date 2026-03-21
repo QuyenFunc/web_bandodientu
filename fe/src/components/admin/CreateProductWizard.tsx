@@ -1,5 +1,6 @@
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
+import ImageUpload from '@/components/common/ImageUpload';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Modal from '@/components/common/Modal';
 import Select from '@/components/common/Select';
@@ -798,82 +799,77 @@ const CreateProductWizard: React.FC<CreateProductWizardProps> = ({
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block font-medium mb-1 text-neutral-700 dark:text-neutral-300">
-                  URLs hình ảnh
+                <label className="block font-medium mb-3 text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
+                  <PhotoIcon className="w-5 h-5 text-primary-500" />
+                  Hình ảnh sản phẩm
                 </label>
-                <textarea
-                  value={formData.images}
-                  onChange={(e) => handleInputChange('images', e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-neutral-800 dark:text-neutral-200"
-                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Nhập các URL hình ảnh, cách nhau bằng dấu phẩy
-                </p>
-              </div>
-
-              <div>
-                <label className="block font-medium mb-1 text-neutral-700 dark:text-neutral-300">
-                  URL hình ảnh đại diện (thumbnail)
-                </label>
-                <Input
-                  value={formData.thumbnail}
-                  onChange={(e) =>
-                    handleInputChange('thumbnail', e.target.value)
-                  }
-                  placeholder="https://example.com/thumbnail.jpg"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Để trống sẽ sử dụng hình ảnh đầu tiên làm thumbnail
-                </p>
-              </div>
-            </div>
-
-            {/* Image preview */}
-            {formData.images && (
-              <div className="mt-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Xem trước hình ảnh:
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {formData.images.split(',').map((url, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-square bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 overflow-hidden group"
-                    >
-                      <img
-                        src={url.trim()}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            'https://via.placeholder.com/150?text=Error';
-                        }}
-                      />
-                      {formData.thumbnail === url.trim() && (
-                        <div className="absolute top-2 left-2 bg-primary-500 text-white text-xs px-2 py-1 rounded-full">
-                          Thumbnail
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleInputChange('thumbnail', url.trim())
-                          }
-                          className="bg-white text-gray-800 text-xs px-2 py-1 rounded"
-                        >
-                          Đặt làm thumbnail
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-sm">
+                  <ImageUpload
+                    value={formData.images}
+                    onChange={(val) => {
+                      const imageList = Array.isArray(val) ? val.join(',') : val;
+                      handleInputChange('images', imageList);
+                      
+                      // Auto-set thumbnail if not set
+                      if (!formData.thumbnail && imageList) {
+                        const firstImg = imageList.split(',')[0].trim();
+                        handleInputChange('thumbnail', firstImg);
+                      }
+                    }}
+                    multiple={true}
+                    maxFiles={10}
+                    type="products"
+                  />
                 </div>
               </div>
-            )}
+
+              {formData.images && (
+                <div>
+                  <label className="block font-medium mb-2 text-neutral-700 dark:text-neutral-300">
+                    Chọn ảnh đại diện (Thumbnail)
+                  </label>
+                  <div className="flex flex-wrap gap-3 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl border border-neutral-100 dark:border-neutral-800">
+                    {formData.images.split(',').map((url, idx) => {
+                      const trimmedUrl = url.trim();
+                      const isSelected = formData.thumbnail === trimmedUrl;
+                      
+                      // Resolve relative URL for thumbnail preview
+                      const getFullUrl = (u: string) => {
+                        if (!u) return '';
+                        if (u.startsWith('http')) return u;
+                        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8888';
+                        return `${baseUrl}${u.startsWith('/') ? '' : '/'}${u}`;
+                      };
+
+                      return (
+                        <div 
+                          key={idx}
+                          onClick={() => handleInputChange('thumbnail', trimmedUrl)}
+                          className={`relative w-20 h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group
+                            ${isSelected ? 'border-primary-500 scale-105 shadow-md' : 'border-transparent hover:border-neutral-300'}`}
+                        >
+                          <img 
+                            src={getFullUrl(trimmedUrl)} 
+                            alt="thumb" 
+                            className="w-full h-full object-cover"
+                          />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-primary-500/10 flex items-center justify-center">
+                              <CheckCircleIcon className="w-6 h-6 text-primary-600 bg-white rounded-full" />
+                            </div>
+                          )}
+                          {!isSelected && (
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         );
 

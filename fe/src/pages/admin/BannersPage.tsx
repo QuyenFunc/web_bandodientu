@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Modal, Form, Input, Select, Switch, message, Upload, Popconfirm } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import apiClient from '@/services/apiClient';
+import ImageUpload from '@/components/common/ImageUpload';
 
 interface Banner {
   id: string;
@@ -85,9 +86,10 @@ const BannersPage: React.FC = () => {
       title: 'Image',
       dataIndex: 'imageUrl',
       key: 'imageUrl',
-      render: (url: string) => (
-        <img src={url} alt="Banner" style={{ width: 100, borderRadius: 4 }} />
-      ),
+      render: (url: string) => {
+        const fullUrl = url?.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://localhost:8888'}${url?.startsWith('/') ? '' : '/'}${url}`;
+        return <img src={fullUrl} alt="Banner" style={{ width: 100, borderRadius: 4 }} />;
+      },
     },
     {
       title: 'Position',
@@ -163,8 +165,13 @@ const BannersPage: React.FC = () => {
           <Form.Item name="title" label="Title" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
-            <Input placeholder="Enter image URL" />
+          <Form.Item name="imageUrl" label="Hình ảnh Banner" rules={[{ required: true, message: 'Vui lòng tải ảnh lên' }]}>
+            <ImageUpload 
+              type="banners" 
+              multiple={false} 
+              value={form.getFieldValue('imageUrl')}
+              onChange={(val) => form.setFieldsValue({ imageUrl: val })}
+            />
           </Form.Item>
           <Form.Item name="linkUrl" label="Link URL">
             <Input placeholder="Enter destination URL" />

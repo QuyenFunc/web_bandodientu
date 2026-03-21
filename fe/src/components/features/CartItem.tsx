@@ -15,9 +15,11 @@ interface CartItemProps {
   item: CartItemType;
   isCheckout?: boolean;
   readonly?: boolean;
+  maxStock?: number; // real-time stock from validateCart
 }
 
-const CartItem: React.FC<CartItemProps> = ({ item, isCheckout = false, readonly = false }) => {
+const CartItem: React.FC<CartItemProps> = ({ item, isCheckout = false, readonly = false, maxStock }) => {
+  const effectiveMaxStock = maxStock ?? item.stockQuantity;
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
@@ -30,8 +32,8 @@ const CartItem: React.FC<CartItemProps> = ({ item, isCheckout = false, readonly 
     if (newQuantity <= 0 || newQuantity > 99) return;
 
     // Check stock limits
-    if (item.stockQuantity && newQuantity > item.stockQuantity) {
-      toast.error(`Chỉ còn ${item.stockQuantity} sản phẩm trong kho`);
+    if (effectiveMaxStock && newQuantity > effectiveMaxStock) {
+      toast.error(`Chỉ còn ${effectiveMaxStock} sản phẩm trong kho`);
       return;
     }
 
@@ -120,11 +122,11 @@ const CartItem: React.FC<CartItemProps> = ({ item, isCheckout = false, readonly 
 
         {/* Stock status */}
         {item.inStock === false && (
-          <div className="mt-1 text-sm text-red-500">Out of stock</div>
+          <div className="mt-1 text-sm text-red-500 font-medium">❌ Hết hàng</div>
         )}
-        {item.stockQuantity && item.stockQuantity <= 5 && item.inStock && (
-          <div className="mt-1 text-sm text-yellow-600">
-            Only {item.stockQuantity} left in stock
+        {effectiveMaxStock && effectiveMaxStock > 0 && effectiveMaxStock <= 5 && item.inStock && (
+          <div className="mt-1 text-sm text-amber-600 font-medium">
+            ⚡ Chỉ còn {effectiveMaxStock} sản phẩm
           </div>
         )}
 
@@ -162,7 +164,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, isCheckout = false, readonly 
                 onClick={() => handleQuantityChange(item.quantity + 1)}
                 disabled={
                   isUpdating ||
-                  !!(item.stockQuantity && item.quantity >= item.stockQuantity)
+                  !!(effectiveMaxStock && item.quantity >= effectiveMaxStock)
                 }
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-neutral-300 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Increase quantity"

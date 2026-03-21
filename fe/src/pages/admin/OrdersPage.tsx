@@ -263,7 +263,7 @@ const OrdersPage: React.FC = () => {
         return (
           <Tag color={config?.color} className={styles.statusTag}>
             {config?.icon}{' '}
-            {statusOptions.find((opt) => opt.value === status)?.label || status}
+            {t(`admin.orders.status.${status}`)}
           </Tag>
         );
       },
@@ -282,13 +282,13 @@ const OrdersPage: React.FC = () => {
         
         let statusText = paymentStatus;
         if (paymentStatus === 'pending') {
-          statusText = isCOD ? 'Thanh toán khi nhận hàng' : 'Chờ thanh toán';
+          statusText = isCOD ? t('admin.orders.paymentStatus.cod') : t('admin.orders.paymentStatus.pending');
         } else if (paymentStatus === 'paid') {
-          statusText = 'Đã thanh toán';
+          statusText = t('admin.orders.paymentStatus.paid');
         } else if (paymentStatus === 'failed') {
-          statusText = 'Thanh toán thất bại';
+          statusText = t('admin.orders.paymentStatus.failed');
         } else if (paymentStatus === 'refunded') {
-          statusText = 'Đã hoàn tiền';
+          statusText = t('admin.orders.paymentStatus.refunded');
         }
 
         return (
@@ -341,7 +341,7 @@ const OrdersPage: React.FC = () => {
       <div style={{ padding: '24px', textAlign: 'center' }}>
         <Spin size="large" />
         <div style={{ marginTop: '16px' }}>
-          <Text>Đang tải đơn hàng...</Text>
+          <Text>{t('common.loading')}</Text>
         </div>
       </div>
     );
@@ -353,13 +353,13 @@ const OrdersPage: React.FC = () => {
     return (
       <div style={{ padding: '24px' }}>
         <Alert
-          message="Lỗi khi tải đơn hàng"
-          description="Không thể tải danh sách đơn hàng. Vui lòng thử lại."
+          message={t('admin.orders.messages.loadError')}
+          description={t('admin.orders.messages.loadError')}
           type="error"
           showIcon
           action={
             <Button size="small" danger onClick={() => refetch()}>
-              Thử lại
+              {t('admin.orders.messages.retry')}
             </Button>
           }
         />
@@ -375,10 +375,10 @@ const OrdersPage: React.FC = () => {
       <div className={styles.pageHeader}>
         <Title level={2} className={`${styles.pageTitle} dark:text-white`}>
           <ShoppingCartOutlined />
-          Quản lý đơn hàng
+          {t('admin.orders.title')}
         </Title>
         <Text type="secondary" className="dark:text-neutral-400">
-          Quản lý danh sách đơn hàng của khách hàng
+          {t('admin.orders.subtitle')}
         </Text>
       </div>
 
@@ -387,7 +387,7 @@ const OrdersPage: React.FC = () => {
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={12} md={8} lg={6}>
             <Input
-              placeholder="Tìm kiếm đơn hàng..."
+              placeholder={t('admin.orders.searchPlaceholder')}
               allowClear
               onChange={(e) => handleSearch(e.target.value)}
               style={{ width: '100%' }}
@@ -402,7 +402,7 @@ const OrdersPage: React.FC = () => {
           </Col>
           <Col xs={24} sm={12} md={8} lg={6}>
             <Select
-              placeholder="Lọc theo trạng thái"
+              placeholder={t('admin.orders.filterByStatus')}
               style={{ width: '100%' }}
               value={statusFilter}
               onChange={handleStatusFilterChange}
@@ -411,7 +411,7 @@ const OrdersPage: React.FC = () => {
             >
               {statusOptions.map((option) => (
                 <Option key={option.value} value={option.value}>
-                  {option.label}
+                  {option.value === '' ? t('admin.orders.allStatus') : t(`admin.orders.status.${option.value}`)}
                 </Option>
               ))}
             </Select>
@@ -423,7 +423,7 @@ const OrdersPage: React.FC = () => {
               loading={isLoading}
               className="dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-700"
             >
-              Làm mới
+              {t('admin.orders.messages.retry')}
             </Button>
           </Col>
         </Row>
@@ -524,14 +524,14 @@ const OrdersPage: React.FC = () => {
                   }{' '}
                   {selectedOrder.paymentStatus === 'pending'
                     ? selectedOrder.paymentMethod === 'cod' 
-                      ? 'Thanh toán khi nhận hàng' 
-                      : 'Chờ thanh toán'
+                      ? t('admin.orders.details.paymentInfo.cod') 
+                      : t('admin.orders.paymentStatus.pending')
                     : selectedOrder.paymentStatus === 'paid'
-                      ? 'Đã thanh toán'
+                      ? t('admin.orders.paymentStatus.paid')
                       : selectedOrder.paymentStatus === 'failed'
-                        ? 'Thanh toán thất bại'
+                        ? t('admin.orders.paymentStatus.failed')
                         : selectedOrder.paymentStatus === 'refunded'
-                          ? 'Đã hoàn tiền'
+                          ? t('admin.orders.paymentStatus.refunded')
                           : selectedOrder.paymentStatus}
                 </Tag>
               </Descriptions.Item>
@@ -568,15 +568,15 @@ const OrdersPage: React.FC = () => {
               </Col>
               
               <Col xs={24} md={12}>
-                <Card title="Thông tin giao hàng" size="small" style={{ height: '100%' }}>
+                <Card title={t('admin.orders.details.shipping.title')} size="small" style={{ height: '100%' }}>
                   <Descriptions column={1}>
-                    <Descriptions.Item label="Người nhận">
+                    <Descriptions.Item label={t('admin.orders.details.shipping.fullName')}>
                       {selectedOrder.shippingFirstName} {selectedOrder.shippingLastName}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Điện thoại">
+                    <Descriptions.Item label={t('admin.orders.details.shipping.phone')}>
                       {selectedOrder.shippingPhone || 'N/A'}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Địa chỉ">
+                    <Descriptions.Item label={t('admin.orders.details.shipping.address')}>
                       {selectedOrder.shippingAddress1}
                       {selectedOrder.shippingAddress2 ? `, ${selectedOrder.shippingAddress2}` : ''}
                       {`, ${selectedOrder.shippingCity}, ${selectedOrder.shippingState}`}
@@ -587,12 +587,12 @@ const OrdersPage: React.FC = () => {
             </Row>
 
             {/* Payment Info */}
-            <Card title="Thông tin thanh toán" size="small" style={{ marginBottom: '16px' }}>
+            <Card title={t('admin.orders.details.paymentInfo.title')} size="small" style={{ marginBottom: '16px' }}>
               <Descriptions column={2}>
-                <Descriptions.Item label="Phương thức">
-                  {selectedOrder.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : selectedOrder.paymentMethod.toUpperCase()}
+                <Descriptions.Item label={t('admin.orders.details.paymentInfo.method')}>
+                  {selectedOrder.paymentMethod === 'cod' ? t('admin.orders.details.paymentInfo.cod') : selectedOrder.paymentMethod.toUpperCase()}
                 </Descriptions.Item>
-                <Descriptions.Item label="Giao dịch">
+                <Descriptions.Item label={t('admin.orders.details.paymentInfo.transaction')}>
                   {selectedOrder.paymentTransactionId || 'N/A'}
                 </Descriptions.Item>
               </Descriptions>
@@ -731,7 +731,7 @@ const OrdersPage: React.FC = () => {
               <Select placeholder={t('admin.orders.updateStatus.selectNewStatus')}>
                 {updateStatusOptions.map((option) => (
                   <Option key={option.value} value={option.value}>
-                    {option.label}
+                    {t(`admin.orders.status.${option.value}`)}
                   </Option>
                 ))}
               </Select>
@@ -739,13 +739,13 @@ const OrdersPage: React.FC = () => {
 
             <Form.Item
               name="paymentStatus"
-              label="Trạng thái thanh toán"
+              label={t('admin.orders.details.paymentStatus')}
             >
-              <Select placeholder="Chọn trạng thái thanh toán">
-                <Option value="pending">Chờ thanh toán / COD</Option>
-                <Option value="paid">Đã thanh toán</Option>
-                <Option value="failed">Thanh toán thất bại</Option>
-                <Option value="refunded">Đã hoàn tiền</Option>
+              <Select placeholder={t('admin.orders.details.paymentStatus')}>
+                <Option value="pending">{t('admin.orders.paymentStatus.pending')}</Option>
+                <Option value="paid">{t('admin.orders.paymentStatus.paid')}</Option>
+                <Option value="failed">{t('admin.orders.paymentStatus.failed')}</Option>
+                <Option value="refunded">{t('admin.orders.paymentStatus.refunded')}</Option>
               </Select>
             </Form.Item>
 

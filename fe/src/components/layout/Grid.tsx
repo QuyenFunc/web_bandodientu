@@ -100,7 +100,7 @@ export const ProductGrid: React.FC<{
         sm: 2,
         md: 3,
         lg: 4,
-        xl: 5,
+        xl: 4,
       }}
       gap={6}
       className={className}
@@ -120,12 +120,12 @@ export const CategoryGrid: React.FC<{
   return (
     <Grid
       cols={{
-        xs: 1,
-        sm: 2,
-        md: 3,
-        lg: 3,
+        xs: 2,
+        sm: 3,
+        md: 4,
+        lg: 4,
       }}
-      gap={8}
+      gap={6}
       className={className}
     >
       {children}

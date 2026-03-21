@@ -385,20 +385,31 @@ const handlePaymentFailed = async (paymentIntent) => {
 
 // Helper function to clear user cart after successful payment
 const clearUserCart = async (userId) => {
+  if (!userId) {
+    console.warn('clearUserCart: userId is missing');
+    return;
+  }
+  
   try {
-    const cart = await Cart.findOne({
+    // Find all active carts for this user just in case
+    const carts = await Cart.findAll({
       where: { userId, status: 'active' }
     });
 
-    if (cart) {
-      await cart.update({ status: 'converted' });
-      await CartItem.destroy({
-        where: { cartId: cart.id }
-      });
-      console.log(`Cart cleared for user ${userId}`);
+    if (carts && carts.length > 0) {
+      for (const cart of carts) {
+        await cart.update({ status: 'converted' });
+        // Also destroy items to be double sure count returns 0
+        await CartItem.destroy({
+          where: { cartId: cart.id }
+        });
+        console.log(`[SUCCESS] Cart ${cart.id} cleared for user ${userId}`);
+      }
+    } else {
+      console.log(`[INFO] No active cart found to clear for user ${userId}`);
     }
   } catch (error) {
-    console.error(`Error clearing cart for user ${userId}:`, error);
+    console.error(`[ERROR] Error clearing cart for user ${userId}:`, error.message);
   }
 };
 

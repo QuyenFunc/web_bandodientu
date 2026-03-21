@@ -13,8 +13,8 @@ import {
   Image,
   Card,
   Typography,
-  Upload,
 } from 'antd';
+import ImageUpload from '@/components/common/ImageUpload';
 import {
   PlusOutlined,
   EditOutlined,
@@ -139,10 +139,11 @@ const BrandsPage: React.FC = () => {
       dataIndex: 'logo',
       key: 'logo',
       width: 80,
-      render: (logo: string, record: any) =>
-        logo ? (
+      render: (logo: string, record: any) => {
+        const fullLogoUrl = logo?.startsWith('http') ? logo : `${import.meta.env.VITE_API_URL || 'http://localhost:8888'}${logo?.startsWith('/') ? '' : '/'}${logo}`;
+        return logo ? (
           <Image
-            src={logo}
+            src={fullLogoUrl}
             alt={record.name}
             width={50}
             height={50}
@@ -152,7 +153,8 @@ const BrandsPage: React.FC = () => {
           <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
             <TrademarkOutlined className="text-gray-400" />
           </div>
-        ),
+        );
+      },
     },
     {
       title: 'Tên thương hiệu',
@@ -302,41 +304,14 @@ const BrandsPage: React.FC = () => {
 
             <Form.Item
               name="logo"
-              label="Logo"
+              label="Logo thương hiệu"
             >
-              <div className="flex flex-col gap-2">
-                <Input 
-                  placeholder="URL logo" 
-                  value={form.getFieldValue('logo')}
-                  onChange={(e) => form.setFieldsValue({ logo: e.target.value })}
-                />
-                <Upload
-                  name="file"
-                  action={`${import.meta.env.VITE_API_URL || 'http://localhost:8888'}/api/upload/brands/single`}
-                  headers={{
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
-                  }}
-                  listType="picture-card"
-                  fileList={fileList}
-                  onChange={({ fileList: newFileList, file }) => {
-                    setFileList(newFileList);
-                    if (file.status === 'done' && file.response?.data?.url) {
-                      form.setFieldsValue({ logo: file.response.data.url });
-                      message.success('Tải ảnh lên thành công!');
-                    } else if (file.status === 'error') {
-                      message.error('Tải ảnh lên thất bại!');
-                    }
-                  }}
-                  maxCount={1}
-                >
-                  {fileList.length < 1 && (
-                    <div>
-                      <PlusOutlined />
-                      <div style={{ marginTop: 8 }}>Tải lên</div>
-                    </div>
-                  )}
-                </Upload>
-              </div>
+              <ImageUpload
+                type="brands"
+                multiple={false}
+                value={form.getFieldValue('logo')}
+                onChange={(val) => form.setFieldsValue({ logo: val })}
+              />
             </Form.Item>
 
             <Form.Item

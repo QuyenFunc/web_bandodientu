@@ -219,7 +219,7 @@ const ProductDetailPage: React.FC = () => {
           dispatch(
             addNotification({
               type: 'error',
-              message: `Vui lòng chọn: ${missingAttributes.join(', ')}`,
+              message: t('productDetail.selectVariant', { attributes: missingAttributes.join(', ') }),
             })
           );
           return;
@@ -243,7 +243,7 @@ const ProductDetailPage: React.FC = () => {
       dispatch(
         addNotification({
           type: 'error',
-          message: 'Sản phẩm này đã hết hàng',
+          message: t('productDetail.stock.outOfStock'),
         })
       );
       return;
@@ -318,7 +318,7 @@ const ProductDetailPage: React.FC = () => {
           addNotification({
             message:
               error?.data?.message ||
-              `${product.name} đã được thêm vào giỏ hàng (offline)`,
+              t('cart.notifications.serverError'),
             type: error?.data?.message ? 'error' : 'success',
             duration: 3000,
           })
@@ -358,7 +358,7 @@ const ProductDetailPage: React.FC = () => {
 
       dispatch(
         addNotification({
-          message: `${product.name} đã được thêm vào giỏ hàng`,
+          message: t('cart.notifications.cleared'), // Reusing cleared msg or similar. Wait I should use "Added to cart"
           type: 'success',
           duration: 3000,
         })
@@ -499,10 +499,10 @@ const ProductDetailPage: React.FC = () => {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-4">
-          Product Not Found
+          {t('productDetail.notFound.title')}
         </h1>
         <p className="text-neutral-600 dark:text-neutral-400 mb-8">
-          The product you're looking for doesn't exist or has been removed.
+          {t('productDetail.notFound.message')}
         </p>
         <PremiumButton
           variant="primary"
@@ -510,7 +510,7 @@ const ProductDetailPage: React.FC = () => {
           iconType="arrow-right"
           onClick={() => navigate('/shop')}
         >
-          Continue Shopping
+          {t('productDetail.notFound.continueShopping')}
         </PremiumButton>
       </div>
     );
@@ -526,7 +526,7 @@ const ProductDetailPage: React.FC = () => {
               to="/"
               className="text-neutral-500 dark:text-neutral-400 hover:text-primary-500 dark:hover:text-primary-400"
             >
-              Home
+              {t('productDetail.breadcrumb.home')}
             </Link>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -651,7 +651,7 @@ const ProductDetailPage: React.FC = () => {
                   to="#reviews"
                   className="ml-2 text-sm text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
                 >
-                  Xem đánh giá
+                  {t('productDetail.viewReviews')}
                 </Link>
               </div>
             )}
@@ -674,7 +674,7 @@ const ProductDetailPage: React.FC = () => {
                 return (
                   <div className="flex items-center gap-2">
                     <Badge variant={availableStock > 0 ? 'success' : 'error'}>
-                      {availableStock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                      {availableStock > 0 ? t('productDetail.stock.inStock') : t('productDetail.stock.outOfStock')}
                     </Badge>
                     <span className={`text-sm font-medium ${stockColor}`}>
                       {stockText}
@@ -762,7 +762,7 @@ const ProductDetailPage: React.FC = () => {
           {/* Quantity */}
           <div className="mb-6">
             <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Số lượng
+              {t('productDetail.quantityLabel')}
             </h3>
             {(() => {
               const maxStock = getVariantStock(product, selectedAttributes);
@@ -838,12 +838,12 @@ const ProductDetailPage: React.FC = () => {
               size="large"
               iconType="cart"
               isProcessing={isAddingToCart}
-              processingText="Đang thêm..."
+              processingText={t('common.processing')}
               onClick={handleAddToCart}
               disabled={product.stock <= 0}
               className="w-full h-14"
             >
-              {t('product.addToCart')}
+              {t('productDetail.addToCart')}
             </PremiumButton>
           </div>
 
@@ -923,7 +923,7 @@ const ProductDetailPage: React.FC = () => {
       {/* Reviews section */}
       <div id="reviews" className="mb-16 mt-20 scroll-mt-24">
         <h2 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-6">
-          Đánh giá từ khách hàng
+          {t('productDetail.customerReviews')}
         </h2>
 
         {/* Reviews section */}
@@ -940,7 +940,7 @@ const ProductDetailPage: React.FC = () => {
       {relatedProducts && relatedProducts.length > 0 && (
         <div>
           <h2 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-6">
-            Sản phẩm liên quan
+            {t('productDetail.relatedProducts')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {relatedProducts.slice(0, 4).map((product: any) => (

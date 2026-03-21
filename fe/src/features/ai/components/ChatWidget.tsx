@@ -15,6 +15,9 @@ import ChatQuickActions from './ChatQuickActions';
 import ChatEmptyState from './ChatEmptyState';
 import ChatResizeIndicator from './ChatResizeIndicator';
 
+// Icons
+import { VerifiedIcon, TrashIcon, HelpIcon } from './icons';
+
 // Services & API
 import {
   useSendChatbotMessageMutation,
@@ -51,7 +54,7 @@ export interface Message {
 
 const ChatWidget: React.FC = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, user } = useSelector(
+  const { user } = useSelector(
     (state: RootState) => state.auth
   );
 
@@ -67,10 +70,8 @@ const ChatWidget: React.FC = () => {
     closeChat,
     addMessage,
     removeMessage,
-    updateMessage,
     applyChanges,
     setSize,
-    setPosition,
     setMessages,
   } = useChatWidget();
 
@@ -105,8 +106,6 @@ const ChatWidget: React.FC = () => {
     });
 
     try {
-      console.log('Sending message to AI:', text);
-
       // Track analytics
       await trackAnalytics({
         event: 'message_sent',
@@ -131,15 +130,12 @@ const ChatWidget: React.FC = () => {
         context,
       }).unwrap();
 
-      console.log('Received AI response:', apiResponse);
-
       // Handle different response structures
       let response: ChatbotResponse;
       if (
         (apiResponse as any).status === 'success' &&
         (apiResponse as any).data
       ) {
-        // New API structure
         const newApiResponse = apiResponse as any;
         response = {
           response: newApiResponse.data.response,
@@ -149,7 +145,6 @@ const ChatWidget: React.FC = () => {
           sessionId: newApiResponse.data.sessionId,
         };
       } else {
-        // Legacy structure
         response = apiResponse as any as ChatbotResponse;
       }
 
@@ -166,11 +161,9 @@ const ChatWidget: React.FC = () => {
     } catch (error: any) {
       console.error('Error sending message:', error);
 
-      // Determine appropriate error message
       let errorMessage = t('chat.errors.general');
 
       if (error.message === 'Request timeout' || error.code === 'ECONNABORTED') {
-        // User requested to remove "timeout" message. We'll show a friendly "busy" message or retry.
         errorMessage = 'Hệ thống đang bận xử lý, bạn vui lòng chờ trong giây lát hoặc thử lại nhé! 🙏';
       } else if (error.status === 404) {
         errorMessage = t('chat.errors.notFound');
@@ -207,10 +200,7 @@ const ChatWidget: React.FC = () => {
     delta: any,
     position: any
   ) => {
-    // Add resize-feedback class for visual feedback
     ref.classList.add('resize-feedback');
-
-    // Remove the class after animation completes
     setTimeout(() => {
       ref.classList.remove('resize-feedback');
     }, CHAT_WIDGET_CONFIG.ANIMATION_DURATION.RESIZE);
@@ -257,13 +247,13 @@ const ChatWidget: React.FC = () => {
       {/* Chat widget with react-rnd - drag disabled, only resize enabled */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-24 z-50 w-[500px] h-[700px]"
+          className="fixed bottom-24 right-24 z-50 w-[384px] h-[600px]"
           onClick={(e) => {
             e.stopPropagation();
           }}
         >
           <Rnd
-            ref={chatWidgetRef}
+            ref={chatWidgetRef as any}
             size={{ width: size.width, height: size.height }}
             position={position}
             minWidth={CHAT_WIDGET_CONFIG.MIN_SIZE.width}
@@ -276,8 +266,8 @@ const ChatWidget: React.FC = () => {
             onResize={handleResize}
             onResizeStop={handleResizeStop}
             className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-neutral-200/50 dark:border-neutral-700/50 transform animate-in slide-in-from-bottom-4 duration-500 transition-all chat-widget-resize-transition chat-widget-active"
-            resizeHandleStyles={RESIZE_HANDLE_STYLES}
-            resizeHandleClasses={RESIZE_HANDLE_CLASSES}
+            resizeHandleStyles={RESIZE_HANDLE_STYLES as any}
+            resizeHandleClasses={RESIZE_HANDLE_CLASSES as any}
           >
             {/* Chat header */}
             <ChatHeaderContent
@@ -286,7 +276,7 @@ const ChatWidget: React.FC = () => {
             />
 
             {/* Chat messages */}
-            <div className="chat-messages flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-gradient-to-b from-neutral-50/80 via-white/50 to-neutral-50/80 dark:from-neutral-800/80 dark:via-neutral-900/50 dark:to-neutral-800/80 min-h-[300px] max-h-[50vh] sm:max-h-[400px]">
+            <div className="chat-messages flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-gradient-to-b from-neutral-50/80 via-white/50 to-neutral-50/80 dark:from-neutral-800/80 dark:via-neutral-900/50 dark:to-neutral-800/80 min-h-[200px]">
               {messages.length === 0 && <ChatEmptyState onSuggestionClick={handleSendMessage} />}
 
               {messages.map((message) => (
@@ -326,18 +316,60 @@ const ChatWidget: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat input */}
-            <div className="border-t border-neutral-200/60 dark:border-neutral-700/60 bg-gradient-to-r from-white via-neutral-50/50 to-white dark:from-neutral-900 dark:via-neutral-800/50 dark:to-neutral-900 p-4 sm:p-5 backdrop-blur-sm">
+            {/* Chat bottom area: Quick Actions + Input + Branding */}
+            <div className="border-t border-neutral-200/60 dark:border-neutral-700/60 bg-gradient-to-b from-white to-neutral-50/50 dark:from-neutral-900 dark:to-neutral-800/50 backdrop-blur-md">
+              {/* 1. Quick actions above input */}
+              <div className="px-4 pt-3">
+                <ChatQuickActions onSendMessage={handleSendMessage} />
+              </div>
+
+              {/* 2. Chat input component */}
               <ChatInput
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
               />
 
-              {/* Quick actions */}
-              <ChatQuickActions onSendMessage={handleSendMessage} />
+              {/* 3. Global Branding & Meta Actions Footer */}
+              <div className="px-5 pb-4 flex items-center justify-between text-[10px] text-neutral-400 dark:text-neutral-500 font-bold border-t border-neutral-100/50 dark:border-neutral-800/50 pt-2.5 mt-1">
+                <div className="flex items-center group transition-colors hover:text-primary-500">
+                  <VerifiedIcon className="mr-1.5 text-primary-500/70 group-hover:text-primary-500 transition-colors" size={12} />
+                  <span className="uppercase tracking-widest">
+                    {t('chat.poweredBy') || 'Powered by'}{' '}
+                    <span className="text-primary-600 dark:text-primary-400">
+                      Shopmini AI
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <button
+                    type="button"
+                    className="flex items-center space-x-1 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 hover:scale-105 active:scale-95"
+                    title="Xóa cuộc trò chuyện"
+                    onClick={() => {
+                      if (window.confirm('Bạn có chắc muốn xóa toàn bộ cuộc trò chuyện?')) {
+                        setMessages([]);
+                      }
+                    }}
+                  >
+                    <TrashIcon size={12} />
+                    <span className="hidden sm:inline">Làm mới</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="flex items-center space-x-1 hover:text-primary-500 dark:hover:text-primary-400 transition-all duration-200 hover:scale-105 active:scale-95"
+                    title="Trợ giúp"
+                    onClick={() => handleSendMessage('Tôi cần trợ giúp về cách sử dụng chatbot')}
+                  >
+                    <HelpIcon size={12} />
+                    <span className="hidden sm:inline">Trợ giúp</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* Resize indicator with tooltip */}
+            {/* Resize indicator */}
             <ChatResizeIndicator />
           </Rnd>
         </div>

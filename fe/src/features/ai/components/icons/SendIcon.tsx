@@ -2,11 +2,14 @@ import React from 'react';
 
 interface IconProps {
   className?: string;
+  size?: number;
 }
 
-const SendIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => {
+const SendIcon: React.FC<IconProps> = ({ className = '', size = 20 }) => {
   return (
     <svg
+      width={size}
+      height={size}
       className={className}
       fill="none"
       viewBox="0 0 24 24"

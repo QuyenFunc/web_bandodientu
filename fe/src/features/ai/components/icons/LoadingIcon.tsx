@@ -2,11 +2,14 @@ import React from 'react';
 
 interface IconProps {
   className?: string;
+  size?: number;
 }
 
-const LoadingIcon: React.FC<IconProps> = ({ className = 'h-5 w-5' }) => {
+const LoadingIcon: React.FC<IconProps> = ({ className = '', size = 20 }) => {
   return (
     <svg
+      width={size}
+      height={size}
       className={`animate-spin ${className}`}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"

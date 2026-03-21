@@ -7,11 +7,10 @@ const AboutPage: React.FC = () => {
       {/* Hero section */}
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-4">
-          About ShopMini
+          Về ShopMini
         </h1>
         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-3xl mx-auto">
-          We&apos;re on a mission to provide high-quality products at affordable
-          prices with exceptional customer service.
+          Sứ mệnh của chúng tôi là cung cấp các sản phẩm chất lượng cao với giá cả hợp lý cùng dịch vụ chăm sóc khách hàng tận tâm.
         </p>
       </div>
 
@@ -19,47 +18,38 @@ const AboutPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-20 items-center">
         <div>
           <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-6">
-            Our Story
+            Câu chuyện của chúng tôi
           </h2>
           <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-            Founded in 2023, ShopMini started with a simple idea: make shopping
-            easier, more enjoyable, and accessible to everyone. What began as a
-            small online store has grown into a platform offering thousands of
-            products across multiple categories.
+            Được thành lập vào năm 2023, ShopMini bắt đầu với một ý tưởng đơn giản: làm cho việc mua sắm trở nên dễ dàng, thú vị và dễ tiếp cận hơn cho mọi người. Từ một cửa hàng trực tuyến nhỏ, chúng tôi đã phát triển thành một nền tảng cung cấp hàng ngàn sản phẩm đa dạng.
           </p>
           <p className="text-neutral-600 dark:text-neutral-400 mb-4">
-            Our team is passionate about curating the best products and creating
-            a seamless shopping experience. We carefully select each item in our
-            inventory to ensure it meets our standards for quality, value, and
-            sustainability.
+            Đội ngũ của chúng tôi luôn đam mê tìm kiếm những sản phẩm tốt nhất và tạo ra trải nghiệm mua sắm liền mạch. Mỗi mặt hàng đều được lựa chọn kỹ lưỡng để đảm bảo đáp ứng các tiêu chuẩn về chất lượng, giá trị và tính bền vững.
           </p>
           <p className="text-neutral-600 dark:text-neutral-400">
-            As we continue to grow, our commitment to customer satisfaction
-            remains at the heart of everything we do. We&apos;re constantly
-            improving our platform, expanding our product range, and finding new
-            ways to delight our customers.
+            Khi tiếp tục phát triển, cam kết về sự hài lòng của khách hàng vẫn là trái tim trong mọi hoạt động của chúng tôi. Chúng tôi không ngừng cải tiến nền tảng, mở rộng phạm vi sản phẩm và tìm ra những cách mới để làm hài lòng khách hàng.
           </p>
         </div>
-        <div className="rounded-lg overflow-hidden shadow-lg">
+        <div className="rounded-2xl overflow-hidden shadow-2xl border border-neutral-200 dark:border-neutral-700">
           <img
             src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1000&q=80"
-            alt="Our team working"
-            className="w-full h-full object-cover"
+            alt="Đội ngũ của chúng tôi đang làm việc"
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
           />
         </div>
       </div>
 
       {/* Values section */}
-      <div className="bg-neutral-50 dark:bg-neutral-800 rounded-xl p-12 mb-20">
+      <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-3xl p-12 mb-20 border border-neutral-100 dark:border-neutral-700/30">
         <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-10 text-center">
-          Our Values
+          Giá trị cốt lõi
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {
-              title: 'Quality',
+              title: 'Chất lượng',
               description:
-                'We never compromise on quality. Every product we offer is carefully selected and tested to ensure it meets our high standards.',
+                'Chúng tôi không bao giờ thỏa hiệp về chất lượng. Mọi sản phẩm đều được kiểm tra kỹ lưỡng để đảm bảo đáp ứng các tiêu chuẩn cao nhất.',
               icon: (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -78,9 +68,9 @@ const AboutPage: React.FC = () => {
               ),
             },
             {
-              title: 'Customer First',
+              title: 'Khách hàng là trọng tâm',
               description:
-                'Our customers are at the center of everything we do. We strive to provide exceptional service and support at every step of your shopping journey.',
+                'Khách hàng là trung tâm của mọi việc chúng tôi làm. Chúng tôi nỗ lực cung cấp dịch vụ và hỗ trợ đặc biệt trong suốt hành trình mua sắm.',
               icon: (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -99,9 +89,9 @@ const AboutPage: React.FC = () => {
               ),
             },
             {
-              title: 'Innovation',
+              title: 'Đổi mới sáng tạo',
               description:
-                'We&apos;re constantly looking for new ways to improve our platform and offer innovative products that make your life better and more convenient.',
+                'Chúng tôi liên tục tìm kiếm những cách mới để cải thiện nền tảng và cung cấp các sản phẩm sáng tạo giúp cuộc sống của bạn tốt đẹp hơn.',
               icon: (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -122,13 +112,13 @@ const AboutPage: React.FC = () => {
           ].map((value, index) => (
             <div
               key={index}
-              className="bg-white dark:bg-neutral-700 p-6 rounded-lg shadow-sm text-center"
+              className="bg-white dark:bg-neutral-800 p-8 rounded-2xl shadow-sm text-center border border-neutral-100 dark:border-neutral-700 transition-all duration-300 hover:shadow-md hover:-translate-y-1"
             >
-              <div className="flex justify-center mb-4">{value.icon}</div>
-              <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-3">
+              <div className="flex justify-center mb-6">{value.icon}</div>
+              <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">
                 {value.title}
               </h3>
-              <p className="text-neutral-600 dark:text-neutral-300">
+              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed tabular-nums">
                 {value.description}
               </p>
             </div>
@@ -139,47 +129,47 @@ const AboutPage: React.FC = () => {
       {/* Team section */}
       <div className="mb-20">
         <h2 className="text-3xl font-bold text-neutral-900 dark:text-white mb-10 text-center">
-          Our Team
+          Đội ngũ của chúng tôi
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             {
               name: 'Sarah Johnson',
-              role: 'Founder & CEO',
+              role: 'Người sáng lập & CEO',
               image:
                 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80',
             },
             {
               name: 'Michael Chen',
-              role: 'CTO',
+              role: 'Giám đốc công nghệ',
               image:
                 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80',
             },
             {
               name: 'Emily Rodriguez',
-              role: 'Head of Product',
+              role: 'Trưởng phòng sản phẩm',
               image:
                 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80',
             },
             {
               name: 'David Kim',
-              role: 'Customer Experience',
+              role: 'Trải nghiệm khách hàng',
               image:
                 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80',
             },
           ].map((member, index) => (
-            <div key={index} className="text-center">
-              <div className="rounded-full overflow-hidden w-48 h-48 mx-auto mb-4">
+            <div key={index} className="text-center group">
+              <div className="rounded-full overflow-hidden w-48 h-48 mx-auto mb-6 border-4 border-white dark:border-neutral-800 shadow-xl transition-transform duration-500 group-hover:scale-105">
                 <img
                   src={member.image}
                   alt={member.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-xl font-semibold text-neutral-900 dark:text-white">
+              <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1">
                 {member.name}
               </h3>
-              <p className="text-neutral-600 dark:text-neutral-400">
+              <p className="text-primary-600 dark:text-primary-400 font-medium">
                 {member.role}
               </p>
             </div>
@@ -188,26 +178,25 @@ const AboutPage: React.FC = () => {
       </div>
 
       {/* CTA section */}
-      <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-12 text-center">
-        <h2 className="text-3xl font-bold text-primary-700 dark:text-primary-400 mb-4">
-          Ready to Start Shopping?
+      <div className="bg-gradient-to-br from-primary-500 to-primary-700 rounded-3xl p-12 text-center text-white shadow-2xl shadow-primary-500/20">
+        <h2 className="text-3xl font-bold mb-4">
+          Sẵn sàng trải nghiệm mua sắm?
         </h2>
-        <p className="text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-8">
-          Explore our wide range of products and discover why thousands of
-          customers choose ShopMini for their shopping needs.
+        <p className="text-white/80 max-w-2xl mx-auto mb-10 text-lg">
+          Khám phá hàng ngàn sản phẩm đa dạng và tìm hiểu lý do tại sao hàng ngàn khách hàng tin tưởng lựa chọn ShopMini.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-center gap-6">
           <Link
             to="/shop"
-            className="bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            className="bg-white text-primary-600 hover:bg-neutral-50 font-bold py-4 px-10 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
           >
-            Browse Products
+            Mua sắm ngay
           </Link>
           <Link
             to="/contact"
-            className="bg-white dark:bg-neutral-800 text-primary-600 dark:text-primary-400 border border-primary-600 dark:border-primary-400 font-medium py-3 px-6 rounded-lg hover:bg-primary-50 dark:hover:bg-neutral-700 transition-colors"
+            className="bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur-md font-bold py-4 px-10 rounded-2xl transition-all duration-300 hover:-translate-y-1"
           >
-            Contact Us
+            Liên hệ với chúng tôi
           </Link>
         </div>
       </div>

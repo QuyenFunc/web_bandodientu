@@ -9,10 +9,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "db:migrate": "sequelize-cli db:migrate",
-    "db:seed": "sequelize-cli db:seed:all",
-    "db:reset": "sequelize-cli db:drop && sequelize-cli db:create && sequelize-cli db:migrate && sequelize-cli db:seed:all",
-    "import:sample": "node import-sample-data.js",
-    "import:json": "node import-json-data.js"
+    "db:cleanup": "node scripts/db_cleanup.js",
+    "db:seed": "node scripts/db_seed.js",
+    "db:verify": "node scripts/db_verify.js",
+    "db:reset": "npm run db:cleanup && npm run db:seed"
   },
   "keywords": [
     "ecommerce",

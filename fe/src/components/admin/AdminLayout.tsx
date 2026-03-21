@@ -464,11 +464,13 @@ const AdminLayout: React.FC = () => {
             onClose={() => setMobileMenuOpen(false)}
             open={mobileMenuOpen}
             width={280}
-            bodyStyle={{ padding: 0 }}
-            headerStyle={{
-              borderBottom: `1px solid ${theme === 'dark' ? '#424242' : '#f0f0f0'}`,
-              background: theme === 'dark' ? '#141414' : '#fff',
-              color: theme === 'dark' ? '#fff' : '#000',
+            styles={{
+              body: { padding: 0 },
+              header: {
+                borderBottom: `1px solid ${theme === 'dark' ? '#424242' : '#f0f0f0'}`,
+                background: theme === 'dark' ? '#141414' : '#fff',
+                color: theme === 'dark' ? '#fff' : '#000',
+              }
             }}
           >
             <nav className="px-4 py-4">

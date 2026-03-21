@@ -1,115 +1,153 @@
+const moment = require('moment');
 const crypto = require('crypto');
-const querystring = require('querystring');
-const moment = require('moment-timezone');
+const querystring = require('qs');
 
-function sortObject(obj) {
-  // Sắp xếp các key theo bảng chữ cái
-  const keys = Object.keys(obj).sort();
-  const sorted = {};
-  
-  for (const key of keys) {
-    if (obj.hasOwnProperty(key)) {
-      sorted[key] = obj[key];
-    }
+class VNPayService {
+  constructor() {
+    this.tmnCode = process.env.VNP_TMN_CODE;
+    this.secretKey = process.env.VNP_HASH_SECRET;
+    this.vnpUrl = process.env.VNP_URL;
+    this.returnUrl = process.env.VNP_RETURN_URL;
   }
-  return sorted;
+
+  createPaymentUrl({ orderId, amount, ipAddr, orderInfo, locale = 'vn' }) {
+    process.env.TZ = 'Asia/Ho_Chi_Minh';
+    const date = new Date();
+    const createDate = moment(date).format('YYYYMMDDHHmmss');
+
+    const currCode = 'VND';
+    let vnp_Params = {};
+    vnp_Params['vnp_Version'] = '2.1.0';
+    vnp_Params['vnp_Command'] = 'pay';
+    vnp_Params['vnp_TmnCode'] = this.tmnCode;
+    vnp_Params['vnp_Locale'] = locale;
+    vnp_Params['vnp_CurrCode'] = currCode;
+    vnp_Params['vnp_TxnRef'] = orderId;
+    vnp_Params['vnp_OrderInfo'] = orderInfo || 'Thanh toan cho ma GD:' + orderId;
+    vnp_Params['vnp_OrderType'] = 'other';
+    vnp_Params['vnp_Amount'] = Math.round(amount * 100);
+    vnp_Params['vnp_ReturnUrl'] = this.returnUrl;
+    vnp_Params['vnp_IpAddr'] = ipAddr;
+    vnp_Params['vnp_CreateDate'] = createDate;
+
+    vnp_Params = this.sortObject(vnp_Params);
+
+    const signData = querystring.stringify(vnp_Params, { encode: false });
+    const hmac = crypto.createHmac('sha512', this.secretKey);
+    const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
+    vnp_Params['vnp_SecureHash'] = signed;
+
+    const queryUrl = querystring.stringify(vnp_Params, { encode: false });
+    return this.vnpUrl + '?' + queryUrl;
+  }
+
+  verifyReturnUrl(params) {
+    let vnp_Params = { ...params };
+    const secureHash = vnp_Params['vnp_SecureHash'];
+
+    delete vnp_Params['vnp_SecureHash'];
+    delete vnp_Params['vnp_SecureHashType'];
+
+    vnp_Params = this.sortObject(vnp_Params);
+
+    const signData = querystring.stringify(vnp_Params, { encode: false });
+    const hmac = crypto.createHmac('sha512', this.secretKey);
+    const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex');
+
+    return secureHash === signed;
+  }
+
+  async refund({
+    orderId,
+    amount,
+    transDate,
+    transType = '02',
+    user = 'Admin',
+    ipAddr,
+  }) {
+    process.env.TZ = 'Asia/Ho_Chi_Minh';
+    const date = new Date();
+    const vnp_Api = process.env.VNP_API;
+    const vnp_TmnCode = this.tmnCode;
+    const secretKey = this.secretKey;
+
+    const vnp_RequestId = moment(date).format('HHmmss');
+    const vnp_Version = '2.1.0';
+    const vnp_Command = 'refund';
+    const vnp_OrderInfo = 'Hoan tien GD ma:' + orderId;
+    const vnp_Amount = Math.round(amount * 100);
+    const vnp_CreateDate = moment(date).format('YYYYMMDDHHmmss');
+    const vnp_TransactionNo = '0'; // If unknown
+    const vnp_TransactionDate = transDate; // Format YYYYMMDDHHmmss
+    const vnp_CreateBy = user;
+
+    const data =
+      vnp_RequestId +
+      '|' +
+      vnp_Version +
+      '|' +
+      vnp_Command +
+      '|' +
+      vnp_TmnCode +
+      '|' +
+      transType +
+      '|' +
+      orderId +
+      '|' +
+      vnp_Amount +
+      '|' +
+      vnp_TransactionNo +
+      '|' +
+      vnp_TransactionDate +
+      '|' +
+      vnp_CreateBy +
+      '|' +
+      vnp_CreateDate +
+      '|' +
+      ipAddr +
+      '|' +
+      vnp_OrderInfo;
+
+    const hmac = crypto.createHmac('sha512', secretKey);
+    const vnp_SecureHash = hmac.update(new Buffer(data, 'utf-8')).digest('hex');
+
+    const dataObj = {
+      vnp_RequestId,
+      vnp_Version,
+      vnp_Command,
+      vnp_TmnCode,
+      vnp_TransactionType: transType,
+      vnp_TxnRef: orderId,
+      vnp_Amount,
+      vnp_TransactionNo,
+      vnp_CreateBy,
+      vnp_OrderInfo,
+      vnp_TransactionDate,
+      vnp_CreateDate,
+      vnp_IpAddr: ipAddr,
+      vnp_SecureHash,
+    };
+
+    const axios = require('axios');
+    const response = await axios.post(vnp_Api, dataObj);
+    return response.data;
+  }
+
+  sortObject(obj) {
+    let sorted = {};
+    let str = [];
+    let key;
+    for (key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        str.push(encodeURIComponent(key));
+      }
+    }
+    str.sort();
+    for (key = 0; key < str.length; key++) {
+      sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, '+');
+    }
+    return sorted;
+  }
 }
 
-const createPaymentUrl = ({ orderId, amount, bankCode = '', ipAddr, returnUrl }) => {
-  // Loại bỏ hoàn toàn khoảng trắng, tab, hoặc ký tự \r \n trong secretKey/TMPCODE
-  const tmnCode = String(process.env.VNP_TMN_CODE).trim().replace(/[\r\n\s]/g, '');
-  const secretKey = String(process.env.VNP_HASH_SECRET).trim().replace(/[\r\n\s]/g, '');
-  let vnpUrl = String(process.env.VNP_URL).trim();
-  const realReturnUrl = returnUrl || String(process.env.VNP_RETURN_URL).trim();
-
-  const sanitizedOrderId = String(orderId).replace(/[^a-zA-Z0-9]/g, '');
-  const vnpAmount = Math.round(parseFloat(amount) * 100);
-
-  // Định dạng chuẩn GMT+7 bằng moment-timezone
-  const createDate = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
-  const expireDateStr = moment().tz('Asia/Ho_Chi_Minh').add(15, 'minutes').format('YYYYMMDDHHmmss');
-
-  let formattedIpAddr = ipAddr ? String(ipAddr) : '127.0.0.1';
-  if (formattedIpAddr.includes(',')) {
-    formattedIpAddr = formattedIpAddr.split(',')[0].trim();
-  }
-  if (formattedIpAddr === '::1' || formattedIpAddr.startsWith('::ffff:')) {
-    formattedIpAddr = formattedIpAddr.replace('::ffff:', '');
-    if (!formattedIpAddr) formattedIpAddr = '127.0.0.1';
-  }
-  if (formattedIpAddr.length > 15) {
-    formattedIpAddr = '127.0.0.1'; // VNP_IpAddr chỉ cho max 15 ký tự
-  }
-
-  let vnp_Params = {
-    vnp_Version: '2.1.0',
-    vnp_Command: 'pay',
-    vnp_TmnCode: tmnCode,
-    vnp_Locale: 'vn',
-    vnp_CurrCode: 'VND',
-    vnp_TxnRef: sanitizedOrderId,
-    vnp_OrderInfo: 'Thanh toan don hang ' + sanitizedOrderId,
-    vnp_OrderType: 'other',
-    vnp_Amount: vnpAmount,
-    vnp_ReturnUrl: realReturnUrl,
-    vnp_IpAddr: formattedIpAddr,
-    vnp_CreateDate: createDate,
-    vnp_ExpireDate: expireDateStr,
-  };
-
-  if (bankCode && bankCode !== '') {
-    vnp_Params['vnp_BankCode'] = bankCode;
-  }
-
-  vnp_Params = sortObject(vnp_Params);
-
-  // Tạo query string từ các parameters đã sắp xếp
-  let signData = querystring.stringify(vnp_Params);
-  
-  // Tính toán HMAC SHA-512
-  let hmac = crypto.createHmac('sha512', secretKey);
-  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-  vnp_Params['vnp_SecureHash'] = signed;
-
-  // Tạo URL hoàn chỉnh
-  let queryUrl = querystring.stringify(vnp_Params);
-  vnpUrl += '?' + queryUrl;
-
-  return vnpUrl;
-};
-
-const verifyReturnUrl = (vnp_Params) => {
-  let secureHash = vnp_Params['vnp_SecureHash'];
-
-  // Loại bỏ các tham số không liên quan đến chữ ký
-  let params = {};
-  for (let key in vnp_Params) {
-    if (key !== 'vnp_SecureHash' && key !== 'vnp_SecureHashType') {
-      params[key] = vnp_Params[key];
-    }
-  }
-
-  // Sắp xếp và tạo query string
-  params = sortObject(params);
-  const secretKey = String(process.env.VNP_HASH_SECRET).trim().replace(/[\r\n\s]/g, '');
-
-  let signData = querystring.stringify(params);
-  
-  let hmac = crypto.createHmac('sha512', secretKey);
-  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-
-  const vnp_Amount = params['vnp_Amount'] ? params['vnp_Amount'] : 0;
-
-  return {
-    isSuccess: secureHash === signed,
-    orderId: params['vnp_TxnRef'] || vnp_Params['vnp_TxnRef'],
-    amount: parseInt(vnp_Amount) / 100,
-    transactionNo: params['vnp_TransactionNo'] || vnp_Params['vnp_TransactionNo'],
-    responseCode: params['vnp_ResponseCode'] || vnp_Params['vnp_ResponseCode'],
-  };
-};
-
-module.exports = {
-  createPaymentUrl,
-  verifyReturnUrl,
-};
+module.exports = new VNPayService();

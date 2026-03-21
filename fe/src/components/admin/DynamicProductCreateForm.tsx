@@ -436,7 +436,7 @@ const DynamicProductCreateForm: React.FC<DynamicProductCreateFormProps> = ({
           <Card
             title={currentStepInfo.title}
             style={{ marginBottom: 24 }}
-            bodyStyle={{ minHeight: 400 }}
+            styles={{ body: { minHeight: 400 } }}
           >
             {renderStepContent()}
           </Card>

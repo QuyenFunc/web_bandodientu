@@ -288,9 +288,9 @@ Hãy trả lời theo format JSON sau:
       if (process.env.NODE_ENV !== 'production') {
         console.log('✅ Identified "new products" intent');
       }
-      
+
       const newProducts = products.slice(0, 5); // Assuming products are already sorted by createdAt DESC
-      
+
       const productList = newProducts
         .map((p) => `• ${p.name} - ${p.price?.toLocaleString('vi-VN')}đ`)
         .join('\n');

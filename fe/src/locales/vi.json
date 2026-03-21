@@ -674,7 +674,6 @@
       "cod": "Thanh toán khi nhận hàng",
       "paypal": "PayPal",
       "bank_transfer": "Chuyển khoản ngân hàng",
-      "vnpay": "VNPAY",
       "momo": "MoMo",
       "installment": "Trả góp"
     },

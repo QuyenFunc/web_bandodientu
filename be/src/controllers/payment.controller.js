@@ -1,6 +1,6 @@
 const stripeService = require('../services/payment/stripeService');
-const vnpayService = require('../services/payment/vnpayService');
 const momoService = require('../services/payment/momoService');
+const vnpayService = require('../services/payment/vnpayService');
 const { Order, User, OrderItem, Product, ProductVariant, Cart, CartItem } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
 const { Op } = require('sequelize');
@@ -431,11 +431,32 @@ const createRefund = async (req, res, next) => {
       throw new AppError('No payment transaction found for this order', 400);
     }
 
-    const refund = await stripeService.createRefund({
-      paymentIntentId: order.paymentTransactionId,
-      amount,
-      reason,
-    });
+    let refund;
+    if (order.paymentProvider === 'stripe') {
+      refund = await stripeService.createRefund({
+        paymentIntentId: order.paymentTransactionId,
+        amount,
+        reason,
+      });
+    } else if (order.paymentProvider === 'vnpay') {
+      const ipAddr =
+        req.headers['x-forwarded-for'] ||
+        req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
+        req.connection.socket.remoteAddress;
+
+      refund = await vnpayService.refund({
+        orderId: order.number,
+        amount: amount || order.total,
+        transDate: moment(order.updatedAt).format('YYYYMMDDHHmmss'),
+        ipAddr,
+      });
+    } else {
+      throw new AppError(
+        `Hoàn tiền chưa được hỗ trợ cho ${order.paymentProvider}`,
+        400
+      );
+    }
 
     // Update order payment status
     await order.update({
@@ -863,94 +884,6 @@ const handleSePayWebhook = async (req, res, next) => {
   }
 };
 
-// Tạo VNPay URL
-const createVnpayUrl = async (req, res, next) => {
-  try {
-    const { amount, orderId, bankCode } = req.body;
-    
-    if (!amount || amount <= 0 || !orderId) {
-      throw new AppError('Invalid amount or orderId', 400);
-    }
-    
-    const ipAddr = req.headers['x-forwarded-for'] ||
-                   req.connection.remoteAddress ||
-                   req.socket.remoteAddress ||
-                   req.connection.socket.remoteAddress || '127.0.0.1';
-                   
-    const paymentUrl = vnpayService.createPaymentUrl({
-      orderId,
-      amount,
-      bankCode,
-      ipAddr
-    });
-    
-    res.status(200).json({
-      status: 'success',
-      data: { paymentUrl }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Xử lý VNPay Return
-const vnpayReturn = async (req, res, next) => {
-  try {
-    const vnp_Params = req.query;
-    const result = vnpayService.verifyReturnUrl(vnp_Params);
-    
-    if (result.isSuccess && result.responseCode === '00') {
-      // vnp_TxnRef đã bị loại ký tự đặc biệt (VD: "ORD25110001" thay vì "ORD-2511-00001")
-      // Tìm order theo cả dạng đã sanitize và dạng gốc với dấu gạch ngang
-      const sanitizedRef = result.orderId;
-      let order = await Order.findOne({ where: { number: sanitizedRef } });
-      
-      // Thử tìm theo dạng gốc có dấu gạch ngang (ORD-XXXX-XXXXX)
-      if (!order && sanitizedRef.startsWith('ORD') && sanitizedRef.length > 6) {
-        const withDashes = `${sanitizedRef.substring(0, 3)}-${sanitizedRef.substring(3, 7)}-${sanitizedRef.substring(7)}`;
-        order = await Order.findOne({ where: { number: withDashes } });
-      }
-      
-      // Thử tìm partial match
-      if (!order) {
-        order = await Order.findOne({ where: { number: { [Op.like]: `%${sanitizedRef}%` } } });
-      }
-      
-      if (order && order.paymentStatus !== 'paid') {
-        const updateResult = await Order.update(
-          {
-            status: 'processing',
-            paymentStatus: 'paid',
-            paymentTransactionId: result.transactionNo,
-            paymentProvider: 'vnpay',
-            updatedAt: new Date(),
-          },
-          { where: { id: order.id } }
-        );
-
-        // Reduce inventory
-        const orderItems = await OrderItem.findAll({ where: { orderId: order.id } });
-        for (const item of orderItems) {
-          if (item.variantId) {
-            await ProductVariant.decrement({ stockQuantity: item.quantity }, { where: { id: item.variantId } });
-          } else {
-            await Product.decrement({ stockQuantity: item.quantity }, { where: { id: item.productId } });
-          }
-        }
-        
-        await clearUserCart(order.userId);
-      }
-      
-      // Chuyển hướng frontend về trang thành công (đã gắn URL trong VNPay redirect)
-      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=success`);
-    } else {
-      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=failed`);
-    }
-  } catch (error) {
-    console.error('VNPay return error:', error);
-    return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=error`);
-  }
-};
 
 // Create MoMo Payment URL
 const createMomoUrl = async (req, res, next) => {
@@ -1070,6 +1003,145 @@ const momoIPN = async (req, res, next) => {
 
 // IPN if needed can be added similar to vnpayReturn but using server-to-server POST
 
+// Create VNPay Payment URL
+const createVNPayUrl = async (req, res, next) => {
+  try {
+    const { orderId } = req.body;
+    const ipAddr = req.headers['x-forwarded-for'] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      req.connection.socket.remoteAddress;
+
+    const order = await Order.findByPk(orderId);
+    if (!order) {
+      throw new AppError('Không tìm thấy đơn hàng', 404);
+    }
+
+    const payUrl = vnpayService.createPaymentUrl({
+      orderId: order.number,
+      amount: order.total,
+      ipAddr,
+      orderInfo: `Thanh toan don hang ${order.number}`,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: payUrl,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Handle VNPay Return (GET)
+const vnpayReturn = async (req, res, next) => {
+  try {
+    const vnp_Params = req.query;
+    const isValid = vnpayService.verifyReturnUrl(vnp_Params);
+
+    if (!isValid) {
+      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=checksum-failed`);
+    }
+
+    const orderNumber = vnp_Params['vnp_TxnRef'];
+    const responseCode = vnp_Params['vnp_ResponseCode'];
+
+    if (responseCode === '00') {
+      const order = await Order.findOne({ where: { number: orderNumber } });
+      if (order && order.paymentStatus !== 'paid') {
+        await order.update({
+          status: 'processing',
+          paymentStatus: 'paid',
+          paymentProvider: 'vnpay',
+          paymentTransactionId: vnp_Params['vnp_TransactionNo'],
+          updatedAt: new Date(),
+        });
+
+        // Reduce inventory
+        const orderItems = await OrderItem.findAll({ where: { orderId: order.id } });
+        for (const item of orderItems) {
+          if (item.variantId) {
+            await ProductVariant.decrement({ stockQuantity: item.quantity }, { where: { id: item.variantId } });
+          } else {
+            await Product.decrement({ stockQuantity: item.quantity }, { where: { id: item.productId } });
+          }
+        }
+        
+        await clearUserCart(order.userId);
+      }
+      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=success&order=${orderNumber}`);
+    } else {
+      return res.redirect(`${process.env.FRONTEND_URL}/orders?payment=failed&code=${responseCode}`);
+    }
+  } catch (error) {
+    console.error('VNPay return error:', error);
+    next(error);
+  }
+};
+
+// Handle VNPay IPN (GET)
+const vnpayIPN = async (req, res, next) => {
+  try {
+    const vnp_Params = req.query;
+    const isValid = vnpayService.verifyReturnUrl(vnp_Params);
+
+    if (!isValid) {
+      return res.status(200).json({ RspCode: '97', Message: 'Checksum failed' });
+    }
+
+    const orderNumber = vnp_Params['vnp_TxnRef'];
+    const responseCode = vnp_Params['vnp_ResponseCode'];
+    const amount = parseInt(vnp_Params['vnp_Amount']) / 100;
+
+    const order = await Order.findOne({ where: { number: orderNumber } });
+
+    if (!order) {
+      return res.status(200).json({ RspCode: '01', Message: 'Order not found' });
+    }
+
+    if (Math.abs(order.total - amount) > 0.01) {
+      return res.status(200).json({ RspCode: '04', Message: 'Invalid amount' });
+    }
+
+    if (order.paymentStatus === 'paid') {
+      return res.status(200).json({ RspCode: '02', Message: 'Order already confirmed' });
+    }
+
+    if (responseCode === '00') {
+      await order.update({
+        status: 'processing',
+        paymentStatus: 'paid',
+        paymentProvider: 'vnpay',
+        paymentTransactionId: vnp_Params['vnp_TransactionNo'],
+        updatedAt: new Date(),
+      });
+
+      // Reduce inventory
+      const orderItems = await OrderItem.findAll({ where: { orderId: order.id } });
+      for (const item of orderItems) {
+        if (item.variantId) {
+          await ProductVariant.decrement({ stockQuantity: item.quantity }, { where: { id: item.variantId } });
+        } else {
+          await Product.decrement({ stockQuantity: item.quantity }, { where: { id: item.productId } });
+        }
+      }
+      
+      await clearUserCart(order.userId);
+      return res.status(200).json({ RspCode: '00', Message: 'Confirm Success' });
+    } else {
+      // payment failed
+      await order.update({
+        paymentStatus: 'failed',
+        updatedAt: new Date(),
+      });
+      return res.status(200).json({ RspCode: '00', Message: 'Confirm Success' });
+    }
+  } catch (error) {
+    console.error('VNPay IPN error:', error);
+    return res.status(200).json({ RspCode: '99', Message: 'Unknow error' });
+  }
+};
+
 module.exports = {
   createPaymentIntent,
   confirmPayment,
@@ -1079,9 +1151,10 @@ module.exports = {
   handleWebhook,
   createRefund,
   handleSePayWebhook,
-  createVnpayUrl,
-  vnpayReturn,
   createMomoUrl,
   momoReturn,
   momoIPN,
+  createVNPayUrl,
+  vnpayReturn,
+  vnpayIPN,
 };

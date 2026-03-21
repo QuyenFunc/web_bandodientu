@@ -303,9 +303,7 @@ const ProductSpecificationsForm: React.FC<ProductSpecificationsFormProps> = ({
       )}
 
       {/* Hidden Form Field to store specifications */}
-      <Form.Item name="specifications" style={{ display: 'none' }}>
-        <Input />
-      </Form.Item>
+      <Form.Item name="specifications" hidden />
 
       {/* Summary */}
       {specifications.length > 0 && (

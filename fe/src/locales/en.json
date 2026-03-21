@@ -552,7 +552,6 @@
       "cod": "Cash on Delivery",
       "paypal": "PayPal",
       "bank_transfer": "Bank Transfer",
-      "vnpay": "VNPAY",
       "momo": "MoMo",
       "installment": "Installment"
     },

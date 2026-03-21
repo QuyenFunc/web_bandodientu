@@ -18,12 +18,13 @@ router.post(
   paymentController.handleSePayWebhook
 );
 
-// VNPay return IPN/redirect route (no authentication)
-router.get('/vnpay/return', paymentController.vnpayReturn);
-
 // MoMo return/IPN routes (no authentication)
 router.get('/momo/return', paymentController.momoReturn);
 router.post('/momo/ipn', paymentController.momoIPN);
+
+// VNPay return/IPN routes (no authentication)
+router.get('/vnpay/return', paymentController.vnpayReturn);
+router.get('/vnpay/ipn', paymentController.vnpayIPN);
 
 // Authenticated routes
 router.use(authenticate);
@@ -34,11 +35,11 @@ router.post('/create-payment-intent', paymentController.createPaymentIntent);
 // Confirm payment
 router.post('/confirm-payment', paymentController.confirmPayment);
 
-// VNPay create url
-router.post('/vnpay/create-url', paymentController.createVnpayUrl);
-
 // MoMo create url
 router.post('/momo/create-url', paymentController.createMomoUrl);
+
+// VNPay create url
+router.post('/vnpay/create-url', paymentController.createVNPayUrl);
 
 // Customer management
 router.post('/create-customer', paymentController.createCustomer);

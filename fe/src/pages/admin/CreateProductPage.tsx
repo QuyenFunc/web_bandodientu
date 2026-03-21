@@ -160,7 +160,6 @@ const CreateProductPage: React.FC = () => {
       seoKeywords: '',
       images: '',
       thumbnail: '',
-      thumbnail: '',
       condition: 'new',
       faqs: DEFAULT_FAQS,
     });
@@ -208,8 +207,8 @@ const CreateProductPage: React.FC = () => {
           console.log('Found base64 images in description, converting...');
 
           const result = await processDescriptionImages(processedDescription, {
-            productId: undefined, // Will be set after product creation
-            category: 'product',
+            productId: undefined,
+            category: 'product' as any,
             uploadImageFn: async ({ base64Data, options }) => {
               return await convertBase64ToImage({
                 base64Data,
@@ -283,7 +282,7 @@ const CreateProductPage: React.FC = () => {
               ) || 0,
           sku: hasVariants
             ? undefined
-            : allFormValues.sku || values.sku || `PROD-${Date.now()}`,
+            : allFormValues.sku || (values as any).sku || `PROD-${Date.now()}`,
           status: allFormValues.status || values.status || 'active',
           featured: allFormValues.featured || values.featured || false,
           categoryIds: allFormValues.categoryIds || values.categoryIds || [],
@@ -322,6 +321,7 @@ const CreateProductPage: React.FC = () => {
               return specs.map((spec) => ({
                 name: spec.name || '',
                 value: spec.value || '',
+                category: spec.category || 'General',
               }));
             }
             return [];
@@ -346,9 +346,9 @@ const CreateProductPage: React.FC = () => {
           attributes:
             attributes.length > 0
               ? attributes.map((attr) => ({
-                  name: attr.name,
-                  value: attr.value,
-                }))
+                name: attr.name,
+                value: (attr as any).value || (attr as any).values || '',
+              }))
               : [],
           variants: hasVariants
             ? variants.map((variant, index) => ({

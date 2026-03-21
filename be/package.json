@@ -59,7 +59,7 @@
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
-    "axios": "^1.10.0",
+    "axios": "^1.13.6",
     "eslint": "^9.28.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.10",

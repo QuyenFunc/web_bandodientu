@@ -24,8 +24,8 @@ import { addNotification } from '@/features/ui/uiSlice';
 import { formatPrice } from '@/utils/format';
 import { useCreateOrderMutation, useApplyDiscountCodeMutation } from '@/services/orderApi';
 import { cartApi, useGetCartCountQuery } from '@/services/cartApi';
-import { useCreateVnpayUrlMutation } from '@/services/vnpayApi';
 import { useCreateMomoUrlMutation } from '@/services/momoApi';
+import { useCreateVNPayUrlMutation } from '@/services/vnpayApi';
 import { useGetLoyaltyInfoQuery } from '@/services/loyaltyApi';
 
 const CheckoutPage: React.FC = () => {
@@ -125,8 +125,8 @@ const CheckoutPage: React.FC = () => {
   }, [dispatch, navigate, t]);
 
   const [createOrder] = useCreateOrderMutation();
-  const [createVnpayUrl] = useCreateVnpayUrlMutation();
   const [createMomoUrl] = useCreateMomoUrlMutation();
+  const [createVNPayUrl] = useCreateVNPayUrlMutation();
 
   // Lấy số lượng giỏ hàng từ server
   const { data: serverCartCount } = useGetCartCountQuery();
@@ -142,10 +142,8 @@ const CheckoutPage: React.FC = () => {
   // Payment methods with i18n
   const paymentMethods = [
     { value: 'cod', label: 'Thanh toán khi nhận hàng (COD)' },
-    { value: 'vnpay', label: 'Thanh toán trực tuyến VNPay' },
+    { value: 'vnpay', label: 'Thanh toán VNPay' },
     { value: 'momo', label: 'Thanh toán MoMo' },
-    { value: 'stripe', label: t('checkout.paymentMethod.creditCard') },
-    { value: 'bank_transfer', label: t('checkout.paymentMethod.bankTransfer') },
     { value: 'installment', label: 'Trả góp 0% qua thẻ tín dụng' },
   ];
 
@@ -184,7 +182,7 @@ const CheckoutPage: React.FC = () => {
     zipCode: '',
     country: 'VN',
     shippingMethod: 'standard',
-    paymentMethod: 'bank_transfer', // Default to bank transfer
+    paymentMethod: 'cod', // Default to COD
     notes: '',
     // Billing address (same as shipping by default)
     billingFirstName: user?.firstName || '',
@@ -624,22 +622,16 @@ const CheckoutPage: React.FC = () => {
 
       if (order) {
         try {
-          const res = await createVnpayUrl({
-            amount: order.total,
-            orderId: order.number || order.id, // Ưu tiên số đơn hàng, nếu không có dùng ID
-            bankCode: ''
+          const res = await createVNPayUrl({
+            orderId: order.id
           }).unwrap();
 
-          if (res.data?.paymentUrl) {
-            // NOTE: Cart is NOT cleared here anymore. 
-            // It will be cleared ONLY AFTER successful payment when the user is redirected back with success state,
-            // or through the backend success webhook (preventing empty cart on cancel/back).
-            
-            window.location.href = res.data.paymentUrl;
+          if (res.data) {
+            window.location.href = res.data;
             return;
           }
         } catch (error) {
-          console.error('Failed to create VNPay URL', error);
+          console.error('Failed to create VNPay payment URL', error);
           dispatch(
             addNotification({
               type: 'error',

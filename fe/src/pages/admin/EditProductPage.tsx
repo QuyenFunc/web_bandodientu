@@ -157,13 +157,15 @@ const EditProductPage: React.FC = () => {
           faqs: formValues.faqs || [],
           thumbnail: formValues.thumbnail || '',
           images: typeof formValues.images === 'string'
-            ? formValues.images.split('\n').filter((img: string) => img.trim())
+            ? formValues.images.split('\n').map((img: string) => img.trim()).filter((img: string) => img)
             : Array.isArray(formValues.images) ? formValues.images : [],
-          specifications: (formValues.specifications || []).map((spec: any) => ({
-            name: spec.name,
-            value: spec.value,
-            category: spec.category || 'General',
-          })),
+          specifications: Array.isArray(formValues.specifications)
+            ? formValues.specifications.map((spec: any) => ({
+              name: spec.name,
+              value: spec.value,
+              category: spec.category || 'General',
+            }))
+            : [],
         };
 
         // Price and Stock logic

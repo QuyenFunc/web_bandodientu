@@ -16,12 +16,12 @@ const createProductValidation = [
     .withMessage('Giá sản phẩm phải là số dương'),
 
   body('compareAtPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Giá so sánh phải là số dương'),
 
   body('comparePrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Giá so sánh phải là số dương'),
 
@@ -71,17 +71,17 @@ const updateProductValidation = [
   body('shortDescription').optional(),
 
   body('price')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Giá sản phẩm phải là số dương'),
 
   body('compareAtPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Giá so sánh phải là số dương'),
 
   body('comparePrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Giá so sánh phải là số dương'),
 

@@ -17,6 +17,7 @@ import {
   Typography,
   Upload,
 } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import {
   PlusOutlined,
   EditOutlined,
@@ -49,7 +50,6 @@ const CategoriesPage: React.FC = () => {
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [fileList, setFileList] = useState<any[]>([]);
 
   // API hooks
   const {
@@ -65,11 +65,13 @@ const CategoriesPage: React.FC = () => {
   const [deleteCategory, { isLoading: isDeleting }] =
     useDeleteCategoryMutation();
 
-  const categories = Array.isArray(categoriesData?.data)
-    ? categoriesData.data
-    : categoriesData?.data
-      ? [categoriesData.data]
-      : [];
+  const categories = React.useMemo(() => {
+    if (!categoriesData?.data) return [];
+    if (Array.isArray(categoriesData.data)) {
+      return categoriesData.data;
+    }
+    return [categoriesData.data];
+  }, [categoriesData]);
 
   // Build parent category options
   const getParentOptions = (excludeId?: string) => {
@@ -98,7 +100,6 @@ const CategoriesPage: React.FC = () => {
       setIsModalVisible(false);
       setEditingCategory(null);
       form.resetFields();
-      setFileList([]);
       refetch();
     } catch (error: any) {
       message.error(error?.data?.message || 'Có lỗi xảy ra!');
@@ -121,7 +122,6 @@ const CategoriesPage: React.FC = () => {
     setEditingCategory(null);
     setIsModalVisible(true);
     form.resetFields();
-    setFileList([]);
     form.setFieldsValue({
       isActive: true,
       sortOrder: 0,
@@ -140,23 +140,14 @@ const CategoriesPage: React.FC = () => {
       isActive: category.isActive,
       sortOrder: category.sortOrder || 0,
     });
-    
+
     if (category.image) {
-      setFileList([
-        {
-          uid: '-1',
-          name: 'image',
-          status: 'done',
-          url: category.image,
-        },
-      ]);
-    } else {
-      setFileList([]);
+      // Logic for ImageUpload handling can be here if needed
     }
   };
 
   // Table columns
-  const columns = [
+  const columns: ColumnsType<Category> = [
     {
       title: 'Hình ảnh',
       dataIndex: 'image',
@@ -193,7 +184,7 @@ const CategoriesPage: React.FC = () => {
       title: 'Mô tả',
       dataIndex: 'description',
       key: 'description',
-      render: (description: string) =>
+      render: (description?: string) =>
         description ? (
           <div className="max-w-xs truncate" title={description}>
             {description}
@@ -206,7 +197,7 @@ const CategoriesPage: React.FC = () => {
       title: 'Danh mục cha',
       dataIndex: 'parentId',
       key: 'parentId',
-      render: (parentId: string | null) => {
+      render: (parentId?: string | null) => {
         if (!parentId) {
           return <Tag color="green">Danh mục gốc</Tag>;
         }
@@ -233,7 +224,7 @@ const CategoriesPage: React.FC = () => {
       dataIndex: 'sortOrder',
       key: 'sortOrder',
       width: 80,
-      render: (sortOrder: number) => sortOrder || 0,
+      render: (sortOrder?: number) => sortOrder || 0,
     },
     {
       title: 'Hành động',

@@ -327,7 +327,7 @@ const createOrder = async (req, res, next) => {
     }
 
     // NOTE: CartItems are NOT cleared here anymore for ONLINE payments (vnpay, momo, stripe).
-    // They will be cleared ONLY AFTER successful payment in the payment webhook (confirmPayment / vnpayReturn).
+    // They will be cleared ONLY AFTER successful payment in the payment webhook (confirmPayment / momoReturn).
     // This allows the user to retain their cart items if they cancel/fail the payment window and try again.
     
     // BUT we SHOULD clear for COD and other manual methods that don't have a payment webhook.

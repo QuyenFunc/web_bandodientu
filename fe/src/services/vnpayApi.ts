@@ -1,28 +1,15 @@
 import { api } from './api';
 
-export interface CreateVnpayUrlRequest {
-  amount: number;
-  orderId: string;
-  bankCode?: string;
-}
-
-export interface CreateVnpayUrlResponse {
-  status: string;
-  data: {
-    paymentUrl: string;
-  };
-}
-
 export const vnpayApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    createVnpayUrl: builder.mutation<CreateVnpayUrlResponse, CreateVnpayUrlRequest>({
-      query: (data) => ({
+    createVNPayUrl: builder.mutation<any, { orderId: string }>({
+      query: (body) => ({
         url: '/payment/vnpay/create-url',
         method: 'POST',
-        body: data,
+        body,
       }),
     }),
   }),
 });
 
-export const { useCreateVnpayUrlMutation } = vnpayApi;
+export const { useCreateVNPayUrlMutation } = vnpayApi;

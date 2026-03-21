@@ -48,7 +48,7 @@ const ProductDetailsSection: React.FC<ProductDetailsSectionProps> = ({
             </div>
           }
           className="h-fit shadow-sm border-0"
-          bodyStyle={{ padding: '24px' }}
+          styles={{ body: { padding: '24px' } }}
         >
           <div className="relative">
             {/* Truncated Content Container */}
@@ -89,7 +89,7 @@ const ProductDetailsSection: React.FC<ProductDetailsSectionProps> = ({
             </div>
           }
           className="h-fit sticky top-16 sm:top-20 lg:top-24 shadow-sm hover:shadow-lg border-0 transition-all duration-300"
-          bodyStyle={{ padding: '16px' }}
+          styles={{ body: { padding: '16px' } }}
         >
           {specifications && specifications.length > 0 ? (
             <div className="relative">

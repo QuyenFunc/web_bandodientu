@@ -50,6 +50,9 @@ export interface ProductVariant {
   sortOrder?: number;
   isDefault?: boolean;
   isAvailable?: boolean;
+  stock?: number; // alias for stockQuantity
+  compareAtPrice?: number | null;
+  specifications?: Record<string, any>;
 }
 
 export interface ProductAttribute {

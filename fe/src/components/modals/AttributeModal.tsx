@@ -11,14 +11,15 @@ const { TextArea } = Input;
 interface Attribute {
   id?: string;
   name: string;
-  value: string;
+  value?: string;
+  values?: string[];
 }
 
 interface AttributeModalProps {
   visible: boolean;
   onClose: () => void;
-  attribute?: Attribute | null;
-  onSave: (attribute: Attribute) => void;
+  attribute?: any;
+  onSave: (attribute: any) => void;
 }
 
 const AttributeModal: React.FC<AttributeModalProps> = ({
@@ -33,7 +34,9 @@ const AttributeModal: React.FC<AttributeModalProps> = ({
     if (attribute) {
       form.setFieldsValue({
         name: attribute.name || '',
-        value: attribute.value || '',
+        value: Array.isArray(attribute.values) 
+          ? attribute.values.join(', ') 
+          : (attribute.value || ''),
       });
     } else {
       form.resetFields();

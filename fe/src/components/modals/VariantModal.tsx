@@ -5,14 +5,16 @@ import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
 interface Attribute {
   id: string;
   name: string;
-  value: string;
+  value?: string;
+  values?: string[];
 }
 
 interface Variant {
   id?: string;
   name: string;
   price: number;
-  stock: number;
+  stock?: number;
+  stockQuantity?: number;
   sku?: string;
   attributes?: Record<string, string>;
   value?: string;
@@ -21,9 +23,9 @@ interface Variant {
 interface VariantModalProps {
   visible: boolean;
   onClose: () => void;
-  variant?: Variant | null;
-  onSave: (variant: Variant) => void;
-  attributes: Attribute[];
+  variant?: any;
+  onSave: (variant: any) => void;
+  attributes: any[];
 }
 
 const VariantModal: React.FC<VariantModalProps> = ({
@@ -150,7 +152,7 @@ const VariantModal: React.FC<VariantModalProps> = ({
               formatter={(value) =>
                 `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
               }
-              parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+              parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '') as any}
               addonAfter="₫"
             />
           </Form.Item>
@@ -192,15 +194,15 @@ const VariantModal: React.FC<VariantModalProps> = ({
               {attributes.map((attr) => {
                 // Kiểm tra attr.value có tồn tại không trước khi gọi split
                 const values = attr.value
-                  ? attr.value
+                  ? (attr.value as string)
                       .split(',')
-                      .map((v) => v.trim())
-                      .filter((v) => v)
+                      .map((v: string) => v.trim())
+                      .filter((v: string) => v)
                   : [];
                 return (
                   <Form.Item key={attr.id} label={attr.name} name={attr.name}>
                     <Select placeholder={`Chọn ${attr.name}`} allowClear>
-                      {values.map((value) => (
+                      {values.map((value: string) => (
                         <Select.Option key={value} value={value}>
                           {value}
                         </Select.Option>

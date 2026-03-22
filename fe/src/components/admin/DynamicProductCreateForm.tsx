@@ -35,6 +35,7 @@ import ProductCategoryForm from '../product/ProductCategoryForm';
 // Import services
 import { adminProductService } from '@/services/adminProductApi';
 import { attributeService } from '@/services/attributeService';
+import { useGetCategoriesQuery } from '@/services/categoryApi';
 
 const { Step } = Steps;
 const { Title, Text, Paragraph } = Typography;
@@ -106,6 +107,11 @@ const DynamicProductCreateForm: React.FC<DynamicProductCreateFormProps> = ({
   const [formData, setFormData] = useState<Partial<ProductFormData>>(
     initialData || {}
   );
+
+  // Load categories
+  const { data: categoriesData, isLoading: isCategoriesLoading } =
+    useGetCategoriesQuery();
+  const categories = categoriesData || [];
 
   // Initialize form with default values
   useEffect(() => {
@@ -215,7 +221,7 @@ const DynamicProductCreateForm: React.FC<DynamicProductCreateFormProps> = ({
 
   // Fill example data
   const fillExampleData = useCallback(() => {
-    const exampleData = {
+    const exampleData: Partial<ProductFormData> = {
       name: 'ThinkPad X1 Carbon Gen 11',
       baseName: 'ThinkPad X1 Carbon',
       shortDescription:
@@ -274,16 +280,23 @@ const DynamicProductCreateForm: React.FC<DynamicProductCreateFormProps> = ({
       setLoading(true);
       const values = await form.validateFields();
 
-      const productData = {
+      const productData: any = {
         ...values,
-        selectedAttributes,
-        generatedName,
+        name: generatedName || values.name,
+        attributes: Object.entries(selectedAttributes).map(([name, value]) => ({
+          name,
+          value,
+        })),
         price: Number(values.price) || 0,
-        compareAtPrice: values.compareAtPrice
-          ? Number(values.compareAtPrice)
-          : undefined,
-        stockQuantity: Number(values.stockQuantity) || 0,
+        comparePrice: values.compareAtPrice ? Number(values.compareAtPrice) : undefined,
+        stock: Number(values.stockQuantity) || 0,
       };
+
+      // Remove internal form fields that don't belong in the API request
+      delete productData.selectedAttributes;
+      delete productData.generatedName;
+      delete productData.stockQuantity;
+      delete productData.compareAtPrice;
 
       console.log('Submitting product:', productData);
 
@@ -342,7 +355,12 @@ const DynamicProductCreateForm: React.FC<DynamicProductCreateFormProps> = ({
         return <ProductImagesForm />;
 
       case 'category':
-        return <ProductCategoryForm />;
+        return (
+          <ProductCategoryForm
+            categories={categories}
+            isLoading={isCategoriesLoading}
+          />
+        );
 
       case 'seo':
         return <ProductSeoForm />;

@@ -20,7 +20,7 @@ import { useProductVariants } from '@/hooks/useProductVariants';
 
 // API hooks
 import { useCreateProductMutation } from '@/services/adminProductApi';
-import { useGetAllCategoriesQuery } from '@/services/categoryApi';
+import { useGetCategoriesQuery } from '@/services/categoryApi';
 import { useConvertBase64ToImageMutation } from '@/services/imageApi';
 import { useGetWarrantyPackagesQuery } from '@/services/warrantyApi';
 
@@ -105,8 +105,8 @@ const CreateProductPage: React.FC = () => {
   const [specifications, setSpecifications] = useState<any[]>([]);
 
   // API hooks
-  const { data: categoriesResponse, isLoading: isCategoriesLoading } =
-    useGetAllCategoriesQuery();
+  const { data: categories, isLoading: isCategoriesLoading } =
+    useGetCategoriesQuery();
   const { data: warrantyData, isLoading: isWarrantyLoading } =
     useGetWarrantyPackagesQuery({ isActive: true });
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
@@ -212,7 +212,7 @@ const CreateProductPage: React.FC = () => {
             uploadImageFn: async ({ base64Data, options }) => {
               return await convertBase64ToImage({
                 base64Data,
-                options,
+                options: options as any,
               }).unwrap();
             },
           });
@@ -239,47 +239,47 @@ const CreateProductPage: React.FC = () => {
           price: hasVariants
             ? 0
             : parseFloat(
-                (allFormValues.price || values.price || '0').toString()
-              ) || 0,
+              (allFormValues.price || values.price || '0').toString()
+            ) || 0,
           comparePrice: hasVariants
             ? undefined
             : (() => {
-                const compareAtPrice =
-                  allFormValues.compareAtPrice || values.compareAtPrice;
-                return compareAtPrice &&
-                  parseFloat(compareAtPrice.toString()) > 0
-                  ? parseFloat(compareAtPrice.toString())
-                  : undefined;
-              })(),
+              const compareAtPrice =
+                allFormValues.compareAtPrice || values.compareAtPrice;
+              return compareAtPrice &&
+                parseFloat(compareAtPrice.toString()) > 0
+                ? parseFloat(compareAtPrice.toString())
+                : undefined;
+            })(),
           compareAtPrice: hasVariants
             ? undefined
             : (() => {
-                const compareAtPrice =
-                  allFormValues.compareAtPrice || values.compareAtPrice;
-                return compareAtPrice &&
-                  parseFloat(compareAtPrice.toString()) > 0
-                  ? parseFloat(compareAtPrice.toString())
-                  : undefined;
-              })(),
+              const compareAtPrice =
+                allFormValues.compareAtPrice || values.compareAtPrice;
+              return compareAtPrice &&
+                parseFloat(compareAtPrice.toString()) > 0
+                ? parseFloat(compareAtPrice.toString())
+                : undefined;
+            })(),
           // For variant products, set stock to 0
           stock: hasVariants
             ? 0
             : parseInt(
-                (
-                  allFormValues.stockQuantity ||
-                  values.stockQuantity ||
-                  '0'
-                ).toString()
-              ) || 0,
+              (
+                allFormValues.stockQuantity ||
+                values.stockQuantity ||
+                '0'
+              ).toString()
+            ) || 0,
           stockQuantity: hasVariants
             ? 0
             : parseInt(
-                (
-                  allFormValues.stockQuantity ||
-                  values.stockQuantity ||
-                  '0'
-                ).toString()
-              ) || 0,
+              (
+                allFormValues.stockQuantity ||
+                values.stockQuantity ||
+                '0'
+              ).toString()
+            ) || 0,
           sku: hasVariants
             ? undefined
             : allFormValues.sku || (values as any).sku || `PROD-${Date.now()}`,
@@ -347,41 +347,43 @@ const CreateProductPage: React.FC = () => {
             attributes.length > 0
               ? attributes.map((attr) => ({
                 name: attr.name,
-                value: (attr as any).value || (attr as any).values || '',
+                value: Array.isArray((attr as any).values)
+                  ? (attr as any).values.join(', ')
+                  : (attr as any).value || (attr as any).values || '',
               }))
               : [],
           variants: hasVariants
             ? variants.map((variant, index) => ({
-                name: variant.name,
-                variantName: variant.name,
-                price: parseFloat(variant.price?.toString() || '0') || 0,
-                compareAtPrice: variant.compareAtPrice
-                  ? parseFloat(variant.compareAtPrice.toString())
-                  : undefined,
-                stockQuantity: parseInt(variant.stock?.toString() || '0') || 0,
-                stock: parseInt(variant.stock?.toString() || '0') || 0,
-                sku: variant.sku || `VAR-${Date.now()}-${index + 1}`,
-                isDefault: index === 0, // First variant is default
-                isAvailable: true,
-                attributes: variant.attributes || {},
-                specifications: variant.specifications || {},
-                images: variant.images || [],
-              }))
+              name: variant.name,
+              variantName: variant.name,
+              price: parseFloat(variant.price?.toString() || '0') || 0,
+              compareAtPrice: variant.compareAtPrice
+                ? parseFloat(variant.compareAtPrice.toString())
+                : undefined,
+              stockQuantity: parseInt((variant as any).stockQuantity?.toString() || variant.stock?.toString() || '0') || 0,
+              stock: parseInt(variant.stock?.toString() || (variant as any).stockQuantity?.toString() || '0') || 0,
+              sku: variant.sku || `VAR-${Date.now()}-${index + 1}`,
+              isDefault: index === 0, // First variant is default
+              isAvailable: true,
+              attributes: variant.attributes || {},
+              specifications: variant.specifications || {},
+              images: variant.images || [],
+            }))
             : [],
           // Thêm các trường SEO - chỉ thêm nếu có giá trị
           ...(allFormValues.seoTitle || values.seoTitle
             ? {
-                seoTitle: (allFormValues.seoTitle || values.seoTitle).substring(
-                  0,
-                  500
-                ),
-              }
+              seoTitle: (allFormValues.seoTitle || values.seoTitle).substring(
+                0,
+                500
+              ),
+            }
             : {}),
           ...(allFormValues.seoDescription || values.seoDescription
             ? {
-                seoDescription:
-                  allFormValues.seoDescription || values.seoDescription,
-              }
+              seoDescription:
+                allFormValues.seoDescription || values.seoDescription,
+            }
             : {}),
           seoKeywords: (() => {
             const keywords = allFormValues.seoKeywords || values.seoKeywords;
@@ -478,7 +480,7 @@ const CreateProductPage: React.FC = () => {
     return 'Tạo sản phẩm thất bại. Vui lòng thử lại.';
   };
 
-  const categories = categoriesResponse?.data || [];
+  const categoriesList = categories || [];
 
   // Tab order constant
   const TAB_ORDER = [
@@ -698,7 +700,7 @@ const CreateProductPage: React.FC = () => {
       children: (
         <>
           <ProductCategoryForm
-            categories={categories}
+            categories={categoriesList}
             isLoading={isCategoriesLoading}
           />
           <TabNavigation
@@ -819,7 +821,7 @@ const CreateProductPage: React.FC = () => {
             tabOrder={TAB_ORDER}
             completedSteps={completedSteps}
             isLastTab={true}
-            onSubmit={handleSubmit}
+            onSubmit={() => handleSubmit(form.getFieldsValue())}
             isSubmitting={isCreating}
             submitText="Tạo sản phẩm"
             loadingText="Đang tạo..."

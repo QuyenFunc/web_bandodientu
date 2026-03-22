@@ -126,7 +126,7 @@ const EditProductPage: React.FC = () => {
             uploadImageFn: async ({ base64Data, options }) => {
               return await convertBase64ToImage({
                 base64Data,
-                options,
+                options: options as any,
               }).unwrap();
             },
           });
@@ -185,7 +185,9 @@ const EditProductPage: React.FC = () => {
         // Attributes and Variants - Always send if they exist to be safe, or do a shallow content check
         productData.attributes = attributes.map((attr: any) => ({
           name: attr.name,
-          values: Array.isArray(attr.value) ? attr.value : [attr.value],
+          value: Array.isArray((attr as any).values) 
+            ? (attr as any).values.join(', ') 
+            : (attr as any).value || (attr as any).values || '',
         }));
 
         if (hasVariants) {
@@ -193,11 +195,12 @@ const EditProductPage: React.FC = () => {
             id: variant.id && !variant.id.startsWith('var-') ? variant.id : undefined,
             name: variant.name,
             price: parseFloat(variant.price?.toString()) || 0,
-            stockQuantity: parseInt(variant.stock?.toString()) || 0,
             sku: variant.sku || `VAR-${id}-${index}-${Date.now()}`,
-            attributes: variant.attributes || {},
-            isDefault: index === 0,
             isAvailable: true,
+            isDefault: variant.isDefault || index === 0,
+            stockQuantity: parseInt((variant as any).stockQuantity?.toString() || variant.stock?.toString() || '0') || 0,
+            stock: parseInt(variant.stock?.toString() || (variant as any).stockQuantity?.toString() || '0') || 0,
+            attributes: variant.attributes || {},
           }));
         }
 
@@ -462,9 +465,9 @@ const EditProductPage: React.FC = () => {
       label: '2. Thuộc tính',
       children: (
         <ProductAttributesSection
-          attributes={attributes as any}
+          attributes={attributes}
           onAddAttribute={() => openAttributeModal()}
-          onEditAttribute={(attribute: any) => openAttributeModal(attribute)}
+          onEditAttribute={(attribute) => openAttributeModal(attribute)}
           onDeleteAttribute={handleDeleteAttribute}
         />
       ),
@@ -474,9 +477,9 @@ const EditProductPage: React.FC = () => {
       label: '3. Biến thể',
       children: (
         <ProductVariantsSection
-          variants={variants as any}
+          variants={variants}
           onAddVariant={() => openVariantModal()}
-          onEditVariant={(variant: any) => openVariantModal(variant)}
+          onEditVariant={(variant) => openVariantModal(variant)}
           onDeleteVariant={handleDeleteVariant}
         />
       ),

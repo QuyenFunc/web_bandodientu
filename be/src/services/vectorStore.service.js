@@ -37,6 +37,11 @@ class SimpleVectorStore {
     }
   }
 
+  clear() {
+    this.items = [];
+    console.log('🗑️ Vector store cleared');
+  }
+
   async addProduct(product) {
     try {
       const textToEmbed = `${product.name}. ${product.shortDescription || ''}`.substring(0, 500);

@@ -23,7 +23,11 @@ const indexAllProducts = async () => {
 
     console.log(`Found ${products.length} products to index.`);
 
-    // 2. Index each product
+    // 2. Clear old index before starting fresh
+    console.log('🧹 Clearing old vector store...');
+    vectorStoreService.clear();
+
+    // 3. Index each product
     for (let i = 0; i < products.length; i++) {
         const product = products[i];
         console.log(`[${i + 1}/${products.length}] Indexing: ${product.name}...`);

@@ -9,7 +9,7 @@ export interface RawProduct {
   price: string | number;
   compareAtPrice?: string | number;
   stockQuantity: number;
-  categories?: Array<{ id: string; name: string }>;
+  categories?: Array<{ id: string; name: string; slug?: string }>;
   featured?: boolean;
   ratings?: {
     average: number;
@@ -26,6 +26,7 @@ export interface TransformedProduct {
   stock: number;
   categoryId: string;
   categoryName: string;
+  categorySlug: string;
   isFeatured: boolean;
   ratings: {
     average: number;
@@ -47,6 +48,7 @@ export const transformProduct = (product: RawProduct): TransformedProduct => {
     stock: product.stockQuantity,
     categoryId: product.categories?.[0]?.id || '',
     categoryName: product.categories?.[0]?.name || '',
+    categorySlug: product.categories?.[0]?.slug || '',
     isFeatured: product.featured || false,
     ratings: product.ratings || {
       average: 0,

@@ -489,7 +489,7 @@ const ProductDetailPage: React.FC = () => {
           </li>
           <li className="flex items-center">
             <Link
-              to={`/categories/${product.categoryId}`}
+              to={`/categories/${product.categorySlug || product.categoryId}`}
               className="text-neutral-500 dark:text-neutral-400 hover:text-primary-500 dark:hover:text-primary-400"
             >
               {product.categoryName}

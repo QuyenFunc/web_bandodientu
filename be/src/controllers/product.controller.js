@@ -452,9 +452,15 @@ const getProductBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
     const { skuId } = req.query;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
 
     const product = await Product.findOne({
-      where: { slug },
+      where: {
+        [Op.or]: [
+          { slug },
+          isUUID ? { id: slug } : null
+        ].filter(Boolean)
+      },
       include: [
         {
           association: 'categories',

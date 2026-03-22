@@ -132,9 +132,15 @@ const getCategoryById = async (req, res, next) => {
 const getCategoryBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
 
     const category = await Category.findOne({
-      where: { slug },
+      where: {
+        [Op.or]: [
+          { slug },
+          isUUID ? { id: slug } : null
+        ].filter(Boolean)
+      },
       include: [
         {
           association: 'parent',

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGetCategoryBySlugQuery, useGetProductsByCategoryQuery } from '@/services/categoryApi';
 import { useGetAllCategoriesQuery } from '@/services/categoryApi';
@@ -70,6 +70,13 @@ const CategoryPage: React.FC = () => {
     return cats.filter((c: any) => c.slug !== slug).slice(0, 5);
   }, [allCatsData, slug]);
 
+  // Redirect if category not found AFTER loading finished
+  useEffect(() => {
+    if (!categoryLoading && !categoryInfo) {
+      navigate('/not-found');
+    }
+  }, [categoryLoading, categoryInfo, navigate]);
+
   if (categoryLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
@@ -78,10 +85,7 @@ const CategoryPage: React.FC = () => {
     );
   }
 
-  if (!categoryInfo) {
-    navigate('/not-found');
-    return null;
-  }
+  if (!categoryInfo) return null;
 
   const products = productsData?.data?.products || [];
   const totalProducts = productsData?.data?.pagination?.totalItems ?? categoryInfo.productCount ?? 0;
@@ -169,7 +173,7 @@ const CategoryPage: React.FC = () => {
             {relatedCategories.map((cat) => (
               <Link
                 key={cat.slug}
-                to={`/category/${cat.slug}`}
+                to={`/categories/${cat.slug}`}
                 className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:border-primary-300 hover:text-primary-700 dark:hover:border-primary-700 dark:hover:text-primary-300 transition-all"
               >
                 <span>{CATEGORY_ICONS[cat.slug] || '📦'}</span>

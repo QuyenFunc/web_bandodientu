@@ -12,16 +12,6 @@ const { Op } = require('sequelize');
 const chatbotService = require('../services/chatbot.service');
 const geminiChatbotService = require('../services/geminiChatbot.service');
 
-// Initialize Gemini AI only if API key is available
-let genAI = null;
-try {
-  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'demo-key') {
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  }
-} catch (error) {
-  console.log('Google Generative AI not available, using fallback responses');
-}
 
 class ChatbotController {
   /**
@@ -549,33 +539,13 @@ class ChatbotController {
 
   async generateAIResponse(prompt, context = {}) {
     try {
-      if (!genAI) {
-        // Fallback to template response if no AI available
-        return this.getTemplateResponse(prompt, context);
-      }
-
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-      const enhancedPrompt = `
-        Bạn là trợ lý bán hàng thông minh của Shopmini - một cửa hàng thời trang trực tuyến.
-        Mục tiêu chính của bạn là giúp khách hàng tìm và mua sản phẩm phù hợp.
-        
-        Ngữ cảnh: ${JSON.stringify(context)}
-        Câu hỏi khách hàng: ${prompt}
-        
-        Hãy trả lời một cách:
-        - Thân thiện và chuyên nghiệp
-        - Tập trung vào việc bán hàng
-        - Đề xuất sản phẩm cụ thể khi có thể
-        - Tạo cảm giác cấp bách để khuyến khích mua hàng
-        - Sử dụng emoji phù hợp để tạo sự thân thiện
-        
-        Độ dài: Khoảng 2-3 câu, ngắn gọn nhưng hiệu quả.
-      `;
-
-      const result = await model.generateContent(enhancedPrompt);
-      const response = result.response;
-      return response.text();
+      // Use the refactored service that now uses OpenRouter
+      const products = context.products || [];
+      const aiResponse = await geminiChatbotService.getAIResponse(prompt, products, context);
+      
+      // If the response is an object (from the service's parseAIResponse), 
+      // extract just the text for this helper method
+      return typeof aiResponse === 'object' ? aiResponse.response : aiResponse;
     } catch (error) {
       console.error('AI response generation error:', error.message || error);
       return this.getTemplateResponse(prompt, context);

@@ -130,10 +130,10 @@ const googleLogin = async (req, res, next) => {
     const { sub: googleId, email, given_name: firstName, family_name: lastName, picture: avatar } = payload;
 
     // Find or Create user
-    let user = await User.findOne({ 
-      where: { 
-        [Op.or]: [{ googleId }, { email }] 
-      } 
+    let user = await User.findOne({
+      where: {
+        [Op.or]: [{ googleId }, { email }]
+      }
     });
 
     if (!user) {
@@ -152,7 +152,7 @@ const googleLogin = async (req, res, next) => {
       if (!user.googleId) updates.googleId = googleId;
       if (!user.avatar) updates.avatar = avatar;
       if (!user.isEmailVerified) updates.isEmailVerified = true;
-      
+
       if (Object.keys(updates).length > 0) {
         await user.update(updates);
       }
@@ -368,7 +368,6 @@ const forgotPassword = async (req, res, next) => {
   }
 };
 
-const { Op } = require('sequelize');
 
 // Reset password
 const resetPassword = async (req, res, next) => {
@@ -400,7 +399,7 @@ const resetPassword = async (req, res, next) => {
       } else {
         console.log('No user found with the provided token');
       }
-      
+
       throw new AppError('Token không hợp lệ hoặc đã hết hạn', 400);
     }
 

@@ -59,11 +59,17 @@ const connectDB = async () => {
 const ensureColumns = async () => {
   try {
     // Add stripe columns to users
-    await sequelize.query(`
-      ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255),
-      ADD COLUMN IF NOT EXISTS google_id VARCHAR(255);
-    `);
+    try {
+      await sequelize.query('ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(255);');
+    } catch (e) {
+      // Column might already exist
+    }
+
+    try {
+      await sequelize.query('ALTER TABLE users ADD COLUMN google_id VARCHAR(255);');
+    } catch (e) {
+      // Column might already exist
+    }
     
     // Add warranty columns to orders
     try {

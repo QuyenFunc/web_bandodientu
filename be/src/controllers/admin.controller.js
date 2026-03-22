@@ -26,6 +26,53 @@ const {
 } = require('../utils/productHelpers');
 
 /**
+ * Recursively parse JSON strings to handle multi-layered stringification.
+ * e.g. '"{\\"key\\":\\"val\\"}"' → { key: "val" }
+ */
+function deepParseJSON(val) {
+  if (val === null || val === undefined) return {};
+  if (typeof val === 'object' && !Array.isArray(val)) return val; // Already an object
+  if (typeof val !== 'string') return {};
+  
+  let parsed = val;
+  let maxAttempts = 5; // Prevent infinite loop
+  while (typeof parsed === 'string' && maxAttempts-- > 0) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch (e) {
+      return {}; // Not valid JSON at all
+    }
+  }
+  
+  if (typeof parsed === 'object' && !Array.isArray(parsed) && parsed !== null) {
+    return parsed;
+  }
+  return {};
+}
+
+/**
+ * Recursively parse JSON array strings
+ */
+function deepParseJSONArray(val) {
+  if (val === null || val === undefined) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val !== 'string') return [];
+  
+  let parsed = val;
+  let maxAttempts = 5;
+  while (typeof parsed === 'string' && maxAttempts-- > 0) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch (e) {
+      return [];
+    }
+  }
+  
+  if (Array.isArray(parsed)) return parsed;
+  return [];
+}
+
+/**
  * Dashboard - Thống kê tổng quan
  */
 const getDashboardStats = catchAsync(async (req, res) => {
@@ -465,9 +512,35 @@ const getProductById = catchAsync(async (req, res) => {
     throw new AppError('Không tìm thấy sản phẩm', 404);
   }
 
+  // Sanitize product data before sending to frontend
+  const productJson = product.toJSON();
+  
+  // Deep-parse variant attributes (fix multi-stringification)
+  if (productJson.variants && Array.isArray(productJson.variants)) {
+    productJson.variants = productJson.variants.map(v => ({
+      ...v,
+      attributes: deepParseJSON(v.attributes),
+      attributeValues: deepParseJSON(v.attributeValues || v.attributes),
+      specifications: deepParseJSON(v.specifications),
+    }));
+  }
+  
+  // Deep-parse product attribute values
+  if (productJson.attributes && Array.isArray(productJson.attributes)) {
+    productJson.attributes = productJson.attributes.map(attr => ({
+      ...attr,
+      values: deepParseJSONArray(attr.values),
+    }));
+  }
+  
+  // Deep-parse specifications
+  if (productJson.specifications && typeof productJson.specifications !== 'object') {
+    productJson.specifications = deepParseJSON(productJson.specifications);
+  }
+
   res.status(200).json({
     status: 'success',
-    data: { product },
+    data: { product: productJson },
   });
 });
 
@@ -665,7 +738,7 @@ const createProduct = catchAsync(async (req, res) => {
 
       const variantPromises = variants.map(async (variant) => {
         // Đảm bảo variant.attributes luôn là một object
-        const variantAttributes = variant.attributes || {};
+        const variantAttributes = deepParseJSON(variant.attributes);
 
         console.log(`Processing variant: ${variant.name}`, {
           price: variant.price,
@@ -681,15 +754,6 @@ const createProduct = catchAsync(async (req, res) => {
         ) {
           try {
             // Tạm thời bỏ qua validation để đảm bảo biến thể được tạo
-            // const isValid = validateVariantAttributes(
-            //   productAttributes,
-            //   variantAttributes
-            // );
-            // if (!isValid) {
-            //   throw new Error(
-            //     `Thuộc tính biến thể không hợp lệ cho biến thể: ${variant.name}`
-            //   );
-            // }
           } catch (error) {
             console.error('Lỗi khi xác thực thuộc tính biến thể:', error);
             // Không throw error, chỉ log để tiếp tục tạo biến thể
@@ -705,8 +769,9 @@ const createProduct = catchAsync(async (req, res) => {
         // Generate display name for variant
         const displayName =
           variant.displayName ||
-          Object.values(variantAttributes).join(' - ') ||
-          variant.name;
+          (variantAttributes && Object.values(variantAttributes).length > 0
+            ? Object.values(variantAttributes).join(' - ')
+            : variant.name);
 
         // Tạo biến thể với dữ liệu đã được xác thực
         return await ProductVariant.create({
@@ -865,6 +930,7 @@ const updateProduct = catchAsync(async (req, res) => {
   const { id } = req.params;
   const {
     name,
+    baseName,
     description,
     shortDescription,
     price,
@@ -911,6 +977,7 @@ const updateProduct = catchAsync(async (req, res) => {
     // Prepare update data
     const updateData = {};
     if (req.body.hasOwnProperty('name')) updateData.name = name;
+    if (req.body.hasOwnProperty('baseName')) updateData.baseName = req.body.baseName || name;
     if (req.body.hasOwnProperty('description')) updateData.description = description;
     if (req.body.hasOwnProperty('shortDescription')) updateData.shortDescription = shortDescription;
     if (req.body.hasOwnProperty('price')) updateData.price = parseFloat(price?.toString()) || 0;
@@ -960,88 +1027,174 @@ const updateProduct = catchAsync(async (req, res) => {
       changes.categories = categoryIds;
     }
 
-    // 4. Update attributes
+    // 4. Update attributes (differential update)
     if (req.body.hasOwnProperty('attributes') && Array.isArray(attributes)) {
-      await ProductAttribute.destroy({ where: { productId: id }, transaction });
-      if (attributes.length > 0) {
-        const attributePromises = attributes.map(async (attr) => {
-          let attrValues = [];
-          if (typeof attr.value === 'string') {
-            attrValues = attr.value.split(',').map(v => v.trim()).filter(Boolean);
-          } else if (Array.isArray(attr.value)) {
-            attrValues = attr.value;
-          } else if (Array.isArray(attr.values)) {
-            attrValues = attr.values;
-          } else if (attr.value) {
-            attrValues = [String(attr.value)];
-          }
+      const currentAttributes = await ProductAttribute.findAll({ where: { productId: id }, transaction });
+      const currentAttrMap = currentAttributes.reduce((map, attr) => {
+        map[attr.name] = attr;
+        return map;
+      }, {});
 
+      const newAttrNames = new Set(attributes.map(a => a.name));
+
+      // 1. Delete attributes not in the new list
+      for (const attr of currentAttributes) {
+        if (!newAttrNames.has(attr.name)) {
+          await attr.destroy({ transaction });
+        }
+      }
+
+      // 2. Create or Update attributes
+      const attributePromises = attributes.map(async (attr) => {
+        let attrValues = [];
+        if (typeof attr.value === 'string') {
+          attrValues = attr.value.split(',').map(v => v.trim()).filter(Boolean);
+        } else if (Array.isArray(attr.value)) {
+          attrValues = attr.value;
+        } else if (Array.isArray(attr.values)) {
+          attrValues = attr.values;
+        } else if (attr.value) {
+          attrValues = [String(attr.value)];
+        }
+
+        const normalizedValues = attrValues.length > 0 ? attrValues : ['Default'];
+
+        if (currentAttrMap[attr.name]) {
+          // Update existing
+          return await currentAttrMap[attr.name].update({ 
+            values: normalizedValues,
+            type: attr.type || currentAttrMap[attr.name].type || 'custom',
+            required: attr.required !== undefined ? attr.required : currentAttrMap[attr.name].required,
+          }, { transaction });
+        } else {
+          // Create new
           return await ProductAttribute.create({
             productId: id,
             name: attr.name,
-            values: attrValues.length > 0 ? attrValues : ['Default'],
+            values: normalizedValues,
+            type: attr.type || 'custom',
+            required: attr.required || false,
           }, { transaction });
-        });
-        await Promise.all(attributePromises);
-        changes.attributes = attributes.length;
-      }
+        }
+      });
+      await Promise.all(attributePromises);
+      changes.attributes = attributes.length;
     }
 
-    // 5. Update variants
+    // 5. Update variants (differential update)
     if (req.body.hasOwnProperty('variants') && Array.isArray(variants)) {
-      await ProductVariant.destroy({ where: { productId: id }, transaction });
-      if (variants.length > 0) {
-        const variantPromises = variants.map(async (variant) => {
-          const variantAttributes = variant.attributes || variant.attributeValues || {};
-          const variantSku = variant.sku || generateVariantSku(product.sku || sku || 'PROD', variantAttributes);
+      const currentVariants = await ProductVariant.findAll({ where: { productId: id }, transaction });
+      const currentVarMap = currentVariants.reduce((map, v) => {
+        map[v.id] = v;
+        return map;
+      }, {});
 
-          return await ProductVariant.create({
-            productId: id,
-            name: variant.name,
-            sku: variantSku,
-            attributes: variantAttributes,
-            attributeValues: variantAttributes,
-            price: parseFloat(variant.price?.toString()) || 0,
-            stockQuantity: parseInt((variant.stock || variant.stockQuantity || 0).toString()) || 0,
-            images: variant.images || [],
-            isDefault: variant.isDefault || false,
-            isAvailable: variant.isAvailable !== false,
-            compareAtPrice: variant.compareAtPrice || null,
-          }, { transaction });
-        });
+      // Use a Set for quick lookup of incoming IDs
+      const incomingVarIds = new Set(variants.filter(v => v.id && !v.id.startsWith('var-')).map(v => v.id));
 
-        const createdVariants = await Promise.all(variantPromises);
-        changes.variants = variants.length;
-
-        // Sync total stock if variants exist
-        const totalStock = calculateTotalStock(createdVariants);
-        await Product.update(
-          { stockQuantity: totalStock, inStock: totalStock > 0 },
-          { where: { id }, transaction }
-        );
-      } else if (req.body.hasOwnProperty('stockQuantity')) {
-        // If no variants, use base stock
-        await Product.update(
-          { stockQuantity: parseInt(stockQuantity?.toString()) || 0, inStock: (parseInt(stockQuantity?.toString()) || 0) > 0 },
-          { where: { id }, transaction }
-        );
+      // 1. Delete variants that aren't in the incoming list
+      for (const variant of currentVariants) {
+        if (!incomingVarIds.has(variant.id)) {
+          await variant.destroy({ transaction });
+        }
       }
+
+      // 2. Create or Update variants
+      const finalVariants = [];
+      const variantPromises = variants.map(async (variant, index) => {
+        const variantAttributes = deepParseJSON(variant.attributes || variant.attributeValues);
+
+        const variantSku = variant.sku || generateVariantSku(product.sku || sku || 'PROD', variantAttributes);
+        
+        const variantData = {
+          name: variant.name,
+          sku: variantSku,
+          attributes: variantAttributes,
+          attributeValues: variantAttributes,
+          price: parseFloat(variant.price?.toString()) || 0,
+          stockQuantity: parseInt((variant.stock || variant.stockQuantity || 0).toString()) || 0,
+          images: variant.images || [],
+          isDefault: variant.isDefault || (index === 0 && !variants.some(v => v.isDefault)),
+          isAvailable: variant.isAvailable !== false,
+          compareAtPrice: variant.compareAtPrice || null,
+          displayName: variant.displayName || variant.name || Object.values(variantAttributes).join(' - '),
+        };
+
+        if (variant.id && currentVarMap[variant.id]) {
+          // Update existing variant
+          const updated = await currentVarMap[variant.id].update(variantData, { transaction });
+          finalVariants.push(updated);
+          return updated;
+        } else {
+          // Create new variant
+          const created = await ProductVariant.create({
+            ...variantData,
+            productId: id,
+            // Only use ID if it's a valid UUID (not a temp ID like 'var-0')
+            id: variant.id && !variant.id.startsWith('var-') ? variant.id : undefined,
+          }, { transaction });
+          finalVariants.push(created);
+          return created;
+        }
+      });
+
+      await Promise.all(variantPromises);
+      changes.variants = variants.length;
+
+      // Sync total stock if variants exist
+      const totalStock = calculateTotalStock(finalVariants);
+      await Product.update(
+        { stockQuantity: totalStock, inStock: totalStock > 0 },
+        { where: { id }, transaction }
+      );
+    } else if (req.body.hasOwnProperty('stockQuantity')) {
+      // If no variants, use base stock
+      await Product.update(
+        { 
+          stockQuantity: parseInt(stockQuantity?.toString()) || 0, 
+          inStock: (parseInt(stockQuantity?.toString()) || 0) > 0 
+        },
+        { where: { id }, transaction }
+      );
     }
 
-    // 6. Update specifications
+    // 6. Update specifications (differential update)
     if (req.body.hasOwnProperty('specifications') && Array.isArray(specifications)) {
-      await ProductSpecification.destroy({ where: { productId: id }, transaction });
-      if (specifications.length > 0) {
-        const specData = specifications.map((spec, index) => ({
-          productId: id,
+      const currentSpecs = await ProductSpecification.findAll({ where: { productId: id }, transaction });
+      const currentSpecMap = currentSpecs.reduce((map, spec) => {
+        map[spec.name] = spec;
+        return map;
+      }, {});
+
+      const incomingSpecNames = new Set(specifications.map(s => s.name));
+
+      // 1. Delete specs not in the incoming list
+      for (const spec of currentSpecs) {
+        if (!incomingSpecNames.has(spec.name)) {
+          await spec.destroy({ transaction });
+        }
+      }
+
+      // 2. Create or Update specs
+      const specPromises = specifications.map(async (spec, index) => {
+        const specData = {
           name: spec.name,
           value: spec.value,
           category: spec.category || 'General',
           sortOrder: spec.sortOrder || index,
-        }));
-        await ProductSpecification.bulkCreate(specData, { transaction });
-        changes.specifications = specifications.length;
-      }
+        };
+
+        if (currentSpecMap[spec.name]) {
+          return await currentSpecMap[spec.name].update(specData, { transaction });
+        } else {
+          return await ProductSpecification.create({
+            ...specData,
+            productId: id,
+          }, { transaction });
+        }
+      });
+      await Promise.all(specPromises);
+      changes.specifications = specifications.length;
     }
 
     // 7. Update warranty packages

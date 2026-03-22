@@ -66,6 +66,11 @@ const updateProductValidation = [
     .isLength({ min: 2, max: 200 })
     .withMessage('Tên sản phẩm phải từ 2-200 ký tự'),
 
+  body('baseName')
+    .optional()
+    .isLength({ min: 2, max: 200 })
+    .withMessage('Tên cơ bản sản phẩm phải từ 2-200 ký tự'),
+
   body('description').optional(),
 
   body('shortDescription').optional(),

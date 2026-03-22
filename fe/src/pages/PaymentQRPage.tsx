@@ -1,5 +1,5 @@
 import { useGetOrderByIdQuery, useCancelOrderMutation } from '@/services/orderApi';
-import { useCreateVnpayUrlMutation } from '@/services/vnpayApi';
+import { useCreateVNPayUrlMutation } from '@/services/vnpayApi';
 import { addNotification } from '@/features/ui/uiSlice';
 import { RootState } from '@/store';
 import { useState, useEffect } from 'react';
@@ -62,7 +62,7 @@ const PaymentQRPage: React.FC = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [countdown, setCountdown] = useState(3);
 
-  const [createVnpayUrl] = useCreateVnpayUrlMutation();
+  const [createVnpayUrl] = useCreateVNPayUrlMutation();
   const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
 
   const { data: orderData } = useGetOrderByIdQuery(orderId || '', {

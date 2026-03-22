@@ -4,11 +4,14 @@ const { v4: uuidv4 } = require('uuid');
 
 class MoMoService {
   constructor() {
-    this.partnerCode = process.env.MOMO_PARTNER_CODE || 'MOMO';
-    this.accessKey = process.env.MOMO_ACCESS_KEY || 'F8B6752GGMT7';
-    this.secretKey = process.env.MOMO_SECRET_KEY || 'K951B6PE9R8KQ9CR86392576554DTH4L';
-    this.apiEndpoint = process.env.MOMO_API_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create';
-    this.redirectUrl = process.env.MOMO_REDIRECT_URL || 'http://localhost:5175/cart?status=momo-return';
+    this.partnerCode = process.env.DEV_PARTNER_CODE || process.env.MOMO_PARTNER_CODE || 'MOMOLRJZ20181206';
+    this.accessKey = process.env.DEV_ACCESS_KEY || process.env.MOMO_ACCESS_KEY || 'mTCKt9W3eU1m39TW';
+    this.secretKey = process.env.DEV_SECRET_KEY || process.env.MOMO_SECRET_KEY || 'SetA5RDnLHvt51AULf51DyauxUo3kDU6';
+    // The base Endpoint is https://test-payment.momo.vn/v2/gateway/api
+    this.apiEndpoint = process.env.DEV_MOMO_ENDPOINT ? `${process.env.DEV_MOMO_ENDPOINT}/create` : (process.env.MOMO_API_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create');
+    
+    // Set to Backend return URL so it can process payment status
+    this.redirectUrl = process.env.MOMO_REDIRECT_URL || 'http://localhost:8888/api/payment/momo/return';
     this.ipnUrl = process.env.MOMO_IPN_URL || 'http://localhost:8888/api/payment/momo/ipn';
   }
 
@@ -19,7 +22,7 @@ class MoMoService {
     // MoMo orderId must be unique for each transaction attempt
     const momoOrderId = `${orderId}-${Date.now().toString().slice(-6)}`;
     const requestId = `${momoOrderId}-${uuidv4().split('-')[0]}`;
-    const requestType = 'captureWallet';
+    const requestType = 'payWithATM';
     
     // Create signature
     const rawSignature = `accessKey=${this.accessKey}&amount=${intAmount}&extraData=${extraData}&ipnUrl=${this.ipnUrl}&orderId=${momoOrderId}&orderInfo=${orderInfo}&partnerCode=${this.partnerCode}&redirectUrl=${this.redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
@@ -50,7 +53,7 @@ class MoMoService {
       return response.data;
     } catch (error) {
       console.error('MoMo Create Payment Error:', error.response?.data || error.message);
-      throw new Error('Không thể tạo liên kết thanh toán MoMo');
+      throw new Error(JSON.stringify(error.response?.data || error.message));
     }
   }
 

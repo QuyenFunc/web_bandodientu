@@ -382,8 +382,8 @@ const getProductById = async (req, res, next) => {
           // Current variant info
           currentVariant: {
             id: selectedVariant.id,
-            name: selectedVariant.variantName,
-            fullName: `${productJson.baseName || productJson.name} - ${selectedVariant.variantName}`,
+            name: selectedVariant.name || selectedVariant.displayName,
+            fullName: selectedVariant.name || `${productJson.baseName || productJson.name} - ${selectedVariant.displayName}`,
             price: selectedVariant.price,
             compareAtPrice: selectedVariant.compareAtPrice,
             sku: selectedVariant.sku,
@@ -400,7 +400,7 @@ const getProductById = async (req, res, next) => {
           // All available variants
           availableVariants: productJson.variants.map((v) => ({
             id: v.id,
-            name: v.variantName,
+            name: v.name || v.displayName,
             price: v.price,
             compareAtPrice: v.compareAtPrice,
             stockQuantity: v.stockQuantity,
@@ -408,7 +408,7 @@ const getProductById = async (req, res, next) => {
             sku: v.sku,
           })),
           // Override main product fields with selected variant
-          name: `${productJson.baseName || productJson.name} - ${selectedVariant.variantName}`,
+          name: selectedVariant.name || `${productJson.baseName || productJson.name} - ${selectedVariant.displayName}`,
           price: selectedVariant.price,
           compareAtPrice: selectedVariant.compareAtPrice,
           stockQuantity: selectedVariant.stockQuantity,
@@ -551,8 +551,8 @@ const getProductBySlug = async (req, res, next) => {
           // Current variant info
           currentVariant: {
             id: selectedVariant.id,
-            name: selectedVariant.variantName,
-            fullName: `${productJson.baseName || productJson.name} - ${selectedVariant.variantName}`,
+            name: selectedVariant.name || selectedVariant.displayName,
+            fullName: selectedVariant.name || `${productJson.baseName || productJson.name} - ${selectedVariant.displayName}`,
             price: selectedVariant.price,
             compareAtPrice: selectedVariant.compareAtPrice,
             sku: selectedVariant.sku,
@@ -569,7 +569,7 @@ const getProductBySlug = async (req, res, next) => {
           // All available variants
           availableVariants: productJson.variants.map((v) => ({
             id: v.id,
-            name: v.variantName,
+            name: v.name || v.displayName,
             price: v.price,
             compareAtPrice: v.compareAtPrice,
             stockQuantity: v.stockQuantity,
@@ -577,7 +577,7 @@ const getProductBySlug = async (req, res, next) => {
             sku: v.sku,
           })),
           // Override main product fields with selected variant
-          name: `${productJson.baseName || productJson.name} - ${selectedVariant.variantName}`,
+          name: selectedVariant.name || `${productJson.baseName || productJson.name} - ${selectedVariant.displayName}`,
           price: selectedVariant.price,
           compareAtPrice: selectedVariant.compareAtPrice,
           stockQuantity: selectedVariant.stockQuantity,
@@ -731,7 +731,7 @@ const createProduct = async (req, res, next) => {
       const productVariants = variants.map((variant, index) => ({
         productId: product.id,
         sku: variant.sku || `${product.id}-VAR-${index + 1}`,
-        variantName: variant.name || variant.variantName,
+        name: variant.name || variant.variantName || variant.displayName,
         price: parseFloat(variant.price) || 0,
         compareAtPrice: variant.compareAtPrice
           ? parseFloat(variant.compareAtPrice)

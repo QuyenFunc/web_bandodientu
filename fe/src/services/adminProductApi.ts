@@ -182,6 +182,35 @@ export const adminProductApi = api.injectEndpoints({
     // Get single product for admin
     getAdminProductById: builder.query<ApiResponse<AdminProduct>, string>({
       query: (id) => `/admin/products/${id}`,
+      transformResponse: (response: any) => {
+        if (response?.data?.product) {
+          const product = response.data.product;
+          
+          // Helper to parse JSON if string
+          const parseIfString = (val: any) => {
+            if (typeof val === 'string') {
+              try { return JSON.parse(val); } catch { return {}; }
+            }
+            return val || {};
+          };
+
+          if (product.variants) {
+            product.variants = product.variants.map((v: any) => ({
+              ...v,
+              attributes: parseIfString(v.attributes),
+              attributeValues: parseIfString(v.attributeValues || v.attributes)
+            }));
+          }
+
+          if (product.attributes) {
+            product.attributes = product.attributes.map((attr: any) => ({
+              ...attr,
+              values: typeof attr.values === 'string' ? JSON.parse(attr.values) : (attr.values || [])
+            }));
+          }
+        }
+        return response;
+      },
       providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
 

@@ -21,8 +21,7 @@ import { useProductAttributes } from '@/hooks/useProductAttributes';
 import { useProductVariants } from '@/hooks/useProductVariants';
 
 // API hooks
-import { useGetProductByIdQuery } from '@/services/productApi';
-import { useUpdateProductMutation } from '@/services/adminProductApi';
+import { useUpdateProductMutation, useGetAdminProductByIdQuery } from '@/services/adminProductApi';
 import { useGetAllCategoriesQuery } from '@/services/categoryApi';
 import { useConvertBase64ToImageMutation } from '@/services/imageApi';
 
@@ -63,7 +62,7 @@ const EditProductPage: React.FC = () => {
     data: productResponse,
     isLoading: isLoadingProduct,
     error: productError,
-  } = useGetProductByIdQuery(id || '', { skip: !id });
+  } = useGetAdminProductByIdQuery(id || '', { skip: !id });
 
   const { data: categoriesResponse, isLoading: isCategoriesLoading } =
     useGetAllCategoriesQuery();
@@ -223,7 +222,8 @@ const EditProductPage: React.FC = () => {
   // Load product data into form
   useEffect(() => {
     if (productResponse?.data) {
-      const product = productResponse.data;
+      // Handle both { product } and raw product formats
+      const product = (productResponse.data as any).product || productResponse.data;
 
       // Process description to handle base64 images
       let processedDescription = product.description || '';
@@ -264,7 +264,7 @@ const EditProductPage: React.FC = () => {
 
       // Set form values
       form.setFieldsValue({
-        name: product.name,
+        name: product.baseName || product.name,
         description: processedDescription,
         shortDescription: product.shortDescription,
         price: parseFloat(product.price) || 0,

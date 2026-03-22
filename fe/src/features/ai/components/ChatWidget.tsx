@@ -61,7 +61,6 @@ const ChatWidget: React.FC = () => {
   // Custom hook for chat widget state management
   const {
     isOpen,
-    position,
     size,
     messages,
     messagesEndRef,
@@ -163,9 +162,7 @@ const ChatWidget: React.FC = () => {
 
       let errorMessage = t('chat.errors.general');
 
-      if (error.message === 'Request timeout' || error.code === 'ECONNABORTED') {
-        errorMessage = 'Hệ thống đang bận xử lý, bạn vui lòng chờ trong giây lát hoặc thử lại nhé! 🙏';
-      } else if (error.status === 404) {
+      if (error.status === 404) {
         errorMessage = t('chat.errors.notFound');
       } else if (error.status === 429) {
         errorMessage = t('chat.errors.tooManyRequests');
@@ -192,21 +189,6 @@ const ChatWidget: React.FC = () => {
     handleSendMessage(suggestion);
   };
 
-  // Handle resize with react-rnd
-  const handleResize = (
-    e: MouseEvent | TouchEvent,
-    direction: any,
-    ref: HTMLElement,
-    delta: any,
-    position: any
-  ) => {
-    ref.classList.add('resize-feedback');
-    setTimeout(() => {
-      ref.classList.remove('resize-feedback');
-    }, CHAT_WIDGET_CONFIG.ANIMATION_DURATION.RESIZE);
-  };
-
-  // Handle resize stop to save final dimensions
   const handleResizeStop = (
     e: MouseEvent | TouchEvent,
     direction: any,
@@ -225,154 +207,121 @@ const ChatWidget: React.FC = () => {
       {/* Chat toggle button */}
       <ChatToggleButton isOpen={isOpen} onClick={toggleChat} />
 
-      {/* Overlay to prevent clicks outside from closing the chat */}
+      {/* Chat widget window */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-transparent z-40"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
+        <Rnd
+          ref={chatWidgetRef as any}
+          default={{
+            x: window.innerWidth - size.width - 24,
+            y: window.innerHeight - size.height - 100,
+            width: size.width as any,
+            height: size.height as any,
           }}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        />
-      )}
-
-      {/* Chat widget with react-rnd - drag disabled, only resize enabled */}
-      {isOpen && (
-        <div
-          className="fixed bottom-24 right-24 z-50 w-[384px] h-[600px]"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
+          minWidth={CHAT_WIDGET_CONFIG.MIN_SIZE.width}
+          minHeight={CHAT_WIDGET_CONFIG.MIN_SIZE.height}
+          maxWidth={CHAT_WIDGET_CONFIG.MAX_SIZE.width}
+          maxHeight={CHAT_WIDGET_CONFIG.MAX_SIZE.height}
+          disableDragging={false} /* Allow dragging for better UX */
+          dragHandleClassName="chat-header-drag"
+          enableUserSelectHack={false}
+          bounds="window"
+          onResizeStop={handleResizeStop}
+          style={{ zIndex: 9999 }}
+          className="bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-neutral-200 dark:border-neutral-800 transition-all chat-widget-active"
+          resizeHandleStyles={RESIZE_HANDLE_STYLES as any}
+          resizeHandleClasses={RESIZE_HANDLE_CLASSES as any}
         >
-          <Rnd
-            ref={chatWidgetRef as any}
-            size={{ width: size.width, height: size.height }}
-            position={position}
-            minWidth={CHAT_WIDGET_CONFIG.MIN_SIZE.width}
-            minHeight={CHAT_WIDGET_CONFIG.MIN_SIZE.height}
-            maxWidth={CHAT_WIDGET_CONFIG.MAX_SIZE.width}
-            maxHeight={CHAT_WIDGET_CONFIG.MAX_SIZE.height}
-            disableDragging={true}
-            enableUserSelectHack={false}
-            bounds="window"
-            onResize={handleResize}
-            onResizeStop={handleResizeStop}
-            className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-neutral-200/50 dark:border-neutral-700/50 transform animate-in slide-in-from-bottom-4 duration-500 transition-all chat-widget-resize-transition chat-widget-active"
-            resizeHandleStyles={RESIZE_HANDLE_STYLES as any}
-            resizeHandleClasses={RESIZE_HANDLE_CLASSES as any}
-          >
-            {/* Chat header */}
+          {/* Header Area - Fixed at top with high z-index */}
+          <div className="chat-header-drag flex-shrink-0 sticky top-0 z-[100] shadow-xl">
             <ChatHeaderContent
               onApplyChanges={applyChanges}
               onClose={closeChat}
             />
+          </div>
 
-            {/* Chat messages */}
-            <div className="chat-messages flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-gradient-to-b from-neutral-50/80 via-white/50 to-neutral-50/80 dark:from-neutral-800/80 dark:via-neutral-900/50 dark:to-neutral-800/80 min-h-[200px]">
-              {messages.length === 0 && <ChatEmptyState onSuggestionClick={handleSendMessage} />}
+          {/* Messages Area - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-neutral-50 dark:bg-neutral-950/50 custom-scrollbar">
+            {messages.length === 0 && <ChatEmptyState onSuggestionClick={handleSendMessage} />}
 
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className="animate-in slide-in-from-bottom-2 duration-500"
+            {messages.map((message) => (
+              <div key={message.id} className="animate-in fade-in duration-300">
+                <ChatMessage message={message} />
+                {message.sender === 'ai' && (
+                  <>
+                    {/* Show products if available */}
+                    {message.products && message.products.length > 0 && (
+                      <div className="ml-10 mt-3 mb-2">
+                        <ChatProductList
+                          products={message.products}
+                          sessionId={sessionId}
+                        />
+                      </div>
+                    )}
+
+                    {/* Show suggestions if available */}
+                    {message.suggestions && message.suggestions.length > 0 && (
+                      <div className="ml-10 mt-3 mb-2">
+                        <ChatSuggestions
+                          suggestions={message.suggestions}
+                          onSuggestionClick={handleSuggestionClick}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Bottom Area: Quick Actions + Input + Footer */}
+          <div className="flex-shrink-0 bg-white dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800 z-10">
+            {/* 1. Quick actions */}
+            <div className="px-4 pt-3">
+              <ChatQuickActions onSendMessage={handleSendMessage} />
+            </div>
+
+            {/* 2. Chat input component */}
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading}
+            />
+
+            {/* 3. Global Branding Footer */}
+            <div className="px-5 pb-3 flex items-center justify-between text-[10px] text-neutral-400 dark:text-neutral-500 font-bold border-t border-neutral-50 dark:border-neutral-800/50 pt-2 bg-neutral-50/30 dark:bg-neutral-800/20">
+              <div className="flex items-center group">
+                <VerifiedIcon className="mr-1.5 text-primary-500/70" size={12} />
+                <span className="uppercase tracking-widest">
+                  Powered by <span className="text-primary-600 dark:text-primary-400">Shopmini AI</span>
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  className="hover:text-red-500 transition-colors flex items-center gap-1"
+                  onClick={() => {
+                    if (window.confirm('Xóa hội thoại?')) setMessages([]);
+                  }}
                 >
-                  <ChatMessage message={message} />
-                  {message.sender === 'ai' && (
-                    <>
-                      {/* Show products if available */}
-                      {message.products && message.products.length > 0 && (
-                        <div className="ml-12 mt-4 mb-2">
-                          <ChatProductList
-                            products={message.products}
-                            sessionId={sessionId}
-                            title="🛍️ Sản phẩm gợi ý cho bạn"
-                          />
-                        </div>
-                      )}
-
-                      {/* Show suggestions if available */}
-                      {message.suggestions &&
-                        message.suggestions.length > 0 && (
-                          <div className="ml-12 mt-4 mb-2">
-                            <ChatSuggestions
-                              suggestions={message.suggestions}
-                              onSuggestionClick={handleSuggestionClick}
-                            />
-                          </div>
-                        )}
-                    </>
-                  )}
-                </div>
-              ))}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Chat bottom area: Quick Actions + Input + Branding */}
-            <div className="border-t border-neutral-200/60 dark:border-neutral-700/60 bg-gradient-to-b from-white to-neutral-50/50 dark:from-neutral-900 dark:to-neutral-800/50 backdrop-blur-md">
-              {/* 1. Quick actions above input */}
-              <div className="px-4 pt-3">
-                <ChatQuickActions onSendMessage={handleSendMessage} />
-              </div>
-
-              {/* 2. Chat input component */}
-              <ChatInput
-                onSendMessage={handleSendMessage}
-                isLoading={isLoading}
-              />
-
-              {/* 3. Global Branding & Meta Actions Footer */}
-              <div className="px-5 pb-4 flex items-center justify-between text-[10px] text-neutral-400 dark:text-neutral-500 font-bold border-t border-neutral-100/50 dark:border-neutral-800/50 pt-2.5 mt-1">
-                <div className="flex items-center group transition-colors hover:text-primary-500">
-                  <VerifiedIcon className="mr-1.5 text-primary-500/70 group-hover:text-primary-500 transition-colors" size={12} />
-                  <span className="uppercase tracking-widest">
-                    {t('chat.poweredBy') || 'Powered by'}{' '}
-                    <span className="text-primary-600 dark:text-primary-400">
-                      Shopmini AI
-                    </span>
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <button
-                    type="button"
-                    className="flex items-center space-x-1 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 hover:scale-105 active:scale-95"
-                    title="Xóa cuộc trò chuyện"
-                    onClick={() => {
-                      if (window.confirm('Bạn có chắc muốn xóa toàn bộ cuộc trò chuyện?')) {
-                        setMessages([]);
-                      }
-                    }}
-                  >
-                    <TrashIcon size={12} />
-                    <span className="hidden sm:inline">Làm mới</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="flex items-center space-x-1 hover:text-primary-500 dark:hover:text-primary-400 transition-all duration-200 hover:scale-105 active:scale-95"
-                    title="Trợ giúp"
-                    onClick={() => handleSendMessage('Tôi cần trợ giúp về cách sử dụng chatbot')}
-                  >
-                    <HelpIcon size={12} />
-                    <span className="hidden sm:inline">Trợ giúp</span>
-                  </button>
-                </div>
+                  <TrashIcon size={12} />
+                  <span>Xóa</span>
+                </button>
+                <button
+                  type="button"
+                  className="hover:text-primary-500 transition-colors flex items-center gap-1"
+                  onClick={() => handleSendMessage('Hướng dẫn sử dụng')}
+                >
+                  <HelpIcon size={12} />
+                  <span>Hỗ trợ</span>
+                </button>
               </div>
             </div>
+          </div>
 
-            {/* Resize indicator */}
-            <ChatResizeIndicator />
-          </Rnd>
-        </div>
+          {/* Resize indicator */}
+          <ChatResizeIndicator />
+        </Rnd>
       )}
     </div>
   );

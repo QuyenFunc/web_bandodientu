@@ -49,66 +49,13 @@ export const useChatWidget = () => {
     if (isOpen) {
       document.body.classList.add('chat-widget-open');
 
-      // Center position calculation
-      const centerX = Math.max(0, (window.innerWidth - size.width) / 2);
-      const bottomY = Math.max(
-        0,
-        window.innerHeight -
-          size.height -
-          CHAT_WIDGET_CONFIG.POSITION_OFFSET.bottom
-      );
-      setPosition({ x: centerX, y: bottomY });
-
-      // Prevent outside clicks from closing
-      const preventClose = (e: MouseEvent) => {
-        if (
-          chatWidgetRef.current &&
-          !chatWidgetRef.current.contains(e.target as Node)
-        ) {
-          e.stopPropagation();
-        }
-      };
-
-      const preventEscapeClose = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          e.stopPropagation();
-          e.preventDefault();
-        }
-      };
-
-      document.addEventListener('click', preventClose, true);
-      document.addEventListener('mousedown', preventClose, true);
-      document.addEventListener('keydown', preventEscapeClose, true);
-
       return () => {
-        document.removeEventListener('click', preventClose, true);
-        document.removeEventListener('mousedown', preventClose, true);
-        document.removeEventListener('keydown', preventEscapeClose, true);
         document.body.classList.remove('chat-widget-open');
       };
     } else {
       document.body.classList.remove('chat-widget-open');
     }
-  }, [isOpen, size.width, size.height]);
-
-  // Handle window resize
-  useEffect(() => {
-    if (isOpen) {
-      const handleWindowResize = () => {
-        const centerX = Math.max(0, (window.innerWidth - size.width) / 2);
-        const bottomY = Math.max(
-          0,
-          window.innerHeight -
-            size.height -
-            CHAT_WIDGET_CONFIG.POSITION_OFFSET.bottom
-        );
-        setPosition({ x: centerX, y: bottomY });
-      };
-
-      window.addEventListener('resize', handleWindowResize);
-      return () => window.removeEventListener('resize', handleWindowResize);
-    }
-  }, [isOpen, size.width, size.height]);
+  }, [isOpen]);
 
   const toggleChat = useCallback(
     (event?: React.MouseEvent) => {

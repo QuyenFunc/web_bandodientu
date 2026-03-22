@@ -13,7 +13,7 @@ const ChatHeaderContent: React.FC<ChatHeaderContentProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="bg-gradient-to-r from-primary-600 to-primary-500 text-white p-4 relative overflow-hidden rounded-t-3xl shadow-lg">
+    <div className="bg-gradient-to-r from-primary-600 to-primary-500 text-white p-4 relative z-[100] overflow-hidden rounded-t-3xl shadow-lg border-b border-white/10">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2210%22%20cy%3D%2210%22%20r%3D%221%22%20fill%3D%22%23ffffff%22/%3E%3C/svg%3E')]" />

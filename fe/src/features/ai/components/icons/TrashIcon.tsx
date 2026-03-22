@@ -2,15 +2,18 @@ import React from 'react';
 
 interface IconProps {
   className?: string;
+  size?: number | string;
 }
 
-const TrashIcon: React.FC<IconProps> = ({ className = 'w-3.5 h-3.5' }) => {
+const TrashIcon: React.FC<IconProps> = ({ className = '', size = 14 }) => {
+  const pixelSize = typeof size === 'number' ? `${size}px` : size;
   return (
     <svg
       className={className}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
+      style={{ width: pixelSize, height: pixelSize }}
     >
       <path
         strokeLinecap="round"

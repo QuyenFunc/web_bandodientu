@@ -10,9 +10,10 @@
     "lint:fix": "eslint . --fix",
     "db:migrate": "sequelize-cli db:migrate",
     "db:cleanup": "node scripts/db_cleanup.js",
-    "db:seed": "node scripts/db_seed.js",
+    "db:seed": "node scripts/seed_products_v2.js",
     "db:verify": "node scripts/db_verify.js",
-    "db:reset": "npm run db:cleanup && npm run db:seed"
+    "db:index": "node scripts/index_products.js",
+    "db:reset": "npm run db:cleanup && npm run db:seed && npm run db:index"
   },
   "keywords": [
     "ecommerce",

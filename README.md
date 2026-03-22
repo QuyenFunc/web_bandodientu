@@ -47,9 +47,9 @@ pnpm install
 # Chạy migration để tạo bảng
 pnpm db:migrate
 
-# Xóa dữ liệu cũ (nếu có) và nạp dữ liệu mẫu mới (80 sản phẩm + 120 biến thể)
+# Xóa dữ liệu cũ (nếu có) và nạp dữ liệu mẫu mới (70 sản phẩm + 150 biến thể đa dạng)
 npm run db:cleanup    # Dọn dẹp dữ liệu cũ (Sản phẩm, Đơn hàng, Tin tức...)
-npm run db:seed       # Nạp 80 sản phẩm mẫu đa dạng chủng loại
+npm run db:seed       # Nạp 70 sản phẩm mẫu (iPhone, Samsung, MacBook, RTX Laptop, v.v.)
 npm run db:verify     # Kiểm tra lại số lượng dữ liệu sau khi seed
 
 # Hoặc dùng lệnh gộp (Reset toàn bộ dữ liệu về trạng thái mẫu)

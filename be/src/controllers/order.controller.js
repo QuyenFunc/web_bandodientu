@@ -6,8 +6,10 @@ const {
   Product,
   ProductVariant,
   User,
+  ChatMessage,
   LoyaltyHistory,
   sequelize,
+  WarrantyPackage,
 } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
 const emailService = require('../services/email/emailService');
@@ -25,7 +27,7 @@ async function clearUserCart(userId) {
     console.warn('clearUserCart: userId is missing');
     return;
   }
-  
+
   try {
     // Find all active carts for this user just in case
     const carts = await Cart.findAll({
@@ -36,7 +38,7 @@ async function clearUserCart(userId) {
       for (const cart of carts) {
         // Mark as converted (turned into an order)
         await cart.update({ status: 'converted' });
-        
+
         // Also destroy items to be double sure count returns 0
         await CartItem.destroy({
           where: { cartId: cart.id }
@@ -81,44 +83,68 @@ const createOrder = async (req, res, next) => {
       paymentMethod,
       notes,
       discountCode,
+      items: providedItems, // Hỗ trợ mua ngay không qua giỏ hàng
       pointsToUse = 0,
       shippingCost: clientShippingCost = 0,
     } = req.body;
 
-    // Get active cart
-    const cart = await Cart.findOne({
-      where: {
-        userId,
-        status: 'active',
-      },
-      include: [
-        {
-          association: 'items',
-          include: [
-            {
-              model: Product,
-              attributes: [
-                'id',
-                'name',
-                'slug',
-                'price',
-                'thumbnail',
-                'inStock',
-                'stockQuantity',
-                'sku',
-              ],
-            },
-            {
-              model: ProductVariant,
-              attributes: ['id', 'name', 'price', 'stockQuantity', 'sku'],
-            },
-          ],
-        },
-      ],
-    });
+    let itemsToProcess = [];
 
-    if (!cart || cart.items.length === 0) {
-      throw new AppError('Giỏ hàng trống', 400);
+    if (providedItems && providedItems.length > 0) {
+      // Trường hợp mua ngay hoặc cung cấp items trực tiếp
+      for (const item of providedItems) {
+        const product = await Product.findByPk(item.productId, {
+          attributes: ['id', 'name', 'slug', 'price', 'thumbnail', 'inStock', 'stockQuantity', 'sku']
+        });
+
+        if (!product) {
+          throw new AppError(`Không tìm thấy sản phẩm ID: ${item.productId}`, 404);
+        }
+
+        let variant = null;
+        if (item.variantId) {
+          variant = await ProductVariant.findByPk(item.variantId, {
+            attributes: ['id', 'name', 'price', 'stockQuantity', 'sku']
+          });
+          if (!variant) {
+            throw new AppError(`Không tìm thấy biến thể ID: ${item.variantId}`, 404);
+          }
+        }
+
+        itemsToProcess.push({
+          productId: product.id,
+          variantId: variant ? variant.id : null,
+          quantity: item.quantity,
+          Product: product,
+          ProductVariant: variant,
+          warrantyPackageIds: item.warrantyPackageIds || []
+        });
+      }
+    } else {
+      // Lấy từ giỏ hàng hiện tại (mặc định)
+      const cart = await Cart.findOne({
+        where: { userId, status: 'active' },
+        include: [
+          {
+            association: 'items',
+            include: [
+              {
+                model: Product,
+                attributes: ['id', 'name', 'slug', 'price', 'thumbnail', 'inStock', 'stockQuantity', 'sku'],
+              },
+              {
+                model: ProductVariant,
+                attributes: ['id', 'name', 'price', 'stockQuantity', 'sku'],
+              },
+            ],
+          },
+        ],
+      });
+
+      if (!cart || cart.items.length === 0) {
+        throw new AppError('Giỏ hàng trống', 400);
+      }
+      itemsToProcess = cart.items;
     }
 
     // Check stock and calculate totals
@@ -126,8 +152,9 @@ const createOrder = async (req, res, next) => {
     const tax = 0; // Calculate tax if needed
     const shippingCost = parseFloat(clientShippingCost) || 0; // Receive from client or calculate
     let discount = 0; // Apply discount if needed
+    let totalWarrantyCost = 0;
 
-    for (const item of cart.items) {
+    for (const item of itemsToProcess) {
       const product = item.Product;
       const variant = item.ProductVariant;
 
@@ -154,6 +181,21 @@ const createOrder = async (req, res, next) => {
       // Calculate item price
       const price = variant ? variant.price : product.price;
       subtotal += price * item.quantity;
+
+      // Calculate warranty cost if any
+      if (item.warrantyPackageIds && item.warrantyPackageIds.length > 0) {
+        const packages = await WarrantyPackage.findAll({
+          where: { id: item.warrantyPackageIds, isActive: true },
+          transaction,
+        });
+        
+        const itemWarrantyFee = packages.reduce((sum, pkg) => sum + parseFloat(pkg.price), 0);
+        item.warrantyFee = itemWarrantyFee;
+        item.warrantyPackages = packages; // For later use in attributes
+        totalWarrantyCost += itemWarrantyFee * item.quantity;
+      } else {
+        item.warrantyFee = 0;
+      }
     }
 
     // Calculate Discount
@@ -218,7 +260,7 @@ const createOrder = async (req, res, next) => {
     }
 
     // Calculate total
-    const total = subtotal + tax + shippingCost - discount - pointsDiscount;
+    const total = subtotal + tax + shippingCost + totalWarrantyCost - discount - pointsDiscount;
 
     // Generate order number
     const date = new Date();
@@ -288,6 +330,7 @@ const createOrder = async (req, res, next) => {
         discount,
         discountCodeId,
         total,
+        warrantyCost: totalWarrantyCost,
         pointsUsed: pointsToUseInt,
         pointsDiscount,
         notes,
@@ -297,7 +340,7 @@ const createOrder = async (req, res, next) => {
 
     // Create order items
     const orderItems = [];
-    for (const item of cart.items) {
+    for (const item of itemsToProcess) {
       const product = item.Product;
       const variant = item.ProductVariant;
       const price = variant ? variant.price : product.price;
@@ -314,7 +357,15 @@ const createOrder = async (req, res, next) => {
           quantity: item.quantity,
           subtotal,
           image: product.thumbnail,
-          attributes: variant ? { variant: variant.name } : {},
+          attributes: {
+            ...(variant ? { variant: variant.name } : {}),
+            warrantyPackages: item.warrantyPackages ? item.warrantyPackages.map(pkg => ({
+              id: pkg.id,
+              name: pkg.name,
+              price: pkg.price
+            })) : []
+          },
+          warrantyPackageIds: item.warrantyPackageIds || null,
         },
         { transaction }
       );
@@ -329,7 +380,7 @@ const createOrder = async (req, res, next) => {
     // NOTE: CartItems are NOT cleared here anymore for ONLINE payments (vnpay, momo, stripe).
     // They will be cleared ONLY AFTER successful payment in the payment webhook (confirmPayment / momoReturn).
     // This allows the user to retain their cart items if they cancel/fail the payment window and try again.
-    
+
     // BUT we SHOULD clear for COD and other manual methods that don't have a payment webhook.
     const manualPaymentMethods = ['cod', 'bank_transfer', 'installment'];
     if (manualPaymentMethods.includes(paymentMethod)) {
@@ -679,12 +730,12 @@ const updateOrderStatus = async (req, res, next) => {
     // Update order status
     const previousStatus = order.status;
     const updateData = { status };
-    
+
     // Automatically set payment status to paid if COD order is delivered
     if (status === 'delivered' && order.paymentMethod === 'cod') {
       updateData.paymentStatus = 'paid';
     }
-    
+
     await order.update(updateData);
 
     // Award loyalty points if status changed to delivered
@@ -831,7 +882,7 @@ const confirmReceived = async (req, res, next) => {
     if (earnedPointsTotal === 0) {
       const orderTotal = parseFloat(order.total);
       newPointsAwarded = Math.floor(orderTotal / POINTS_EARN_RATE);
-      
+
       if (newPointsAwarded > 0) {
         const user = await User.findByPk(userId);
         if (user) {

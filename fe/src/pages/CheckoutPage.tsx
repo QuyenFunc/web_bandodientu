@@ -30,10 +30,24 @@ import { useGetLoyaltyInfoQuery } from '@/services/loyaltyApi';
 
 const CheckoutPage: React.FC = () => {
   const { t } = useTranslation();
-  const { items } = useSelector((state: RootState) => state.cart);
+  const { items: cartItems } = useSelector((state: RootState) => state.cart);
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const [isBuyNow, setIsBuyNow] = useState(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('buyNow') === 'true' || sessionStorage.getItem('buyNowAction') === 'true';
+  });
+  const [buyNowItem, setBuyNowItem] = useState<any>(() => {
+    const itemStr = sessionStorage.getItem('buyNowItem');
+    const searchParams = new URLSearchParams(window.location.search);
+    const isBuyNowFlow = searchParams.get('buyNow') === 'true' || sessionStorage.getItem('buyNowAction') === 'true';
+    return isBuyNowFlow && itemStr ? JSON.parse(itemStr) : null;
+  });
+
+  // Thống nhất danh sách items hiển thị
+  const items = isBuyNow && buyNowItem ? [buyNowItem] : cartItems;
 
   // Đảm bảo giỏ hàng được khởi tạo khi trang được tải
   useEffect(() => {
@@ -84,21 +98,19 @@ const CheckoutPage: React.FC = () => {
 
     // Nếu người dùng vừa thực hiện hành động "Mua ngay", không chuyển hướng
     if (isBuyNow || isBuyNowAction) {
+      setIsBuyNow(true);
       // Xóa cờ sau khi đã sử dụng
       sessionStorage.removeItem('buyNowAction');
 
       // Đảm bảo giỏ hàng được khởi tạo
       dispatch(initializeCart());
 
-      // Nếu có thông tin sản phẩm mua ngay trong sessionStorage, thêm vào giỏ hàng
+      // Lấy thông tin sản phẩm mua ngay từ sessionStorage
       const buyNowItemStr = sessionStorage.getItem('buyNowItem');
       if (buyNowItemStr) {
         try {
-          const buyNowItem = JSON.parse(buyNowItemStr);
-          // Thêm sản phẩm vào giỏ hàng nếu chưa có
-          dispatch(addItem(buyNowItem));
-          // Xóa thông tin sản phẩm sau khi đã sử dụng
-          sessionStorage.removeItem('buyNowItem');
+          const item = JSON.parse(buyNowItemStr);
+          setBuyNowItem(item);
         } catch (error) {
           console.error('Error parsing buyNowItem:', error);
         }
@@ -112,8 +124,8 @@ const CheckoutPage: React.FC = () => {
 
     // Kiểm tra localStorage trực tiếp để đảm bảo không có dữ liệu giỏ hàng cũ
     // Chỉ chuyển hướng nếu không phải đang thanh toán lại đơn hàng
-    const cartItems = localStorage.getItem('cartItems');
-    if ((!cartItems || cartItems === '[]') && !repayOrderId) {
+    const cartItemsStore = localStorage.getItem('cartItems');
+    if ((!cartItemsStore || cartItemsStore === '[]') && !repayOrderId && !isBuyNow) {
       navigate('/shop');
       dispatch(
         addNotification({
@@ -261,11 +273,16 @@ const CheckoutPage: React.FC = () => {
     { value: 'FR', label: t('checkout.countries.FR') },
   ];
 
-  // Calculate totals
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  // Calculate warranty total
+  const warrantyTotal = items.reduce((sum: number, item: any) => {
+    const itemWarrantyPrice = item.warrantyPackages?.reduce((wSum: number, pkg: any) => wSum + pkg.price, 0) || 0;
+    return sum + (itemWarrantyPrice * item.quantity);
+  }, 0);
 
   // Tính phí vận chuyển tự động theo khoảng cách tuyến tính sử dụng API LocationIQ
   let shippingCost = 0;
@@ -307,7 +324,7 @@ const CheckoutPage: React.FC = () => {
   // Point discount calculation (1 point = 1,000 VND)
   const pointsDiscount = pointsToUse * 1000;
   
-  const total = subtotal + shippingCost + tax - discountAmount - pointsDiscount;
+  const total = subtotal + warrantyTotal + shippingCost + tax - discountAmount - pointsDiscount;
 
   // Handle form input changes
   const handleInputChange = (name: string, value: string) => {
@@ -521,6 +538,12 @@ const CheckoutPage: React.FC = () => {
         discountCode: appliedDiscount ? appliedDiscount.code : undefined,
         pointsToUse: pointsToUse,
         shippingCost: shippingCost,
+        items: isBuyNow && buyNowItem ? [{
+          productId: buyNowItem.productId,
+          variantId: buyNowItem.variantId,
+          quantity: buyNowItem.quantity,
+          warrantyPackageIds: buyNowItem.warrantyPackageIds
+        }] : undefined,
       };
 
       const response = await createOrder(orderData).unwrap();
@@ -687,6 +710,8 @@ const CheckoutPage: React.FC = () => {
         })
       );
       dispatch(clearCart());
+      sessionStorage.removeItem('buyNowItem');
+      sessionStorage.removeItem('buyNowAction');
 
       // Refetch cart count to update header badge
       dispatch(cartApi.util.invalidateTags(['CartCount']));
@@ -715,18 +740,16 @@ const CheckoutPage: React.FC = () => {
 
       // Nếu người dùng vừa thực hiện hành động "Mua ngay" hoặc đang thanh toán lại đơn hàng, không chuyển hướng
       if (isBuyNow || isBuyNowAction || repayOrderId) {
+        setIsBuyNow(true);
         // Xóa cờ sau khi đã sử dụng
         sessionStorage.removeItem('buyNowAction');
 
-        // Nếu có thông tin sản phẩm mua ngay trong sessionStorage, thêm vào giỏ hàng
+        // Lấy thông tin sản phẩm mua ngay từ sessionStorage
         const buyNowItemStr = sessionStorage.getItem('buyNowItem');
         if (buyNowItemStr) {
           try {
-            const buyNowItem = JSON.parse(buyNowItemStr);
-            // Thêm sản phẩm vào giỏ hàng nếu chưa có
-            dispatch(addItem(buyNowItem));
-            // Xóa thông tin sản phẩm sau khi đã sử dụng
-            sessionStorage.removeItem('buyNowItem');
+            const item = JSON.parse(buyNowItemStr);
+            setBuyNowItem(item);
           } catch (error) {
             console.error('Error parsing buyNowItem:', error);
           }
@@ -1073,6 +1096,12 @@ const CheckoutPage: React.FC = () => {
                         : formatPrice(shippingCost)}
                     </span>
                   </div>
+                  {warrantyTotal > 0 && (
+                    <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
+                      <span>Phí gói bảo hành</span>
+                      <span>{formatPrice(warrantyTotal)}</span>
+                    </div>
+                  )}
                   {appliedDiscount && (
                     <div className="flex justify-between text-green-600 font-medium">
                       <span>Mã giảm giá ({appliedDiscount.code})</span>

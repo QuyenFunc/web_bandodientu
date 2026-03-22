@@ -55,23 +55,40 @@ const connectDB = async () => {
   }
 };
 
-// Add stripe column if not exists
-const addStripeColumn = async () => {
+// Add missing columns if not exists
+const ensureColumns = async () => {
   try {
+    // Add stripe columns to users
     await sequelize.query(`
       ALTER TABLE users 
-      ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255);
+      ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS google_id VARCHAR(255);
     `);
-    logger.info('✅ stripe_customer_id column ensured');
+    
+    // Add warranty columns to orders
+    try {
+      await sequelize.query(`ALTER TABLE orders ADD COLUMN warranty_cost DECIMAL(19, 2) DEFAULT 0;`);
+    } catch (e) {
+      // Column might already exist
+    }
+
+    // Add warranty columns to order_items
+    try {
+      await sequelize.query(`ALTER TABLE order_items ADD COLUMN warranty_package_ids JSON DEFAULT NULL;`);
+    } catch (e) {
+      // Column might already exist
+    }
+    
+    logger.info('✅ Missing columns ensured');
   } catch (error) {
-    logger.error('Error adding stripe column:', error.message);
+    logger.error('Error ensuring columns:', error.message);
   }
 };
 
 // Start server
 const startServer = async () => {
   await connectDB();
-  await addStripeColumn();
+  await ensureColumns();
 
   const PORT = process.env.PORT || 8888;
   const server = app.listen(PORT, () => {

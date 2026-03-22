@@ -2,6 +2,11 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { AppError } = require('../middlewares/errorHandler');
 const emailService = require('../services/email/emailService');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const { Op } = require('sequelize');
+const crypto = require('crypto');
+const axios = require('axios');
 
 // Register a new user
 const register = async (req, res, next) => {
@@ -88,6 +93,96 @@ const login = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       token,
+      refreshToken,
+      user: user.toJSON(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Google Login
+const googleLogin = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    // Verify Google Token
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (e) {
+      try {
+        const userInfoResponse = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+        payload = userInfoResponse.data;
+      } catch (err) {
+        throw new AppError('Xác thực Google thất bại', 401);
+      }
+    }
+
+    if (!payload) {
+      throw new AppError('Xác thực Google thất bại', 401);
+    }
+
+    const { sub: googleId, email, given_name: firstName, family_name: lastName, picture: avatar } = payload;
+
+    // Find or Create user
+    let user = await User.findOne({ 
+      where: { 
+        [Op.or]: [{ googleId }, { email }] 
+      } 
+    });
+
+    if (!user) {
+      // Create new user if not exists
+      user = await User.create({
+        googleId,
+        email,
+        firstName: firstName || 'Google',
+        lastName: lastName || 'User',
+        avatar,
+        isEmailVerified: true,
+      });
+    } else {
+      // If user exists but googleId is not linked, link it
+      const updates = {};
+      if (!user.googleId) updates.googleId = googleId;
+      if (!user.avatar) updates.avatar = avatar;
+      if (!user.isEmailVerified) updates.isEmailVerified = true;
+      
+      if (Object.keys(updates).length > 0) {
+        await user.update(updates);
+      }
+    }
+
+    // Check if account is active
+    if (!user.isActive) {
+      throw new AppError(
+        'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên',
+        401
+      );
+    }
+
+    // Generate JWT token
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    // Generate refresh token
+    const refreshToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      token: accessToken,
       refreshToken,
       user: user.toJSON(),
     });
@@ -360,4 +455,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getCurrentUser,
+  googleLogin,
 };

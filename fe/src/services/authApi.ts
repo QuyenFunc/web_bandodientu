@@ -69,6 +69,45 @@ export const authApi = api.injectEndpoints({
       },
     }),
 
+    googleLogin: builder.mutation<AuthResponse, { token: string }>({
+      queryFn: async ({ token }, api, extraOptions) => {
+        try {
+          const result = await baseQuery(
+            {
+              url: '/auth/google',
+              method: 'POST',
+              body: { token },
+            },
+            api,
+            extraOptions
+          );
+
+          if (result.error) {
+            return { error: result.error };
+          }
+
+          const data = result.data as any;
+          if (data?.status === 'success') {
+            return {
+              data: {
+                user: data.user,
+                token: data.token,
+                refreshToken: data.refreshToken,
+              },
+            };
+          }
+          return { data: data as AuthResponse };
+        } catch (error) {
+          return {
+            error: {
+              status: 'FETCH_ERROR',
+              error: 'Network error, please try again',
+            },
+          };
+        }
+      },
+    }),
+
     verifyOtp: builder.mutation<{ message: string }, { email: string; otp: string }>({
       queryFn: async ({ email, otp }, api, extraOptions) => {
         try {
@@ -392,5 +431,6 @@ export const {
   useGetCurrentUserQuery,
   useVerifyOtpMutation,
   useForgotPasswordMutation,
+  useGoogleLoginMutation,
 } = authApi;
 

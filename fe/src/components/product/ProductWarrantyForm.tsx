@@ -174,7 +174,7 @@ const ProductWarrantyForm: React.FC<ProductWarrantyFormProps> = ({
                           </Text>
                         )}
 
-                        {pkg.coverage && pkg.coverage.length > 0 && (
+                        {Array.isArray(pkg.coverage) && pkg.coverage.length > 0 && (
                           <Space direction="vertical" size={4}>
                             {pkg.coverage.map((coverage, index) => (
                               <div

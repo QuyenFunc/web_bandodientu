@@ -16,6 +16,9 @@ import {
 } from '@/features/wishlist/wishlistSlice';
 import { HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import { useAddToCartMutation } from '@/services/cartApi';
+import { addItem } from '@/features/cart/cartSlice';
+import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 
 // Mở rộng interface Product để hỗ trợ discountPercentage từ API
 interface ProductCardProps extends Product {
@@ -47,7 +50,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
+  const [addToCart] = useAddToCartMutation();
   const [isToggling, setIsToggling] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
 
   // Authenticated user state - Assuming auth can be pulled if needed
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -112,6 +117,46 @@ const ProductCard: React.FC<ProductCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     navigate(productUrl);
+  };
+
+  // Handle buy now
+  const handleBuyNow = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isBuying) return;
+    setIsBuying(true);
+
+    const defaultVariant = variants?.find(v => v.isDefault) || variants?.[0];
+
+    try {
+      const buyNowItem = {
+        id: defaultVariant ? `${id}-${defaultVariant.id}` : id,
+        productId: id,
+        variantId: defaultVariant?.id,
+        name: name,
+        price: defaultVariant?.price || price,
+        quantity: 1,
+        image: thumbnail,
+        inStock: true,
+        stockQuantity: defaultVariant?.stockQuantity || 10,
+        attributes: defaultVariant ? { variant: defaultVariant.name } : undefined
+      };
+
+      // Lưu vào sessionStorage để CheckoutPage sử dụng
+      sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+      sessionStorage.setItem('buyNowAction', 'true');
+      
+      navigate('/checkout?buyNow=true');
+    } catch (error) {
+      console.error('Buy now failed:', error);
+      dispatch(addNotification({
+        type: 'error',
+        message: 'Không thể thực hiện mua ngay. Vui lòng thử lại.',
+      }));
+    } finally {
+      setIsBuying(false);
+    }
   };
 
   return (
@@ -220,33 +265,49 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* View details button — always at bottom */}
-        <button
-          className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-lg py-2.5 px-4 transition-colors duration-200 shadow-sm hover:shadow font-semibold text-sm flex items-center justify-center gap-2"
-          onClick={handleViewDetails}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <div className="flex flex-col gap-2">
+          {/* Buy now button */}
+          <button
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg py-2.5 px-4 transition-all duration-200 shadow-sm hover:shadow-md font-bold text-sm flex items-center justify-center gap-2 transform active:scale-[0.98] disabled:opacity-70"
+            onClick={handleBuyNow}
+            disabled={isBuying}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-            />
-          </svg>
-          <span>XEM CHI TIẾT</span>
-        </button>
+            {isBuying ? (
+              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <ShoppingCartIcon className="h-4 w-4" />
+            )}
+            <span>MUA NGAY</span>
+          </button>
+
+          {/* View details button — always at bottom */}
+          <button
+            className="w-full bg-primary-600/10 hover:bg-primary-600 text-primary-600 hover:text-white border border-primary-600/20 hover:border-primary-600 rounded-lg py-2.5 px-4 transition-all duration-200 shadow-sm font-semibold text-sm flex items-center justify-center gap-2"
+            onClick={handleViewDetails}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            <span>XEM CHI TIẾT</span>
+          </button>
+        </div>
       </div>
     </div>
   );

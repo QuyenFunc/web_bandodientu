@@ -310,6 +310,7 @@ const ProductDetailPage: React.FC = () => {
               ? selectedAttributes
               : undefined,
           warrantyPackageIds: selectedWarranties,
+          warrantyPackages: product.warrantyPackages?.filter((p: any) => selectedWarranties.includes(p.id)) || [],
         };
 
         dispatch(addItem(newItem));
@@ -345,6 +346,7 @@ const ProductDetailPage: React.FC = () => {
             ? selectedAttributes
             : undefined,
         warrantyPackageIds: selectedWarranties,
+        warrantyPackages: product.warrantyPackages?.filter((p: any) => selectedWarranties.includes(p.id)) || [],
       };
 
       // Chỉ thêm vào Redux store, cartSlice sẽ tự động cập nhật localStorage
@@ -366,10 +368,13 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
+  const [isBuying, setIsBuying] = useState(false);
+
   // Buy now
   const handleBuyNow = async () => {
     try {
       if (!product) return;
+      setIsBuying(true);
 
       // Tìm variant ID dựa trên thuộc tính đã chọn
       let variantId: string | undefined;
@@ -383,107 +388,46 @@ const ProductDetailPage: React.FC = () => {
         variantId = selectedVariant?.id;
       }
 
-      // Thêm sản phẩm vào giỏ hàng và đợi hoàn thành
-      if (isAuthenticated) {
-        // Nếu đã đăng nhập, sử dụng API
-        await addToCart({
-          productId: product.id,
-          variantId: variantId,
-          quantity,
-          warrantyPackageIds: selectedWarranties,
-        }).unwrap();
-      } else {
-        // Nếu chưa đăng nhập, thêm vào local cart
-        dispatch(
-          addItem({
-            id: uuidv4(),
-            productId: product.id,
-            name: product.name,
-            price: product.isVariantProduct && product.currentVariant
-              ? product.currentVariant.price
-              : getVariantPrice(product, selectedAttributes),
-            quantity,
-            image: product.isVariantProduct && product.currentVariant?.images?.[0]
-              ? product.currentVariant.images[0]
-              : product.thumbnail,
-            attributes:
-              Object.keys(selectedAttributes).length > 0
-                ? selectedAttributes
-                : undefined,
-            warrantyPackageIds: selectedWarranties,
-          })
-        );
-      }
+      // Tạo đối tượng sản phẩm để mua ngay
+      const price = product.isVariantProduct && product.currentVariant
+        ? product.currentVariant.price
+        : getVariantPrice(product, selectedAttributes);
+      
+      const image = product.isVariantProduct && product.currentVariant?.images?.[0]
+        ? product.currentVariant.images[0]
+        : product.thumbnail;
 
-      // Thông báo thành công
-      dispatch(
-        addNotification({
-          message: `${product.name} đã được thêm vào giỏ hàng`,
-          type: 'success',
-          duration: 3000,
-        })
-      );
-
-      // Tạo một đối tượng chứa thông tin sản phẩm để mua ngay
       const buyNowItem = {
         id: uuidv4(),
         productId: product.id,
+        variantId: variantId,
         name: product.name,
-        price: product.isVariantProduct && product.currentVariant
-          ? product.currentVariant.price
-          : getVariantPrice(product, selectedAttributes),
+        price,
         quantity,
-        image: product.isVariantProduct && product.currentVariant?.images?.[0]
-          ? product.currentVariant.images[0]
-          : product.thumbnail,
-        attributes:
-          Object.keys(selectedAttributes).length > 0
-            ? selectedAttributes
-            : undefined,
+        image,
+        attributes: Object.keys(selectedAttributes).length > 0 ? selectedAttributes : undefined,
         warrantyPackageIds: selectedWarranties,
+        warrantyPackages: product.warrantyPackages?.filter((p: any) => selectedWarranties.includes(p.id)) || [],
       };
 
-      // Lưu thông tin sản phẩm vào sessionStorage
+      // 3. Lưu thông tin sản phẩm vào sessionStorage để CheckoutPage sử dụng
+      // Không gọi addToCart hay dispatch(addItem) để tránh đi qua giỏ hàng chính
       sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
       sessionStorage.setItem('buyNowAction', 'true');
 
-      // Đảm bảo localStorage được cập nhật ngay lập tức nếu không đăng nhập
-      if (!isAuthenticated) {
-        // Lưu giỏ hàng vào localStorage ngay lập tức
-        const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-
-        // Kiểm tra xem sản phẩm đã tồn tại trong giỏ hàng chưa
-        const existingItemIndex = cartItems.findIndex(
-          (item: any) =>
-            item.productId === product.id &&
-            JSON.stringify(item.attributes || {}) ===
-              JSON.stringify(selectedAttributes || {})
-        );
-
-        if (existingItemIndex >= 0) {
-          // Nếu sản phẩm đã tồn tại, cập nhật số lượng
-          cartItems[existingItemIndex].quantity += quantity;
-        } else {
-          // Nếu sản phẩm chưa tồn tại, thêm mới
-          cartItems.push(buyNowItem);
-        }
-
-        // Lưu giỏ hàng vào localStorage
-        localStorage.setItem('cartItems', JSON.stringify(cartItems));
-      }
-
-      // Chuyển hướng ngay lập tức, không cần setTimeout
+      // 4. Chuyển hướng ngay lập tức đến checkout
       navigate('/checkout?buyNow=true');
     } catch (error: any) {
       console.error('Error buying now:', error);
       dispatch(
         addNotification({
-          message:
-            error?.data?.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng',
+          message: error?.data?.message || 'Có lỗi xảy ra khi mua ngay',
           type: 'error',
           duration: 3000,
         })
       );
+    } finally {
+      setIsBuying(false);
     }
   };
 
@@ -832,7 +776,20 @@ const ProductDetailPage: React.FC = () => {
           />
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="flex flex-col gap-4 mb-8">
+            {/* Buy now button */}
+            <PremiumButton
+              variant="secondary"
+              size="large"
+              isProcessing={isBuying}
+              processingText={t('common.processing')}
+              onClick={handleBuyNow}
+              disabled={product.stock <= 0}
+              className="w-full h-14"
+            >
+              MUA NGAY
+            </PremiumButton>
+
             <PremiumButton
               variant="primary"
               size="large"

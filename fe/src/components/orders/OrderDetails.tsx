@@ -39,7 +39,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
 
   const order = response.data;
   const anyOrder = order as any; // Typecast for fields not defined perfectly in TS but available in API
-  
+
   // Stepper logic
   const steps = ['pending', 'processing', 'shipped', 'delivered'];
   let currentStepIndex = steps.indexOf(order.status);
@@ -81,14 +81,14 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
             <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-0 w-full max-w-3xl mx-auto">
               {/* Bar line for desktop */}
               <div className="hidden md:block absolute left-[10%] top-4 w-[80%] h-1 bg-neutral-200 dark:bg-neutral-700 rounded-full z-0"></div>
-              <div 
+              <div
                 className="hidden md:block absolute left-[10%] top-4 h-1 bg-green-500 rounded-full z-0 transition-all duration-700"
                 style={{ width: `${currentStepIndex >= 0 ? (currentStepIndex / (steps.length - 1)) * 80 : 0}%` }}
               ></div>
-              
+
               {/* Bar line for mobile (vertical) */}
               <div className="block md:hidden absolute left-4 top-[10%] w-0.5 h-[80%] bg-neutral-200 dark:bg-neutral-700 rounded-full z-0"></div>
-              <div 
+              <div
                 className="block md:hidden absolute left-4 top-[10%] w-0.5 bg-green-500 rounded-full z-0 transition-all duration-700"
                 style={{ height: `${currentStepIndex >= 0 ? (currentStepIndex / (steps.length - 1)) * 80 : 0}%` }}
               ></div>
@@ -98,11 +98,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
                 const isActive = idx === currentStepIndex;
                 return (
                   <div key={step} className="relative flex md:flex-col items-center gap-4 md:gap-0 z-10 w-full md:w-32 group">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-all duration-500 ${
-                      isCompleted 
-                        ? 'bg-green-500 text-white ring-4 ring-green-50 dark:ring-green-900/40' 
-                        : 'bg-white dark:bg-neutral-800 border-2 border-neutral-300 dark:border-neutral-600 text-neutral-400'
-                    } ${isActive ? 'scale-110 shadow-md' : ''}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-all duration-500 ${isCompleted
+                      ? 'bg-green-500 text-white ring-4 ring-green-50 dark:ring-green-900/40'
+                      : 'bg-white dark:bg-neutral-800 border-2 border-neutral-300 dark:border-neutral-600 text-neutral-400'
+                      } ${isActive ? 'scale-110 shadow-md' : ''}`}>
                       {idx < currentStepIndex ? (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -112,9 +111,8 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
                       )}
                     </div>
                     <div className="md:mt-3 md:text-center text-left">
-                      <span className={`text-sm md:text-xs font-semibold block transition-colors ${
-                        isCompleted ? 'text-green-600 dark:text-green-500' : 'text-neutral-500 dark:text-neutral-400'
-                      }`}>
+                      <span className={`text-sm md:text-xs font-semibold block transition-colors ${isCompleted ? 'text-green-600 dark:text-green-500' : 'text-neutral-500 dark:text-neutral-400'
+                        }`}>
                         {statusVariants[step]?.label}
                       </span>
                     </div>
@@ -161,7 +159,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-neutral-50 dark:bg-neutral-800/40 p-5 rounded-2xl border border-neutral-100 dark:border-neutral-700/50 shadow-sm transition-transform hover:-translate-y-1 duration-300">
             <div className="flex items-center gap-2 mb-4">
               <span className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
@@ -179,7 +177,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
               <p className="flex justify-between items-center pb-2 border-b border-neutral-200 dark:border-neutral-700/50">
                 <span className="text-neutral-500">Trạng thái:</span>
                 <span className="font-semibold text-neutral-800 dark:text-neutral-100">
-                  {order.paymentStatus === 'paid' ? '✅ Đã thanh toán' : (order.paymentStatus==='failed'?'❌ Thất bại':'⏳ Chờ thanh toán')}
+                  {order.paymentStatus === 'paid' ? '✅ Đã thanh toán' : (order.paymentStatus === 'failed' ? '❌ Thất bại' : '⏳ Chờ thanh toán')}
                 </span>
               </p>
               {order.trackingNumber && (
@@ -207,17 +205,17 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
               <div className="col-span-2 text-center">SL</div>
               <div className="col-span-2 text-right">Tổng</div>
             </div>
-            
+
             <div className="divide-y divide-neutral-100 dark:divide-neutral-700/50">
               {order.items?.map((item) => (
                 <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50 transition-colors">
                   <div className="col-span-1 md:col-span-6 flex gap-4 items-center">
                     <div className="w-20 h-20 rounded-xl overflow-hidden shadow-sm bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex-shrink-0">
                       {(item as any).Product?.thumbnail || (item as any).Product?.images?.[0] || item.image ? (
-                        <img 
-                          src={(item as any).Product?.thumbnail || (item as any).Product?.images?.[0] || item.image} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover transition-transform hover:scale-110" 
+                        <img
+                          src={(item as any).Product?.thumbnail || (item as any).Product?.images?.[0] || item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover transition-transform hover:scale-110"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-400 font-bold text-xl">?</div>
@@ -230,15 +228,24 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
                           Phân loại: {item.attributes.variant}
                         </div>
                       )}
+                      {item.attributes?.warrantyPackages?.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {item.attributes?.warrantyPackages?.map((pkg: any) => (
+                            <span key={pkg.id} className="text-[10px] bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800">
+                              🛡️ {pkg.name} ({formatPrice(pkg.price)})
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {/* Mobile Pricing Info */}
                       <div className="md:hidden mt-2 text-sm">
-                        <span className="font-medium text-neutral-600">{formatPrice(item.price)}</span> 
-                        <span className="text-neutral-400 mx-1">x</span> 
+                        <span className="font-medium text-neutral-600">{formatPrice(item.price)}</span>
+                        <span className="text-neutral-400 mx-1">x</span>
                         <span className="font-bold">{item.quantity}</span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="hidden md:block col-span-2 text-center font-medium text-neutral-600 dark:text-neutral-400">
                     {formatPrice(item.price)}
                   </div>
@@ -269,42 +276,48 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onOpenReview }) =>
         <div className="flex flex-col lg:flex-row justify-end pt-4 mb-4 gap-6">
           <div className="w-full lg:w-[45%] bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-700/50 p-6 md:p-8 rounded-[24px] shadow-sm relative overflow-hidden transition-transform hover:-translate-y-1 duration-300">
             <h3 className="font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest text-xs mb-6 relative z-10">Tổng kết thanh toán</h3>
-            
+
             <div className="space-y-4 relative z-10">
               <div className="flex justify-between items-center text-neutral-600 dark:text-neutral-300">
                 <span>Tạm tính ({order.items?.length} sản phẩm)</span>
                 <span className="font-medium">{formatPrice(order.subtotal)}</span>
               </div>
-              
               <div className="flex justify-between items-center text-neutral-600 dark:text-neutral-300 pb-4 border-b border-neutral-200 dark:border-neutral-700 border-dashed">
                 <span>Phí giao hàng</span>
                 <span className="font-medium">{order.shippingCost === 0 ? 'Miễn phí' : formatPrice(order.shippingCost)}</span>
               </div>
-              
+
+              {anyOrder.warrantyCost > 0 && (
+                <div className="flex justify-between items-center text-neutral-600 dark:text-neutral-300 pt-2 pb-2 border-b border-neutral-200 dark:border-neutral-700 border-dashed">
+                  <span>Phí gói bảo hành</span>
+                  <span className="font-medium">{formatPrice(anyOrder.warrantyCost)}</span>
+                </div>
+              )}
+
               {order.discount > 0 && (
                 <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-2">
                   <span className="flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg> 
+                    </svg>
                     Giảm giá (Voucher)
                   </span>
                   <span className="font-bold">-{formatPrice(order.discount)}</span>
                 </div>
               )}
-              
+
               {anyOrder.pointsDiscount > 0 && (
                 <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 pt-2">
                   <span className="flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg> 
+                    </svg>
                     Đổi điểm
                   </span>
                   <span className="font-bold">-{formatPrice(anyOrder.pointsDiscount)}</span>
                 </div>
               )}
-              
+
               <div className="pt-4 flex justify-between items-end mt-4">
                 <span className="text-neutral-500 dark:text-neutral-400 text-sm">Tổng cộng thanh toán</span>
                 <span className="font-black text-3xl md:text-4xl text-primary-600 dark:text-primary-500 bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400">

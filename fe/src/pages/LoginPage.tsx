@@ -10,6 +10,7 @@ import {
   useResendVerificationMutation,
 } from '@/services/authApi';
 import { loginSuccess } from '@/features/auth/authSlice';
+import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 
 const LoginPage: React.FC = () => {
   const { t } = useTranslation();
@@ -186,6 +187,19 @@ const LoginPage: React.FC = () => {
               </Link>
             </p>
           </div>
+
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-neutral-200 dark:border-neutral-700"></span>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white dark:bg-neutral-800 text-neutral-500">
+                Hoặc
+              </span>
+            </div>
+          </div>
+
+          <GoogleLoginButton />
           <div className="mt-4 space-y-3">
             {/* Login error */}
             {error && (

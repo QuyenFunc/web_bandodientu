@@ -12,6 +12,12 @@ export interface CartItem {
   stockQuantity?: number;
   cartId?: string;
   warrantyPackageIds?: string[]; // For warranty packages
+  warrantyPackages?: {
+    id: string;
+    name: string;
+    price: number;
+    durationMonths: number;
+  }[];
 }
 
 export interface CartState {

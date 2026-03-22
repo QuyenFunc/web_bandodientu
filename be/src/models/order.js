@@ -174,6 +174,11 @@ const Order = sequelize.define(
       defaultValue: 0,
       field: 'pointsDiscount',
     },
+    warrantyCost: {
+      type: DataTypes.DECIMAL(19, 2),
+      defaultValue: 0,
+      field: 'warranty_cost',
+    },
   },
   {
     tableName: 'orders',

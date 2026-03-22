@@ -73,7 +73,7 @@ const WarrantyPackagesPage: React.FC = () => {
     setEditingPackage(record);
     form.setFieldsValue({
       ...record,
-      coverage: record.coverage?.join('\n') || '',
+      coverage: Array.isArray(record.coverage) ? record.coverage.join('\n') : (record.coverage || ''),
     });
     setIsModalOpen(true);
   };
@@ -166,21 +166,24 @@ const WarrantyPackagesPage: React.FC = () => {
       title: 'Quyền lợi',
       dataIndex: 'coverage',
       key: 'coverage',
-      render: (coverage: string[]) => (
-        <div>
-          {coverage?.slice(0, 2).map((item, index) => (
-            <div key={index} className="flex items-center gap-1 text-sm">
-              <CheckCircleOutlined className="text-green-500" />
-              <span>{item}</span>
-            </div>
-          ))}
-          {coverage?.length > 2 && (
-            <div className="text-sm text-gray-500">
-              +{coverage.length - 2} quyền lợi khác
-            </div>
-          )}
-        </div>
-      ),
+      render: (coverage: any) => {
+        const coverageArray = Array.isArray(coverage) ? coverage : [];
+        return (
+          <div>
+            {coverageArray.slice(0, 2).map((item: string, index: number) => (
+              <div key={index} className="flex items-center gap-1 text-sm">
+                <CheckCircleOutlined className="text-green-500" />
+                <span>{item}</span>
+              </div>
+            ))}
+            {coverageArray.length > 2 && (
+              <div className="text-sm text-gray-500">
+                +{coverageArray.length - 2} quyền lợi khác
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: 'Trạng thái',
@@ -206,7 +209,7 @@ const WarrantyPackagesPage: React.FC = () => {
     {
       title: 'Thao tác',
       key: 'actions',
-      render: (_, record: WarrantyPackage) => (
+      render: (_: any, record: WarrantyPackage) => (
         <Space>
           <Tooltip title="Chỉnh sửa">
             <Button
@@ -351,7 +354,7 @@ const WarrantyPackagesPage: React.FC = () => {
                   formatter={(value) =>
                     `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                   }
-                  parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+                  parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '') as any}
                 />
               </Form.Item>
             </Col>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Product } from '@/types/product.types';
 import { addItem, setServerCart } from '@/features/cart/cartSlice';
@@ -11,6 +11,7 @@ import {
 } from '@/utils/priceUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { RootState } from '@/store';
+import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 
 interface ProductListCardProps extends Product {
   enableVariantPricing?: boolean; // Option để bật/tắt việc load variants
@@ -30,7 +31,9 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
   enableVariantPricing = false, // Mặc định tắt để tránh quá nhiều API calls
 }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
 
   // Lấy thông tin đăng nhập từ Redux store
   const isAuthenticated = useSelector(
@@ -39,9 +42,6 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
 
   // Chỉ khởi tạo API mutation khi đã đăng nhập
   const [addToCart] = useAddToCartMutation();
-
-  // Debug: Log authentication status
-  console.log('🔐 isAuthenticated:', isAuthenticated);
 
   // Luôn sử dụng ID để đảm bảo API sản phẩm liên quan hoạt động đúng
   const productUrl = `/products/${id}`;
@@ -53,20 +53,18 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
     : 0;
 
   // Handle add to cart
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddToCart = async (e?: React.MouseEvent | React.FormEvent) => {
+    if (e) {
+      if (e.preventDefault) e.preventDefault();
+      if (e.stopPropagation) e.stopPropagation();
+    }
 
     if (isAddingToCart) return;
-
     setIsAddingToCart(true);
 
-    console.log('🔐 isAuthenticated trong handleAddToCart:', isAuthenticated);
-
-    if (isAuthenticated) {
-      // Nếu đã đăng nhập, sử dụng API
-      try {
-        console.log('🚀 Đã đăng nhập, gọi API để thêm vào giỏ hàng');
+    try {
+      if (isAuthenticated) {
+        // Nếu đã đăng nhập, sử dụng API
         const serverCart = await addToCart({
           productId: id,
           quantity: 1,
@@ -74,18 +72,8 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
 
         // Update Redux store with server response
         dispatch(setServerCart(serverCart));
-
-        dispatch(
-          addNotification({
-            message: `${name} đã được thêm vào giỏ hàng`,
-            type: 'success',
-            duration: 3000,
-          })
-        );
-      } catch (error: any) {
-        console.error('❌ API thất bại:', error);
-
-        // Fallback to localStorage if API fails
+      } else {
+        // Nếu chưa đăng nhập, lưu vào localStorage
         const newItem = {
           id: uuidv4(),
           productId: id,
@@ -94,40 +82,8 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
           quantity: 1,
           image: thumbnail,
         };
-
         dispatch(addItem(newItem));
-
-        dispatch(
-          addNotification({
-            message:
-              error?.data?.message ||
-              `${name} đã được thêm vào giỏ hàng (offline)`,
-            type: error?.data?.message ? 'error' : 'success',
-            duration: 3000,
-          })
-        );
       }
-    } else {
-      // Nếu chưa đăng nhập, KHÔNG gọi API, chỉ lưu vào localStorage
-      console.log('� Chưa đăng nhập, chỉ lưu vào localStorage');
-
-      const newItem = {
-        id: uuidv4(),
-        productId: id,
-        name,
-        price,
-        quantity: 1,
-        image: thumbnail,
-      };
-
-      // Chỉ thêm vào Redux store, cartSlice sẽ tự động cập nhật localStorage
-      dispatch(addItem(newItem));
-
-      // Debug: Check if localStorage was updated
-      console.log(
-        '🔍 localStorage after add:',
-        localStorage.getItem('cartItems')
-      );
 
       dispatch(
         addNotification({
@@ -136,9 +92,48 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
           duration: 3000,
         })
       );
+    } catch (error: any) {
+      console.error('Add to cart failed:', error);
+      dispatch(
+        addNotification({
+          message: error?.data?.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng',
+          type: 'error',
+          duration: 3000,
+        })
+      );
+    } finally {
+      setIsAddingToCart(false);
     }
+  };
 
-    setIsAddingToCart(false);
+  // Handle buy now
+  const handleBuyNow = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isBuying) return;
+    setIsBuying(true);
+
+    try {
+      const buyNowItem = {
+        id: uuidv4(),
+        productId: id,
+        name,
+        price,
+        quantity: 1,
+        image: thumbnail,
+      };
+
+      // Lưu vào sessionStorage để CheckoutPage sử dụng
+      sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+      sessionStorage.setItem('buyNowAction', 'true');
+      
+      navigate('/checkout?buyNow=true');
+    } catch (error) {
+      console.error('Buy now failed:', error);
+    } finally {
+      setIsBuying(false);
+    }
   };
 
   return (
@@ -241,20 +236,62 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
             </div>
 
             {/* Enhanced action buttons */}
-            <div className="flex items-center gap-4">
-              {/* Add to cart button */}
+            <div className="flex flex-col gap-3">
+              {/* Buy now button */}
               <button
-                onClick={handleAddToCart}
-                disabled={isAddingToCart}
-                className="flex-1 bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:via-emerald-800 hover:to-emerald-900 disabled:from-gray-400 disabled:via-gray-500 disabled:to-gray-600 text-white rounded-xl px-6 py-4 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 font-semibold text-base group/cart"
+                onClick={handleBuyNow}
+                disabled={isBuying}
+                className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl px-6 py-4 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.01] active:scale-[0.99] font-bold text-lg flex items-center justify-center gap-3 group/buynow"
               >
-                <div className="flex items-center justify-center gap-3">
-                  {isAddingToCart ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  ) : (
+                {isBuying ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <ShoppingCartIcon className="h-6 w-6 transition-transform duration-200 group-hover/buynow:scale-110" />
+                )}
+                <span>MUA NGAY - GIAO TẬN NHÀ</span>
+              </button>
+
+              <div className="flex items-center gap-4">
+                {/* Add to cart button */}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                  className="flex-1 bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-700 hover:via-emerald-800 hover:to-emerald-900 disabled:from-gray-400 disabled:via-gray-500 disabled:to-gray-600 text-white rounded-xl px-4 py-3.5 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 font-semibold text-base group/cart"
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    {isAddingToCart ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 transition-transform duration-200 group-hover/cart:scale-110"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13v6a2 2 0 002 2h8a2 2 0 002-2v-6"
+                        />
+                      </svg>
+                    )}
+                    <span className="font-medium">
+                      {isAddingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Quick view button */}
+                <Link
+                  to={productUrl}
+                  className="flex-1 bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 hover:from-primary-700 hover:via-primary-800 hover:to-primary-900 text-white rounded-xl px-6 py-4 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] font-semibold text-base group/view"
+                >
+                  <div className="flex items-center justify-center gap-3">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 transition-transform duration-200 group-hover/cart:scale-110"
+                      className="h-5 w-5 transition-transform duration-200 group-hover/view:scale-110"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -263,45 +300,19 @@ const ProductListCard: React.FC<ProductListCardProps> = ({
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13v6a2 2 0 002 2h8a2 2 0 002-2v-6"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                       />
                     </svg>
-                  )}
-                  <span className="font-medium">
-                    {isAddingToCart ? 'Đang thêm...' : 'Thêm vào giỏ'}
-                  </span>
-                </div>
-              </button>
-
-              {/* Quick view button */}
-              <Link
-                to={productUrl}
-                className="flex-1 bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 hover:from-primary-700 hover:via-primary-800 hover:to-primary-900 text-white rounded-xl px-6 py-4 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] font-semibold text-base group/view"
-              >
-                <div className="flex items-center justify-center gap-3">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 transition-transform duration-200 group-hover/view:scale-110"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                  <span className="font-medium">Xem chi tiết</span>
-                </div>
-              </Link>
+                    <span className="font-medium">Xem chi tiết</span>
+                  </div>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

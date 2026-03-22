@@ -57,6 +57,7 @@ export interface Order {
   shippingCost: number;
   discount: number;
   total: number;
+  warrantyCost?: number;
   notes?: string;
   trackingNumber?: string;
   shippingProvider?: string;
@@ -103,6 +104,12 @@ export interface CreateOrderRequest {
   paymentMethod: string;
   notes?: string;
   discountCode?: string;
+  items?: {
+    productId: string;
+    variantId?: string;
+    quantity: number;
+    warrantyPackageIds?: string[];
+  }[];
 }
 
 export interface ApplyDiscountRequest {

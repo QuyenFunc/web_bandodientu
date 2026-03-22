@@ -93,6 +93,29 @@ router.post('/login', validateRequest(loginSchema), authController.login);
 
 /**
  * @swagger
+ * /api/auth/google:
+ *   post:
+ *     summary: Login/Register with Google
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ */
+router.post('/google', authController.googleLogin);
+
+/**
+ * @swagger
  * /api/auth/logout:
  *   post:
  *     summary: Logout user

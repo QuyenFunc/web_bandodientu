@@ -3,10 +3,15 @@ import { transformProductsResponse } from '@/utils/productTransform';
 
 export const brandApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    getBrands: builder.query<any, { isActive?: boolean } | void>({
+    getBrands: builder.query<any, { isActive?: boolean; categoryId?: string } | void>({
       query: (params) => {
         const queryParams = new URLSearchParams();
-        if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+        if (params?.isActive !== undefined) {
+          queryParams.append('isActive', params.isActive.toString());
+        }
+        if (params?.categoryId) {
+          queryParams.append('categoryId', params.categoryId);
+        }
         return {
           url: `/brands?${queryParams.toString()}`,
           method: 'GET',

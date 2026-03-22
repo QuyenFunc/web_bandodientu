@@ -97,8 +97,8 @@ const ProductDetailPage: React.FC = () => {
     }
   }, [error, navigate]);
 
-  // Auto-select first variant when product loads
-  useEffect(() => {
+  // Removed auto-select first variant per user request to force manual selection
+  /* useEffect(() => {
     if (product && product.attributes && product.attributes.length > 0) {
       const firstAttribute = product.attributes[0];
       const values = Array.isArray(firstAttribute.values) ? firstAttribute.values : [];
@@ -113,7 +113,7 @@ const ProductDetailPage: React.FC = () => {
         }
       }
     }
-  }, [product]);
+  }, [product]); */
 
   // Set default warranty - only reset when product changes (avoid infinite loop)
   useEffect(() => {
@@ -777,31 +777,53 @@ const ProductDetailPage: React.FC = () => {
 
           {/* Actions */}
           <div className="flex flex-col gap-4 mb-8">
-            {/* Buy now button */}
-            <PremiumButton
-              variant="secondary"
-              size="large"
-              isProcessing={isBuying}
-              processingText={t('common.processing')}
-              onClick={handleBuyNow}
-              disabled={product.stock <= 0}
-              className="w-full h-14"
-            >
-              MUA NGAY
-            </PremiumButton>
+            {(() => {
+              const allSelected = product && areAllAttributesSelected(product.attributes || [], selectedAttributes);
+              const isOutOfStock = product.stock <= 0 || (product.isVariantProduct && product.currentVariant && product.currentVariant.stockQuantity <= 0);
+              
+              const isDisabled = !allSelected || isOutOfStock;
 
-            <PremiumButton
-              variant="primary"
-              size="large"
-              iconType="cart"
-              isProcessing={isAddingToCart}
-              processingText={t('common.processing')}
-              onClick={handleAddToCart}
-              disabled={product.stock <= 0}
-              className="w-full h-14"
-            >
-              {t('productDetail.addToCart')}
-            </PremiumButton>
+              return (
+                <>
+                  {!allSelected && product && product.attributes && product.attributes.length > 0 && (
+                    <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-3 rounded-lg mb-2">
+                      <p className="text-sm text-orange-700 dark:text-orange-400 font-medium flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Vui lòng chọn đầy đủ các thuộc tính để mua hàng
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Buy now button */}
+                  <PremiumButton
+                    variant="secondary"
+                    size="large"
+                    isProcessing={isBuying}
+                    processingText={t('common.processing')}
+                    onClick={handleBuyNow}
+                    disabled={isDisabled}
+                    className={`w-full h-14 ${!allSelected ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                  >
+                    MUA NGAY
+                  </PremiumButton>
+
+                  <PremiumButton
+                    variant="primary"
+                    size="large"
+                    iconType="cart"
+                    isProcessing={isAddingToCart}
+                    processingText={t('common.processing')}
+                    onClick={handleAddToCart}
+                    disabled={isDisabled}
+                    className={`w-full h-14 ${!allSelected ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                  >
+                    {t('productDetail.addToCart')}
+                  </PremiumButton>
+                </>
+              );
+            })()}
           </div>
 
           {/* Additional info */}

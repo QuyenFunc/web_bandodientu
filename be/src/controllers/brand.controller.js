@@ -5,10 +5,35 @@ const { Op } = require('sequelize');
 // Get all brands
 const getAllBrands = async (req, res, next) => {
   try {
-    const { isActive } = req.query;
+    const { isActive, categoryId } = req.query;
     const where = {};
     if (isActive !== undefined) {
       where.isActive = isActive === 'true';
+    }
+
+    // Filter brands by category if categoryId is provided
+    if (categoryId) {
+      const { ProductCategory } = require('../models');
+      // Step 1: Get all product IDs in this category
+      const productCategories = await ProductCategory.findAll({
+        where: { categoryId },
+        attributes: ['productId'],
+        raw: true,
+      });
+      const productIds = productCategories.map((pc) => pc.productId);
+
+      // Step 2: Get unique brand IDs for these products
+      const products = await Product.findAll({
+        where: {
+          id: { [Op.in]: productIds },
+          status: 'active',
+        },
+        attributes: [[sequelize.fn('DISTINCT', sequelize.col('brand_id')), 'brandId']],
+        raw: true,
+      });
+
+      const brandIds = products.map((p) => p.brandId).filter((id) => !!id);
+      where.id = { [Op.in]: brandIds };
     }
 
     const brands = await Brand.findAll({

@@ -83,6 +83,7 @@ const ShopPage: React.FC = () => {
 
   const { data: brandsData, isLoading: isBrandsLoading } = useGetBrandsQuery({
     isActive: true,
+    categoryId: categoryId, // Tự động lọc thương hiệu theo danh mục đang chọn
   });
 
   const { data: collectionsData, isLoading: isCollectionsLoading } =

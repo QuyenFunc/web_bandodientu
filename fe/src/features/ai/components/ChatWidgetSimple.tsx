@@ -130,8 +130,8 @@ const ChatWidgetSimple: React.FC = () => {
     ]);
 
     try {
-      // Gọi API AI để lấy phản hồi
-      const response = await geminiService.generateContent(text);
+      // Gọi API AI từ Backend để lấy phản hồi (OpenRouter)
+      const response = await geminiService.sendMessage(text);
 
       // Xóa tin nhắn "đang nhập" và thêm phản hồi từ AI
       setMessages((prev) => {
@@ -140,9 +140,9 @@ const ChatWidgetSimple: React.FC = () => {
           ...filtered,
           {
             id: (Date.now() + 2).toString(),
-            text: response,
+            text: response.text,
             sender: 'ai',
-            suggestions: ['Tìm thêm sản phẩm', 'Xem giỏ hàng', 'Hỏi thêm'],
+            suggestions: response.suggestions || ['Tìm thêm sản phẩm', 'Xem giỏ hàng', 'Hỏi thêm'],
           },
         ];
       });

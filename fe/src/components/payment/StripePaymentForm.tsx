@@ -192,12 +192,12 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
         // Stripe expects amount in smallest currency unit (cents for USD)
         // Convert VND to USD using an approximate exchange rate
         const VND_TO_USD_RATE = 0.00004; // Approximate rate: 1 VND = 0.00004 USD (1 USD ≈ 25,000 VND)
-        
+
         let usdAmount = props.amount * VND_TO_USD_RATE;
-        
+
         // Stripe requires amount in cents for USD
         const amountInCents = Math.round(usdAmount * 100);
-        
+
         const response = await createPaymentIntent({
           amount: amountInCents,
           currency: 'usd', // Using USD for Stripe

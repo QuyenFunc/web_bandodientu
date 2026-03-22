@@ -53,7 +53,7 @@ const ChatWidgetSimple: React.FC = () => {
       document.body.classList.add('chat-widget-open');
 
       // Ngăn chặn sự kiện click bên ngoài
-      const handleClickOutside = (e: MouseEvent) => {
+      const handleClickOutside = (e: Event) => {
         // Ngăn chặn tất cả các sự kiện click trên document
         e.stopPropagation();
 
@@ -185,9 +185,9 @@ const ChatWidgetSimple: React.FC = () => {
 
     // Xóa tất cả các event listener trước khi đóng chatbot
     const cleanupEvents = () => {
-      const handleClickOutside = () => {};
-      const handleKeyDown = () => {};
-      const handleScroll = () => {};
+      const handleClickOutside = () => { };
+      const handleKeyDown = () => { };
+      const handleScroll = () => { };
 
       document.removeEventListener('click', handleClickOutside, true);
       document.removeEventListener('mousedown', handleClickOutside, true);
@@ -216,18 +216,16 @@ const ChatWidgetSimple: React.FC = () => {
 
           {/* Chỉ báo trạng thái AI */}
           <div
-            className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-3 border-white shadow-lg ${
-              geminiService.isReady()
+            className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-3 border-white shadow-lg ${geminiService.isReady()
                 ? 'bg-gradient-to-r from-green-400 to-green-500'
                 : 'bg-gradient-to-r from-yellow-400 to-orange-500'
-            }`}
+              }`}
           >
             <div
-              className={`absolute inset-1 rounded-full ${
-                geminiService.isReady()
+              className={`absolute inset-1 rounded-full ${geminiService.isReady()
                   ? 'bg-green-300 animate-pulse'
                   : 'bg-yellow-300 animate-pulse'
-              }`}
+                }`}
             ></div>
           </div>
 
@@ -365,16 +363,14 @@ const ChatWidgetSimple: React.FC = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${
-                    message.sender === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl p-4 chat-bubble ${
-                      message.sender === 'user'
+                    className={`max-w-[80%] rounded-2xl p-4 chat-bubble ${message.sender === 'user'
                         ? 'bg-primary-500 text-white'
                         : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white'
-                    }`}
+                      }`}
                   >
                     {message.text === '...' ? (
                       <div className="typing-indicator">

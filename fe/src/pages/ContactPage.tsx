@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Button from '@/components/common/Button';
 import { PremiumButton } from '@/components/common';
 
@@ -10,6 +11,7 @@ interface FormData {
 }
 
 const ContactPage: React.FC = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -61,11 +63,10 @@ const ContactPage: React.FC = () => {
       {/* Hero section */}
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-4">
-          Contact Us
+          {t('contact.title')}
         </h1>
         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-3xl mx-auto">
-          Have questions or feedback? We&apos;d love to hear from you. Our team
-          is here to help.
+          {t('contact.subtitle')}
         </p>
       </div>
 
@@ -73,13 +74,12 @@ const ContactPage: React.FC = () => {
         {/* Contact form */}
         <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-8">
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-6">
-            Send a Message
+            {t('contact.form.title')}
           </h2>
 
           {submitSuccess && (
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg">
-              Thank you for your message! We&apos;ll get back to you as soon as
-              possible.
+              {t('contact.form.success')}
             </div>
           )}
 
@@ -95,7 +95,7 @@ const ContactPage: React.FC = () => {
                 htmlFor="name"
                 className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Your Name
+                {t('contact.form.nameLabel')}
               </label>
               <input
                 type="text"
@@ -113,7 +113,7 @@ const ContactPage: React.FC = () => {
                 htmlFor="email"
                 className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Email Address
+                {t('contact.form.emailLabel')}
               </label>
               <input
                 type="email"
@@ -131,7 +131,7 @@ const ContactPage: React.FC = () => {
                 htmlFor="subject"
                 className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Subject
+                {t('contact.form.subjectLabel')}
               </label>
               <select
                 id="subject"
@@ -141,11 +141,11 @@ const ContactPage: React.FC = () => {
                 required
                 className="w-full px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">Select a subject</option>
-                <option value="general">General Inquiry</option>
-                <option value="support">Customer Support</option>
-                <option value="feedback">Feedback</option>
-                <option value="partnership">Business Partnership</option>
+                <option value="">{t('contact.form.subjectPlaceholder')}</option>
+                <option value="general">{t('contact.form.subjects.general')}</option>
+                <option value="support">{t('contact.form.subjects.support')}</option>
+                <option value="feedback">{t('contact.form.subjects.feedback')}</option>
+                <option value="partnership">{t('contact.form.subjects.partnership')}</option>
               </select>
             </div>
 
@@ -154,7 +154,7 @@ const ContactPage: React.FC = () => {
                 htmlFor="message"
                 className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Message
+                {t('contact.form.messageLabel')}
               </label>
               <textarea
                 id="message"
@@ -172,11 +172,11 @@ const ContactPage: React.FC = () => {
               size="large"
               iconType="arrow-right"
               isProcessing={isSubmitting}
-              processingText="Sending..."
+              processingText={t('contact.form.sending')}
               onClick={handleSubmit}
               className="w-full h-12"
             >
-              Send Message
+              {t('contact.form.sendButton')}
             </PremiumButton>
           </form>
         </div>
@@ -184,7 +184,7 @@ const ContactPage: React.FC = () => {
         {/* Contact info */}
         <div>
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-6">
-            Contact Information
+            {t('contact.info.title')}
           </h2>
 
           <div className="space-y-8">
@@ -207,13 +207,13 @@ const ContactPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                  Phone
+                  {t('contact.info.phone.title')}
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-400 mt-1">
                   +1 (555) 123-4567
                 </p>
                 <p className="text-neutral-600 dark:text-neutral-400">
-                  Monday - Friday, 9:00 AM - 6:00 PM EST
+                  {t('contact.info.phone.hours')}
                 </p>
               </div>
             </div>
@@ -237,13 +237,13 @@ const ContactPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                  Email
+                  {t('contact.info.email.title')}
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-400 mt-1">
                   support@shopmini.com
                 </p>
                 <p className="text-neutral-600 dark:text-neutral-400">
-                  We&apos;ll respond within 24-48 hours
+                  {t('contact.info.email.responseTime')}
                 </p>
               </div>
             </div>
@@ -273,14 +273,14 @@ const ContactPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-neutral-900 dark:text-white">
-                  Address
+                  {t('contact.info.address.title')}
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-                  123 Commerce Street
+                  {t('contact.info.address.street')}
                   <br />
-                  Suite 500
+                  {t('contact.info.address.suite')}
                   <br />
-                  New York, NY 10001
+                  {t('contact.info.address.city')}
                 </p>
               </div>
             </div>
@@ -289,7 +289,7 @@ const ContactPage: React.FC = () => {
           {/* Social media */}
           <div className="mt-12">
             <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-4">
-              Connect With Us
+              {t('contact.social.title')}
             </h3>
             <div className="flex space-x-4">
               {[
@@ -363,13 +363,13 @@ const ContactPage: React.FC = () => {
       {/* Map */}
       <div className="mb-16">
         <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-6">
-          Our Location
+          {t('contact.location.title')}
         </h2>
         <div className="rounded-xl overflow-hidden h-96 bg-neutral-200 dark:bg-neutral-700">
           {/* Replace with actual map component or iframe */}
-          <div className="w-full h-full flex items-center justify-center text-neutral-500 dark:text-neutral-400">
+          <div className="w-full h-full flex items-center justify-center text-neutral-500 dark:text-neutral-400 p-8 text-center">
             <p>
-              Map placeholder - Replace with Google Maps or other map service
+              {t('contact.location.placeholder')}
             </p>
           </div>
         </div>
@@ -378,29 +378,25 @@ const ContactPage: React.FC = () => {
       {/* FAQ section */}
       <div className="mb-16">
         <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-6 text-center">
-          Frequently Asked Questions
+          {t('contact.faq.title')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             {
-              question: 'What are your business hours?',
-              answer:
-                'Our customer service team is available Monday through Friday from 9:00 AM to 6:00 PM Eastern Time. Our online store is open 24/7 for your shopping convenience.',
+              question: t('contact.faq.q1.question'),
+              answer: t('contact.faq.q1.answer'),
             },
             {
-              question: 'How can I track my order?',
-              answer:
-                'Once your order ships, you will receive a tracking number via email. You can use this number to track your package on our website or directly through the carrier&apos;s website.',
+              question: t('contact.faq.q2.question'),
+              answer: t('contact.faq.q2.answer'),
             },
             {
-              question: 'What is your return policy?',
-              answer:
-                'We offer a 30-day return policy for most items. Products must be returned in their original condition and packaging. Please visit our Returns page for more details.',
+              question: t('contact.faq.q3.question'),
+              answer: t('contact.faq.q3.answer'),
             },
             {
-              question: 'Do you ship internationally?',
-              answer:
-                'Yes, we ship to most countries worldwide. International shipping rates and delivery times vary by location. You can see the shipping options available to your country during checkout.',
+              question: t('contact.faq.q4.question'),
+              answer: t('contact.faq.q4.answer'),
             },
           ].map((faq, index) => (
             <div

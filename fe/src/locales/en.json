@@ -288,7 +288,6 @@
     "goHome": "Go Home",
     "login": "Login"
   },
-
   "cart": {
     "title": "Your Shopping Cart",
     "emptyCart": {
@@ -321,7 +320,6 @@
       "loadError": "Could not load cart from server. Using local data."
     }
   },
-
   "checkout": {
     "title": "Checkout",
     "emptyCart": {
@@ -735,5 +733,69 @@
     "quantity": "Quantity",
     "selectVariant": "Select Variant",
     "relatedProducts": "Related Products"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Have questions or feedback? We'd love to hear from you. Our team is here to help.",
+    "form": {
+      "title": "Send a Message",
+      "success": "Thank you for your message! We'll get back to you as soon as possible.",
+      "nameLabel": "Your Name",
+      "emailLabel": "Email Address",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Select a subject",
+      "subjects": {
+        "general": "General Inquiry",
+        "support": "Customer Support",
+        "feedback": "Feedback",
+        "partnership": "Business Partnership"
+      },
+      "messageLabel": "Message",
+      "sendButton": "Send Message",
+      "sending": "Sending..."
+    },
+    "info": {
+      "title": "Contact Information",
+      "phone": {
+        "title": "Phone",
+        "hours": "Monday - Friday, 9:00 AM - 6:00 PM EST"
+      },
+      "email": {
+        "title": "Email",
+        "responseTime": "We'll respond within 24-48 hours"
+      },
+      "address": {
+        "title": "Address",
+        "street": "123 Commerce Street",
+        "suite": "Suite 500",
+        "city": "New York, NY 10001"
+      }
+    },
+    "social": {
+      "title": "Connect With Us"
+    },
+    "location": {
+      "title": "Our Location",
+      "placeholder": "Map placeholder - Replace with Google Maps or other map service"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": {
+        "question": "What are your business hours?",
+        "answer": "Our customer service team is available Monday through Friday from 9:00 AM to 6:00 PM Eastern Time. Our online store is open 24/7 for your shopping convenience."
+      },
+      "q2": {
+        "question": "How can I track my order?",
+        "answer": "Once your order ships, you will receive a tracking number via email. You can use this number to track your package on our website or directly through the carrier's website."
+      },
+      "q3": {
+        "question": "What is your return policy?",
+        "answer": "We offer a 30-day return policy for most items. Products must be returned in their original condition and packaging. Please visit our Returns page for more details."
+      },
+      "q4": {
+        "question": "Do you ship internationally?",
+        "answer": "Yes, we ship to most countries worldwide. International shipping rates and delivery times vary by location. You can see the shipping options available to your country during checkout."
+      }
+    }
   }
 }

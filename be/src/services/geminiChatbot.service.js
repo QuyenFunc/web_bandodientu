@@ -157,21 +157,30 @@ THÔNG TIN CỬA HÀNG:
 TIN NHẮN KHÁCH HÀNG: "${userMessage}"
 CONTEXT: ${JSON.stringify(context)}
 
-HƯỚNG DẪN TRẢ LỜI:
-- Trả lời bằng tiếng Việt.
-- Dựa VIỆC ĐẦU TIÊN là tìm kiếm trong "DANH SÁCH SẢN PHẨM HIỆN CÓ" để trả lời.
-- Tuyệt đối KHÔNG ĐƯỢC tự ý bịa ra tên sản phẩm, thông số hoặc giá bán nếu không có trong danh sách được cung cấp ở trên. Sự trung thực về dữ liệu là ưu tiên số 1.
-- Nếu khách hỏi sản phẩm có trong danh sách: Giới thiệu chi tiết, giá bán và ưu điểm (có thể liệt kê nhiều sản phẩm phù hợp).
-- Nếu khách hỏi sản phẩm KHÔNG có: Xin lỗi lịch sự, khẳng định cửa hàng hiện chưa có mẫu đó và gợi ý các sản phẩm tương tự đang có sẵn trong danh sách.
-- Luôn xưng hô là "mình" hoặc "em" và gọi khách là "bạn" hoặc "anh/chị" tùy ngữ cảnh.
-- Trả lời ngắn gọn, súc tích, đi thẳng vào vấn đề nhưng vẫn giữ thái độ niềm nở.
+HƯỚNG DẪN TRẢ LỜI CỰC KỲ QUAN TRỌNG (BẮT BUỘC):
+1. TRẢ LỜI BẰNG TIẾNG VIỆT.
+2. QUY TẮC SO KHỚP Tên (Cực kỳ quan trọng):
+   - Bản "Thường" (không hậu tố), "Pro", "Pro Max", "Plus" là các sản phẩm KHÁC NHAU HOÀN TOÀN.
+   - Các đời (13, 14, 15) là các thế hệ KHÁC NHAU HOÀN TOÀN.
+3. QUY TRÌNH KIỂM TRA & PHẢN HỒI:
+   - Bước 1: Kiểm tra xem sản phẩm khách hỏi có tên KHỚP 100% (cả đời máy và hậu tố) với sản phẩm nào trong "DANH SÁCH SẢN PHẨM HIỆN CÓ" hay không.
+   - Bước 2: 
+     + Nếu KHỚP 100%: Tư vấn trực tiếp sản phẩm đó.
+     + Nếu KHÔNG KHỚP 100%: Bạn PHẢI bắt đầu bằng cụm từ: "Tiếc quá, hiện tại bên mình chưa có [Tên sản phẩm khách hỏi] ạ".
+     + Bước 3: Sau khi báo không có, hãy gợi ý các bản khác cùng đời (nếu có) hoặc đời mới hơn (nếu có).
+4. VÍ DỤ MẪU (BẮT BUỘC HỌC THEO):
+   - Khách: "có ip14 không?" | List chỉ có "iPhone 14 Pro" -> Trả lời: "Tiếc quá, bên mình hiện chưa có iPhone 14 bản thường ạ. Nhưng mình đang có sẵn iPhone 14 Pro với cấu hình mạnh hơn, bạn có muốn tham khảo không?"
+   - Khách: "ai phôn 14 pro max" | List chỉ có "iPhone 15 Pro Max" -> Trả lời: "Dạ hiện tại bên mình đã hết hàng iPhone 14 Pro Max rồi ạ. Tuy nhiên mình đang có sẵn iPhone 15 Pro Max (đời mới nhất) cực kỳ hot, mình tư vấn cho bạn nhé?"
+   - Khách: "ip15" | List có "15 Pro", "15 Pro Max" -> Trả lời: "Dạ bên mình hiện chưa có iPhone 15 bản thường, nhưng đang có sẵn bản 15 Pro và 15 Pro Max nè, bạn quan tâm bản nào ạ?"
+5. KHÔNG TỰ BỊA: Tuyệt đối không tự ý bịa giá hoặc tên.
+6. PHONG CÁCH: Thân thiện (mình/em - bạn/anh/chị).
 
 Hãy trả lời THEO ĐÚNG ĐỊNH DẠNG JSON SAU:
 {
-  "response": "Câu trả lời chi tiết, thân thiện của nhân viên bán hàng (dùng emoji phù hợp)",
-    "matchedProducts": ["tên sản phẩm 1", "tên sản phẩm 2"(chỉ liệt kê nếu có trong danh sách cung cấp)],
-      "suggestions": ["Câu trả lời mẫu 1", "Câu trả lời mẫu 2"(Các câu ngắn gọn người dùng có thể chọn để trả lời bạn.VD: "Gaming", "Văn phòng", "Dưới 20 triệu".LƯU Ý: Đây là gợi ý cho Người dùng nói, KHÔNG phải câu hỏi của AI)],
-        "intent": "product_search|pricing|policy|support|complaint|general|off_topic"
+  "response": "Câu trả lời đúng quy trình trên (dùng emoji phù hợp)",
+  "matchedProducts": ["Tên chính xác mẫu sản phẩm trong danh sách (VD: 'iPhone 14 Pro')"],
+  "suggestions": ["Gợi ý câu tiếp theo"],
+  "intent": "product_search|pricing|policy|support|complaint|general|off_topic"
 }
 `;
   }
@@ -190,11 +199,36 @@ Hãy trả lời THEO ĐÚNG ĐỊNH DẠNG JSON SAU:
         const matchedProducts = [];
         if (parsed.matchedProducts && Array.isArray(parsed.matchedProducts)) {
           parsed.matchedProducts.forEach((productName) => {
-            const product = products.find(
-              (p) =>
-                p.name.toLowerCase().includes(productName.toLowerCase()) ||
-                productName.toLowerCase().includes(p.name.toLowerCase())
-            );
+            // Strict matching: product name should be very similar or equal to the recommendation
+            const product = products.find((p) => {
+              const pName = p.name.toLowerCase();
+              const rName = productName.toLowerCase();
+              
+              // If it's an exact match or very close match
+              if (pName === rName) return true;
+              
+              // Strict version keyword matching (Pro, Max, Plus, etc.)
+              const versionKeywords = ['pro', 'max', 'plus', 'ultra', 'mini', 'se', 'ti', 'super'];
+              const rVersions = versionKeywords.filter(v => rName.includes(v));
+              const pVersions = versionKeywords.filter(v => pName.includes(v));
+              
+              // Must have exact same number of version keywords and they must be the same
+              if (rVersions.length !== pVersions.length || !rVersions.every(v => pVersions.includes(v))) {
+                return false;
+              }
+
+              // Check for major version numbers (e.g., 13, 14, 15)
+              const numbersP = pName.match(/\d+/g);
+              const numbersR = rName.match(/\d+/g);
+              
+              if (numbersP && numbersR) {
+                // If there are different main numbers, they are different generations
+                if (numbersP[0] !== numbersR[0]) return false;
+              }
+              
+              return pName.includes(rName) || rName.includes(pName);
+            });
+
             if (product) {
               matchedProducts.push({
                 id: product.id,
@@ -202,9 +236,9 @@ Hãy trả lời THEO ĐÚNG ĐỊNH DẠNG JSON SAU:
                 price: product.price,
                 compareAtPrice: product.compareAtPrice,
                 thumbnail: product.thumbnail,
-                inStock: product.inStock !== undefined ? product.inStock : true, // Default to true if not specified
+                inStock: product.inStock !== undefined ? product.inStock : true,
                 stockQuantity: product.stockQuantity,
-                rating: 4.5, // Default rating as most products don't have it yet
+                rating: 4.5,
               });
             }
           });

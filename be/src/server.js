@@ -1,5 +1,5 @@
 require('dotenv').config();
-// restart nodemon to reload .env config
+// trigger nodemon restart for .env changes
 const app = require('./app');
 const sequelize = require('./config/sequelize');
 const logger = require('./utils/logger');

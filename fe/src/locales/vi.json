@@ -939,5 +939,69 @@
     "quantity": "Số Lượng",
     "selectVariant": "Chọn Phiên Bản",
     "relatedProducts": "Sản Phẩm Liên Quan"
+  },
+  "contact": {
+    "title": "Liên hệ với chúng tôi",
+    "subtitle": "Bạn có câu hỏi hoặc góp ý? Chúng tôi rất muốn lắng nghe từ bạn. Đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ.",
+    "form": {
+      "title": "Gửi tin nhắn",
+      "success": "Cảm ơn tin nhắn của bạn! Chúng tôi sẽ phản hồi sớm nhất có thể.",
+      "nameLabel": "Họ và tên của bạn",
+      "emailLabel": "Địa chỉ Email",
+      "subjectLabel": "Chủ đề",
+      "subjectPlaceholder": "Chọn một chủ đề",
+      "subjects": {
+        "general": "Yêu cầu chung",
+        "support": "Hỗ trợ khách hàng",
+        "feedback": "Góp ý",
+        "partnership": "Hợp tác kinh doanh"
+      },
+      "messageLabel": "Tin nhắn",
+      "sendButton": "Gửi tin nhắn",
+      "sending": "Đang gửi..."
+    },
+    "info": {
+      "title": "Thông tin liên hệ",
+      "phone": {
+        "title": "Điện thoại",
+        "hours": "Thứ Hai - Thứ Sáu, 9:00 - 18:00"
+      },
+      "email": {
+        "title": "Email",
+        "responseTime": "Chúng tôi sẽ phản hồi trong vòng 24-48 giờ"
+      },
+      "address": {
+        "title": "Địa chỉ",
+        "street": "123 Đường Thương Mại",
+        "suite": "Phòng 500",
+        "city": "Hà Nội, Việt Nam"
+      }
+    },
+    "social": {
+      "title": "Kết nối với chúng tôi"
+    },
+    "location": {
+      "title": "Vị trí của chúng tôi",
+      "placeholder": "Bản đồ hiển thị ở đây - Thay thế bằng Google Maps hoặc dịch vụ bản đồ khác"
+    },
+    "faq": {
+      "title": "Câu hỏi thường gặp",
+      "q1": {
+        "question": "Giờ làm việc của bạn là khi nào?",
+        "answer": "Đội ngũ dịch vụ khách hàng của chúng tôi sẵn sàng hỗ trợ từ Thứ Hai đến Thứ Sáu, từ 9:00 đến 18:00. Cửa hàng trực tuyến của chúng tôi mở cửa 24/7 để bạn thuận tiện mua sắm."
+      },
+      "q2": {
+        "question": "Làm thế nào để tôi theo dõi đơn hàng?",
+        "answer": "Sau khi đơn hàng được gửi đi, bạn sẽ nhận được mã vận đơn qua email. Bạn có thể sử dụng mã này để theo dõi gói hàng trên website của chúng tôi hoặc trực tiếp qua website của đơn vị vận chuyển."
+      },
+      "q3": {
+        "question": "Chính sách đổi trả của bạn là gì?",
+        "answer": "Chúng tôi cung cấp chính sách đổi trả trong vòng 30 ngày cho hầu hết các mặt hàng. Sản phẩm phải được trả lại trong tình trạng nguyên vẹn và đóng gói ban đầu. Vui lòng truy cập trang Đổi trả để biết thêm chi tiết."
+      },
+      "q4": {
+        "question": "Bạn có giao hàng quốc tế không?",
+        "answer": "Có, chúng tôi giao hàng đến hầu hết các quốc gia trên toàn thế giới. Phí vận chuyển quốc tế và thời gian giao hàng thay đổi theo từng khu vực. Bạn có thể xem các lựa chọn giao hàng cho quốc gia của mình trong quá trình thanh toán."
+      }
+    }
   }
 }

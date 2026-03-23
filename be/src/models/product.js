@@ -7,6 +7,7 @@ const {
   sanitizeImageCollection,
   sanitizeStoredImageValue,
 } = require('../utils/imageUrl');
+const vectorStoreService = require('../services/vectorStore.service');
 
 const Product = sequelize.define(
   'Product',
@@ -258,6 +259,51 @@ const Product = sequelize.define(
             description: product.description,
             category: product.category,
           });
+        }
+      },
+      afterCreate: async (product) => {
+        try {
+          if (product.status === 'active') {
+            await vectorStoreService.addProduct(product.toJSON());
+            vectorStoreService.save();
+          }
+        } catch (error) {
+          console.error(
+            'Error updating vector store after product create:',
+            error
+          );
+        }
+      },
+      afterUpdate: async (product) => {
+        try {
+          if (product.status === 'active') {
+            await vectorStoreService.addProduct(product.toJSON());
+            vectorStoreService.save();
+          } else {
+            // Remove from vector store if status is not active
+            vectorStoreService.items = vectorStoreService.items.filter(
+              (item) => item.metadata.id !== product.id
+            );
+            vectorStoreService.save();
+          }
+        } catch (error) {
+          console.error(
+            'Error updating vector store after product update:',
+            error
+          );
+        }
+      },
+      afterDestroy: async (product) => {
+        try {
+          vectorStoreService.items = vectorStoreService.items.filter(
+            (item) => item.metadata.id !== product.id
+          );
+          vectorStoreService.save();
+        } catch (error) {
+          console.error(
+            'Error updating vector store after product destroy:',
+            error
+          );
         }
       },
     },

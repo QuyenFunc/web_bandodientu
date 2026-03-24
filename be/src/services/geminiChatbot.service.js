@@ -33,11 +33,20 @@ class GeminiChatbotService {
    */
   async handleMessage(message, context = {}) {
     try {
+      // Step 0: REWRITE Query (Correction & Expansion)
+      console.log(`📝 Original query: "${message}"`);
+      const rewrittenQuery = await this.rewriteQuery(message);
+      const searchMessage = rewrittenQuery || message;
+      
+      if (rewrittenQuery && rewrittenQuery.toLowerCase() !== message.toLowerCase()) {
+        console.log(`✨ Rewritten query: "${rewrittenQuery}"`);
+      }
+
       // Step 1: SEARCH Vector Database (Retrieval)
-      console.log(`🔍 Searching Vector Store for: "${message}"`);
+      console.log(`🔍 Searching Vector Store for: "${searchMessage}"`);
       let relevantProducts = [];
       try {
-        const searchResults = await vectorStoreService.search(message, 10);
+        const searchResults = await vectorStoreService.search(searchMessage, 10);
         relevantProducts = searchResults.map(res => ({
           ...res.metadata,
           score: res.score
@@ -54,9 +63,9 @@ class GeminiChatbotService {
 
       // Step 2: Use AI with ONLY the relevant products (Augmentation & Generation)
       const aiResponse = await this.getAIResponse(
-        message,
+        searchMessage,
         relevantProducts,
-        context
+        { ...context, originalMessage: message }
       );
 
       return aiResponse;
@@ -122,6 +131,49 @@ class GeminiChatbotService {
 
       // Fallback to local keyword matching if AI fails
       return this.simpleKeywordMatch(userMessage, products);
+    }
+  }
+
+  /**
+   * Rewrite/Clean user query to handle typos and abbreviations
+   */
+  async rewriteQuery(message) {
+    if (!this.apiKey || this.apiKey === 'demo-key') return message;
+
+    try {
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: `Bạn là trợ lý ảo hỗ trợ chuẩn hóa câu hỏi mua sắm. 
+                Nhiệm vụ: sửa lỗi chính tả, viết tắt và làm cho câu hỏi rõ ràng hơn nhưng TUYỆT ĐỐI không thay đổi ý định của khách hàng.
+                Nếu câu hỏi đã chuẩn, hãy giữ nguyên. 
+                Trả về DUY NHẤT một chuỗi kết quả, không giải thích thêm.`
+            },
+            {
+              role: 'user',
+              content: `Chuẩn hóa câu hỏi sau: "${message}"`
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 100
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey} `,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const rewritten = response.data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+      return rewritten;
+    } catch (error) {
+      console.error('❌ Rewrite query error:', error.message);
+      return message;
     }
   }
 

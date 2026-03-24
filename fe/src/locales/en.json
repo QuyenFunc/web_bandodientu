@@ -576,6 +576,23 @@
     }
   },
   "admin": {
+    "title": "Admin Dashboard",
+    "menu": "Admin Menu",
+    "backToStore": "Back to Store",
+    "nav": {
+      "dashboard": "Dashboard",
+      "products": "Products",
+      "news": "News",
+      "categories": "Categories",
+      "brands": "Brands",
+      "collections": "Collections",
+      "orders": "Orders",
+      "users": "Users",
+      "warranty": "Warranty Packages",
+      "discounts": "Discount Codes",
+      "email": "Email Campaigns",
+      "support": "Online Support"
+    },
     "dashboard": {
       "title": "Admin Dashboard",
       "lastUpdated": "Last updated",

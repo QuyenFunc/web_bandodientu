@@ -31,9 +31,9 @@ const AppContent: React.FC = () => {
   // Global payment success listener
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const hasSuccess = params.get('payment') === 'success' || 
-                       (params.get('status') === 'momo-return' && params.get('resultCode') === '0');
-    
+    const hasSuccess = params.get('payment') === 'success' ||
+      (params.get('status') === 'momo-return' && params.get('resultCode') === '0');
+
     if (hasSuccess) {
       console.log('[DEBUG] Global payment success detected, clearing cart state and storage.');
       // Remove from storage first
@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
           <LoginSuccess />
           <AppRoutes />
           <ChatWidgetPortal />
-          {/* <SupportChat /> */}
+          {<SupportChat />}
         </StripeProvider>
       </AuthProvider>
     </HelmetProvider>

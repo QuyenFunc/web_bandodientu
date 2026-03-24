@@ -85,6 +85,19 @@ const ensureColumns = async () => {
       // Column might already exist
     }
     
+    // Add session_id column to chat_messages
+    try {
+      await sequelize.query('ALTER TABLE chat_messages ADD COLUMN session_id VARCHAR(255);');
+    } catch (e) {
+      // Column might already exist
+    }
+
+    try {
+      await sequelize.query('ALTER TABLE chat_messages MODIFY COLUMN user_id CHAR(36) BINARY NULL;');
+    } catch (e) {
+      // Column might already exist or not be UUID/CHAR
+    }
+    
     logger.info('✅ Missing columns ensured');
   } catch (error) {
     logger.error('Error ensuring columns:', error.message);

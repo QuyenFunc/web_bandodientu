@@ -32,10 +32,9 @@ const SupportDashboard: React.FC = () => {
   }, [listData]);
 
   // Fetch active user messages
-  // Có thể dùng lazy queries nếu có, hoặc gọi manual API mỗi khi click user
-  const fetchMessages = async (uid: string) => {
+  const fetchMessages = async (identifier: string) => {
     try {
-      const res = await fetch(`${SOCKET_URL}/api/chat/${uid}`, {
+      const res = await fetch(`${SOCKET_URL}/api/chat/${identifier}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -50,7 +49,7 @@ const SupportDashboard: React.FC = () => {
 
   useEffect(() => {
     if (selectedUser) {
-      fetchMessages(selectedUser.userId);
+      fetchMessages(selectedUser.sessionId || selectedUser.userId);
     } else {
       setMessages([]);
     }
@@ -69,7 +68,8 @@ const SupportDashboard: React.FC = () => {
 
     socketRef.current.on('messageRecieved', (msg: ChatMessage) => {
       // Use ref to check selectedUser without being stale
-      if (selectedUserRef.current && msg.userId === selectedUserRef.current.userId) {
+      const currentSelected = selectedUserRef.current;
+      if (currentSelected && (msg.sessionId === currentSelected.sessionId || (msg.userId && msg.userId === currentSelected.userId))) {
         setMessages((prev) => [...prev, msg]);
       }
       refetchList(); // Refresh list structure timestamp
@@ -97,6 +97,7 @@ const SupportDashboard: React.FC = () => {
 
     const messageData = {
       userId: selectedUser.userId,
+      sessionId: selectedUser.sessionId,
       senderId: user?.id,
       content: newMessage.trim(),
       isFromAdmin: true,
@@ -124,19 +125,19 @@ const SupportDashboard: React.FC = () => {
           ) : (
             chatList.map((item) => (
               <button
-                key={item.userId}
+                key={item.sessionId || item.userId}
                 onClick={() => setSelectedUser(item)}
                 className={`w-full p-4 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors ${
-                  selectedUser?.userId === item.userId ? 'bg-primary-50 dark:bg-primary-900/10' : ''
+                  (selectedUser?.sessionId === item.sessionId && item.sessionId) || (selectedUser?.userId === item.userId && !item.sessionId) ? 'bg-primary-50 dark:bg-primary-900/10' : ''
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-neutral-200 dark:bg-neutral-700 h-10 w-10 rounded-full flex items-center justify-center font-bold text-neutral-600 dark:text-neutral-300">
-                    {item.user?.firstName?.[0] || 'U'}
+                    {item.user?.firstName?.[0] || 'G'}
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-neutral-800 dark:text-neutral-100 text-sm">
-                      {item.user ? `${item.user.firstName} ${item.user.lastName}` : 'Anonymous'}
+                      {item.user ? `${item.user.firstName} ${item.user.lastName}` : `Khách (${item.sessionId.substring(0, 5)})`}
                     </p>
                     <p className="text-xs text-neutral-500 truncate max-w-[150px]">{item.lastMessage}</p>
                   </div>

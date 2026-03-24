@@ -8,6 +8,8 @@ import { ChatBubbleLeftRightIcon, XMarkIcon, PaperAirplaneIcon } from '@heroicon
 // Socket URL usually backend base
 const SOCKET_URL = 'http://localhost:8888';
 
+import { v4 as uuidv4 } from 'uuid';
+
 const SupportChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -17,6 +19,21 @@ const SupportChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isOpenRef = useRef(isOpen);
 
+  const { user } = useSelector((state: RootState) => state.auth);
+  const userId = user?.id;
+
+  // Initialize session ID
+  const [sessionId] = useState(() => {
+    let saved = localStorage.getItem('support_chat_session_id');
+    if (!saved) {
+      saved = uuidv4();
+      localStorage.setItem('support_chat_session_id', saved);
+    }
+    return saved;
+  });
+
+  const currentIdentifier = userId || sessionId;
+
   useEffect(() => {
     isOpenRef.current = isOpen;
     if (isOpen) {
@@ -24,11 +41,9 @@ const SupportChat: React.FC = () => {
     }
   }, [isOpen]);
 
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const userId = user?.id;
   // Load history
-  const { data: historyData, isLoading } = useGetChatHistoryQuery(userId || '', {
-    skip: !isOpen || !userId,
+  const { data: historyData, isLoading } = useGetChatHistoryQuery(currentIdentifier, {
+    skip: !isOpen || !currentIdentifier,
   });
 
   useEffect(() => {
@@ -37,22 +52,19 @@ const SupportChat: React.FC = () => {
     }
   }, [historyData]);
 
-  // Connect Socket ONCE on mount (if authenticated)
+  // Connect Socket ONCE on mount
   useEffect(() => {
-    if (!userId) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      return;
-    }
+    if (!currentIdentifier) return;
 
     if (!socketRef.current) {
       socketRef.current = io(SOCKET_URL);
-      socketRef.current.emit('join', userId);
+      socketRef.current.emit('join', { userId, sessionId });
 
       socketRef.current.on('messageRecieved', (newMessage: ChatMessage) => {
-        setMessages((prev) => [...prev, newMessage]);
+        // Only accept messages for this session or user
+        if (newMessage.sessionId === sessionId || (userId && newMessage.userId === userId)) {
+          setMessages((prev) => [...prev, newMessage]);
+        }
 
         // If message is from Admin and box is closed, increment unread
         if (newMessage.isFromAdmin && !isOpenRef.current) {
@@ -67,7 +79,8 @@ const SupportChat: React.FC = () => {
         socketRef.current = null;
       }
     };
-  }, [userId]);
+  }, [userId, sessionId, currentIdentifier]);
+
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,11 +88,12 @@ const SupportChat: React.FC = () => {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !socketRef.current || !userId) return;
+    if (!message.trim() || !socketRef.current || !currentIdentifier) return;
 
     const messageData = {
       userId,
-      senderId: userId,
+      sessionId,
+      senderId: userId || `guest_${sessionId.substring(0, 8)}`,
       content: message.trim(),
       isFromAdmin: false,
     };
@@ -87,8 +101,7 @@ const SupportChat: React.FC = () => {
     socketRef.current.emit('sendMessage', messageData);
     setMessage('');
   };
-
-  if (!isAuthenticated) return null;
+    
 
   return (
     <div className="fixed bottom-6 right-24 z-50">

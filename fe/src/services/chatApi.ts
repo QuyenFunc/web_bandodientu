@@ -3,6 +3,7 @@ import { api } from './api';
 export interface ChatMessage {
   id: string;
   userId: string;
+  sessionId: string;
   senderId: string;
   content: string;
   isFromAdmin: boolean;
@@ -12,13 +13,14 @@ export interface ChatMessage {
 
 export interface AdminChatListResponse {
   userId: string;
+  sessionId: string;
   user: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
     avatar?: string;
-  };
+  } | null;
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
@@ -27,11 +29,11 @@ export interface AdminChatListResponse {
 export const chatApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getChatHistory: builder.query<{ status: string; data: ChatMessage[] }, string>({
-      query: (userId) => ({
-        url: `/chat/${userId}`,
+      query: (identifier) => ({
+        url: `/chat/${identifier}`,
         method: 'GET',
       }),
-      providesTags: (result, error, userId) => [{ type: 'Chat' as any, id: userId }],
+      providesTags: (result, error, identifier) => [{ type: 'Chat' as any, id: identifier }],
     }),
 
     getAdminChatList: builder.query<{ status: string; data: AdminChatListResponse[] }, void>({

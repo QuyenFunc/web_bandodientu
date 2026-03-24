@@ -11,6 +11,9 @@ router.use(authenticate);
 router.get('/admin/list', adminAuthenticate, chatController.getAdminChatList);
 
 // User/Admin Get chat history
-router.get('/:userId', chatController.getChatHistory);
+router.get('/:identifier', chatController.getChatHistory);
+
+// Mark conversation as read
+router.patch('/read/:identifier', chatController.markAsRead);
 
 module.exports = router;

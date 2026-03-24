@@ -148,18 +148,21 @@ class GeminiChatbotService {
           messages: [
             {
               role: 'system',
-              content: `Bạn là trợ lý ảo hỗ trợ chuẩn hóa câu hỏi mua sắm. 
-                Nhiệm vụ: sửa lỗi chính tả, viết tắt và làm cho câu hỏi rõ ràng hơn nhưng TUYỆT ĐỐI không thay đổi ý định của khách hàng.
+              content: `Bạn là trợ lý ảo hỗ trợ chuẩn hóa câu hỏi mua sắm tiếng Việt. 
+                Nhiệm vụ: 
+                1. Sửa lỗi chính tả.
+                2. Mở rộng từ viết tắt (VD: "ip" -> "iPhone", "pm" -> "Pro Max", "đh" -> "đơn hàng", "giá bn" -> "giá bao nhiêu").
+                3. Chuyển thành câu chuẩn, mạch lạc, dễ hiểu nhưng TUYỆT ĐỐI không thay đổi ý định của khách hàng.
                 Nếu câu hỏi đã chuẩn, hãy giữ nguyên. 
-                Trả về DUY NHẤT một chuỗi kết quả, không giải thích thêm.`
+                Trả về DUY NHẤT một chuỗi kết quả (câu chuẩn nhất), không giải thích thêm.`
             },
             {
               role: 'user',
               content: `Chuẩn hóa câu hỏi sau: "${message}"`
             }
           ],
-          temperature: 0.1,
-          max_tokens: 100
+          temperature: 0,
+          max_tokens: 150
         },
         {
           headers: {
@@ -169,11 +172,65 @@ class GeminiChatbotService {
         }
       );
 
-      const rewritten = response.data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+      let rewritten = response.data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+      
+      // Post-cleaning
+      if (rewritten.endsWith('.')) rewritten = rewritten.slice(0, -1);
+      
       return rewritten;
     } catch (error) {
       console.error('❌ Rewrite query error:', error.message);
       return message;
+    }
+  }
+
+  /**
+   * Classify user intent explicitly
+   */
+  async classifyIntent(message, context = {}) {
+    if (!this.apiKey || this.apiKey === 'demo-key') return 'general';
+
+    try {
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: `Bạn là trợ lý ảo hỗ trợ phân loại ý định (intent) của khách hàng cho hệ thống thương mại điện tử.
+                Hãy phân loại câu hỏi vào một trong các nhãn sau:
+                - product_search: tìm kiếm sản phẩm, hỏi về cấu hình, thông số, so sánh sản phẩm.
+                - pricing: hỏi về giá cả, khuyến mãi, giảm giá.
+                - order_inquiry: hỏi về đơn hàng, tình trạng giao hàng, cách mua hàng, thanh toán.
+                - policy: hỏi về chính sách bảo hành, đổi trả, vận chuyển.
+                - support: cần hỗ trợ kỹ thuật, khiếu nại, gặp nhân viên.
+                - general: chào hỏi, cảm ơn, khen ngợi, hoặc các câu hỏi xã giao khác.
+                - off_topic: các câu hỏi không liên quan đến cửa hàng hoặc mua sắm.
+
+                Trả về DUY NHẤT nhãn intent, không giải thích thêm.`
+            },
+            {
+              role: 'user',
+              content: `Phân loại ý định của câu sau: "${message}"`
+            }
+          ],
+          temperature: 0,
+          max_tokens: 20
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey} `,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const intent = response.data.choices[0].message.content.trim().toLowerCase().replace(/[^\w]/g, '');
+      return intent || 'general';
+    } catch (error) {
+      console.error('❌ Classify intent error:', error.message);
+      return 'general';
     }
   }
 

@@ -27,6 +27,31 @@ const getChatHistory = async (req, res, next) => {
       }
     }
 
+    // Update unread status
+    if (isAdmin) {
+      await ChatMessage.update(
+        { isRead: true },
+        {
+          where: {
+            [sequelize.Sequelize.Op.or]: [{ sessionId: identifier }, { userId: identifier }],
+            isFromAdmin: false,
+            isRead: false,
+          },
+        }
+      );
+    } else {
+      await ChatMessage.update(
+        { isRead: true },
+        {
+          where: {
+            [sequelize.Sequelize.Op.or]: [{ sessionId: identifier }, { userId: identifier }],
+            isFromAdmin: true,
+            isRead: false,
+          },
+        }
+      );
+    }
+
     res.status(200).json({
       status: 'success',
       data: messages,
@@ -96,7 +121,47 @@ const getAdminChatList = async (req, res, next) => {
   }
 };
 
+// Mark a conversation as read
+const markAsRead = async (req, res, next) => {
+  try {
+    const { identifier } = req.params;
+    const isAdmin = req.user.role === 'admin';
+
+    if (isAdmin) {
+      await ChatMessage.update(
+        { isRead: true },
+        {
+          where: {
+            [sequelize.Sequelize.Op.or]: [{ sessionId: identifier }, { userId: identifier }],
+            isFromAdmin: false,
+            isRead: false,
+          },
+        }
+      );
+    } else {
+      await ChatMessage.update(
+        { isRead: true },
+        {
+          where: {
+            [sequelize.Sequelize.Op.or]: [{ sessionId: identifier }, { userId: identifier }],
+            isFromAdmin: true,
+            isRead: false,
+          },
+        }
+      );
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Conversation marked as read',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getChatHistory,
   getAdminChatList,
+  markAsRead,
 };
